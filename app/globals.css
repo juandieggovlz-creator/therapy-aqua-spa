@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* Paleta de colores (Luxury Spa) */
+:root {
+  --cafe-900: #3E2C23; /* Marrón café oscuro */
+  --crema-50: #F7F1E5; /* Crema cálido */
+  --arena-300: #DCC7AA; /* Arena dorado suave */
+  --oliva-400: #8E9775; /* Verde oliva suave */
+  --blanco: #FFFFFF; /* Blanco puro */
+  --negro-humo: #1A1A1A; /* Negro humo */
+
+  /* Tokens base */
+  --background: var(--crema-50);
+  --foreground: var(--negro-humo);
+  --surface: var(--blanco);
+  --border: color-mix(in oklab, var(--arena-300) 60%, var(--negro-humo));
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-cafe-900: var(--cafe-900);
+  --color-crema-50: var(--crema-50);
+  --color-arena-300: var(--arena-300);
+  --color-oliva-400: var(--oliva-400);
+  --color-blanco: var(--blanco);
+  --color-negro-humo: var(--negro-humo);
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-poppins);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-poppins), ui-sans-serif, system-ui;
+}
