@@ -120,7 +120,7 @@ const testimoniosQuick = [
 ];
 
 export default function HomePage() {
-  const [flippedCard, setFlippedCard] = useState(null);
+  const [flippedCard, setFlippedCard] = useState<number | null>(null);
   const [currentTestimonio, setCurrentTestimonio] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
