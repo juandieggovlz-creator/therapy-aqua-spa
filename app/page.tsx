@@ -144,7 +144,6 @@ export default function HomePage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
         
-        /* Custom scrollbar para el reverso de las tarjetas */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
@@ -158,12 +157,11 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
-          <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-amber-200 to-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
-          <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-pink-200 to-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-amber-200 to-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-pink-200 to-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
 
         <div className={`relative z-10 text-center px-4 transition-all duration-1000 transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -192,7 +190,7 @@ export default function HomePage() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
-              <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
             </button>
             
             <button className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl">
@@ -226,7 +224,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Servicios Destacados - TARJETAS MEJORADAS */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -255,7 +252,6 @@ export default function HomePage() {
                     zIndex: flippedCard === servicio.id ? 50 : 1
                   }}
                 >
-                  {/* FRENTE */}
                   <div 
                     className="absolute w-full h-full bg-gradient-to-br from-green-100 to-emerald-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
                     style={{ backfaceVisibility: 'hidden' }}
@@ -295,7 +291,6 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* REVERSO */}
                   <div 
                     className="absolute w-full h-full bg-white rounded-3xl shadow-2xl overflow-hidden"
                     style={{ 
@@ -350,7 +345,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Dra. Carolina */}
       <section className="py-20 px-4 bg-gradient-to-br from-green-50 to-emerald-50">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -373,7 +367,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="absolute -bottom-4 -right-4 w-full h-full bg-gradient-to-br from-amber-200 to-orange-200 rounded-3xl -z-10" />
+              <div className="absolute -bottom-4 -right-4 w-full h-full bg-gradient-to-br from-amber-200 to-orange-200 rounded-3xl -z-10"></div>
             </div>
 
             <div>
@@ -415,7 +409,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonios */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -441,7 +434,7 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="text-lg md:text-xl text-stone-700 italic mb-6 leading-relaxed">
-                "{testimoniosQuick[currentTestimonio].text}"
+                &quot;{testimoniosQuick[currentTestimonio].text}&quot;
               </p>
               <p className="font-semibold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
                 — {testimoniosQuick[currentTestimonio].name}
@@ -463,7 +456,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Por Qué Elegirnos */}
       <section className="py-20 px-4 bg-gradient-to-br from-amber-100 to-stone-100">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -522,12 +514,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Final */}
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="relative bg-gradient-to-br from-[#3d2817] to-[#2d1f11] rounded-3xl shadow-2xl overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500 rounded-full opacity-10 blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500 rounded-full opacity-10 blur-3xl" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500 rounded-full opacity-10 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500 rounded-full opacity-10 blur-3xl"></div>
             
             <div className="relative z-10 text-center py-16 px-8">
               <div className="inline-block mb-6">
@@ -550,7 +541,7 @@ export default function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                   </svg>
                   Reservar Cita
-                  <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full"></span>
                 </button>
                 
                 <button className="inline-flex items-center gap-2 bg-white hover:bg-stone-100 text-[#3d2817] px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl">
