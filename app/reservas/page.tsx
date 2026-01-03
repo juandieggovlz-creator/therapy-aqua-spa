@@ -9,6 +9,7 @@ type TerapiaItem = {
   nombre: string;
   duracion: number;
   precio: number;
+  precioOriginal?: number;
   icon: string;
 };
 
@@ -44,12 +45,11 @@ const terapias: TerapiaItem[] = [
   { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', duracion: 40, precio: 100000, icon: '🏃' },
 ];
 
-// Paquete de servicios (sauna + jacuzzi + turco)
 const paqueteServicios = {
   id: 'paquete-relajacion',
   nombre: 'Paquete Relajación (Sauna + Jacuzzi + Turco)',
-  precioAfiliado: 40800, // 13600 * 3
-  precioParticular: 89700, // 29900 * 3
+  precioAfiliado: 13000,
+  precioParticular: 20000,
   icon: '💆',
   servicios: ['sauna', 'jacuzzi', 'turco']
 };
@@ -70,7 +70,7 @@ const horariosDisponibles = [
   '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'
 ];
 
-export default function ReservasPage() {
+export default function ReservasContent() {
   const searchParams = useSearchParams();
   const [paso, setPaso] = useState(1);
   const [esAfiliado, setEsAfiliado] = useState(false);
@@ -88,10 +88,13 @@ export default function ReservasPage() {
   const [metodoPago, setMetodoPago] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [reservaExitosa, setReservaExitosa] = useState(false);
+  const [promocion, setPromocion] = useState<any>(null);
+  const [descuentosServicios, setDescuentosServicios] = useState<Record<string, number>>({});
+  const [terapiasActualizadas, setTerapiasActualizadas] = useState<TerapiaItem[]>(terapias);
 
-  const diasCerrados = [1, 2, 3]; // Lunes, Martes, Miércoles
+  const diasCerrados = [1, 2, 3];
+  const [servicioPrecargado, setServicioPrecargado] = useState(false);
 
-  // Detectar afiliado al cargar
   useEffect(() => {
     const afiliadoToken = sessionStorage.getItem('afiliado_token');
     const afiliadoData = sessionStorage.getItem('afiliado');
@@ -104,19 +107,56 @@ export default function ReservasPage() {
       setTelefono(afiliado.telefono);
       setEmail(afiliado.email);
     }
+
+    // Cargar promoción, descuentos y servicios actualizados
+    const loadPromocion = async () => {
+      try {
+        const [promocionRes, descuentosRes, serviciosRes] = await Promise.all([
+          fetch('/api/admin/promociones'),
+          fetch('/api/admin/descuentos'),
+          fetch('/api/servicios')
+        ]);
+        const promocionData = await promocionRes.json();
+        const descuentosData = await descuentosRes.json();
+        const serviciosData = await serviciosRes.json();
+        
+        setPromocion(promocionData.promocion);
+        setDescuentosServicios(descuentosData.descuentos || {});
+        
+        // Actualizar terapias con precios y descuentos desde la API
+        if (serviciosData.servicios) {
+          const terapiasConPrecios = terapias.map(terapia => {
+            const servicioAPI = serviciosData.servicios.find((s: any) => s.id === terapia.id);
+            if (servicioAPI) {
+              return {
+                ...terapia,
+                precio: servicioAPI.precio,
+                precioOriginal: servicioAPI.precioOriginal || servicioAPI.precio
+              };
+            }
+            return terapia;
+          });
+          setTerapiasActualizadas(terapiasConPrecios);
+        }
+      } catch (error) {
+        console.error('Error cargando promoción:', error);
+      }
+    };
+    loadPromocion();
   }, []);
 
-  // Detectar servicio precargado desde URL
   useEffect(() => {
     const servicioParam = searchParams?.get('servicio');
-    if (servicioParam && terapiasSeleccionadas.length === 0) {
-      const terapia = terapias.find(t => t.id === servicioParam);
+    // Solo precargar si hay un parámetro, no se ha precargado antes, y no hay terapias seleccionadas
+    if (servicioParam && !servicioPrecargado && terapiasSeleccionadas.length === 0) {
+      const terapia = terapiasActualizadas.find(t => t.id === servicioParam);
       if (terapia) {
         setTerapiasSeleccionadas([terapia.id]);
-        setPaso(2); // Ir directamente al paso de selección de terapias
+        setPaso(2);
+        setServicioPrecargado(true); // Marcar como precargado para evitar que se vuelva a ejecutar
       }
     }
-  }, [searchParams]);
+  }, [searchParams, servicioPrecargado, terapiasActualizadas]);
 
   const esDiaValido = (fecha: string) => {
     if (!fecha) return true;
@@ -138,11 +178,9 @@ export default function ReservasPage() {
 
   const togglePaquete = () => {
     if (paqueteSeleccionado) {
-      // Deseleccionar paquete y todos sus servicios
       setPaqueteSeleccionado(false);
       setServiciosSeleccionados(prev => prev.filter(s => !paqueteServicios.servicios.includes(s)));
     } else {
-      // Seleccionar paquete y agregar todos sus servicios
       setPaqueteSeleccionado(true);
       setServiciosSeleccionados(prev => [...new Set([...prev, ...paqueteServicios.servicios])]);
     }
@@ -156,16 +194,28 @@ export default function ReservasPage() {
 
   const calcularTotal = () => {
     const totalTerapias = terapiasSeleccionadas.reduce((acc, id) => {
-      const terapia = terapias.find(t => t.id === id);
-      return acc + (terapia?.precio || 0);
+      const terapia = terapiasActualizadas.find(t => t.id === id);
+      if (!terapia) return acc;
+      
+      const precioOriginal = terapia.precioOriginal || terapia.precio;
+      let precio = terapia.precio;
+      
+      // Aplicar descuento individual si existe
+      if (descuentosServicios[id]) {
+        precio = precioOriginal * (1 - descuentosServicios[id] / 100);
+      }
+      // Aplicar promoción general si está activa y no hay descuento individual
+      else if (promocion?.activa) {
+        precio = precioOriginal * (1 - promocion.descuento / 100);
+      }
+      
+      return acc + precio;
     }, 0);
 
     let totalServicios = 0;
     
-    // Si el paquete está seleccionado, usar precio del paquete y restar servicios individuales
     if (paqueteSeleccionado) {
       totalServicios += esAfiliado ? paqueteServicios.precioAfiliado : paqueteServicios.precioParticular;
-      // Los servicios del paquete ya están incluidos, no los contamos individualmente
       const serviciosIndividuales = serviciosSeleccionados.filter(s => !paqueteServicios.servicios.includes(s));
       totalServicios += serviciosIndividuales.reduce((acc, id) => {
         const servicio = serviciosAdicionales.find(s => s.id === id);
@@ -173,7 +223,6 @@ export default function ReservasPage() {
         return acc + (precio || 0);
       }, 0);
     } else {
-      // Calcular servicios individuales
       totalServicios = serviciosSeleccionados.reduce((acc, id) => {
         const servicio = serviciosAdicionales.find(s => s.id === id);
         const precio = esAfiliado ? servicio?.precioAfiliado : servicio?.precioParticular;
@@ -181,7 +230,6 @@ export default function ReservasPage() {
       }, 0);
     }
 
-    // Productos del spa
     const totalProductos = productosSeleccionados.reduce((acc, id) => {
       const producto = productosSpa.find(p => p.id === id);
       return acc + (producto?.precio || 0);
@@ -192,7 +240,7 @@ export default function ReservasPage() {
 
   const calcularDuracionTotal = () => {
     return terapiasSeleccionadas.reduce((acc, id) => {
-      const terapia = terapias.find(t => t.id === id);
+      const terapia = terapiasActualizadas.find(t => t.id === id);
       return acc + (terapia?.duracion || 0);
     }, 0);
   };
@@ -200,11 +248,10 @@ export default function ReservasPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     
-    // Preparar datos de la reserva
     const reserva = {
       esAfiliado,
       afiliadoNombre: afiliadoNombre || null,
-      terapias: terapiasSeleccionadas.map(id => terapias.find(t => t.id === id)),
+      terapias: terapiasSeleccionadas.map(id => terapiasActualizadas.find(t => t.id === id)),
       serviciosAdicionales: serviciosSeleccionados.map(id => serviciosAdicionales.find(s => s.id === id)),
       paqueteSeleccionado,
       productos: productosSeleccionados.map(id => productosSpa.find(p => p.id === id)),
@@ -221,8 +268,7 @@ export default function ReservasPage() {
     };
 
     try {
-      // Enviar a la API
-      const response = await fetch('/api/booking', {
+      const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reserva),
@@ -256,6 +302,7 @@ export default function ReservasPage() {
     setNotas('');
     setMetodoPago('');
     setReservaExitosa(false);
+    setServicioPrecargado(false); // Resetear el flag de precarga
   };
 
   if (reservaExitosa) {
@@ -323,7 +370,6 @@ export default function ReservasPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
             Reserva tu Cita
@@ -342,7 +388,6 @@ export default function ReservasPage() {
           </p>
         </div>
 
-        {/* Indicador de pasos */}
         <div className="mb-12">
           <div className="flex items-center justify-center gap-4">
             {[1, 2, 3, 4].map((num) => (
@@ -368,9 +413,7 @@ export default function ReservasPage() {
           </div>
         </div>
 
-        {/* Contenido por pasos */}
         <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-12">
-          {/* Paso 1: Tipo de cliente */}
           {paso === 1 && (
             <div className="space-y-8">
               <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -382,8 +425,6 @@ export default function ReservasPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                     <button
                       onClick={() => {
-                        setEsAfiliado(true);
-                        // Redirigir al login de afiliados
                         window.location.href = '/login/afiliados';
                       }}
                       className="group relative p-8 rounded-3xl border-4 transition-all duration-300 transform hover:scale-105 border-stone-200 hover:border-green-300"
@@ -443,214 +484,339 @@ export default function ReservasPage() {
             </div>
           )}
 
-          {/* Paso 2: Seleccionar terapias */}
           {paso === 2 && (
             <div className="space-y-8">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  Selecciona tus terapias
-                </h2>
-                <p className="text-stone-600">Puedes elegir múltiples servicios</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {terapias.map((terapia) => (
+              <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Selecciona tus Terapias
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto p-2">
+                {terapiasActualizadas.map((terapia) => (
                   <button
                     key={terapia.id}
                     onClick={() => toggleTerapia(terapia.id)}
-                    className={`relative p-6 rounded-2xl border-2 text-left transition-all duration-300 transform hover:scale-105 ${
+                    className={`group relative p-6 rounded-2xl border-4 transition-all duration-300 text-left ${
                       terapiasSeleccionadas.includes(terapia.id)
-                        ? 'border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
-                        : 'border-stone-200 hover:border-amber-300'
+                        ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-stone-100 shadow-xl ring-4 ring-amber-200 ring-opacity-50'
+                        : 'border-stone-200 hover:border-amber-300 bg-white hover:shadow-lg'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <span className="text-4xl">{terapia.icon}</span>
-                      {terapiasSeleccionadas.includes(terapia.id) && (
-                        <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
+                    <div className="flex items-start gap-4">
+                      <div className="text-4xl flex-shrink-0">{terapia.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-[#3d2817] mb-2 text-sm md:text-base leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                          {terapia.nombre}
+                        </h3>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-stone-600">⏱️ {terapia.duracion} min</span>
+                          <div className="text-right">
+                            {(() => {
+                              const precioOriginal = terapia.precioOriginal || terapia.precio;
+                              let precioFinal = terapia.precio;
+                              let descuentoAplicado = 0;
+                              
+                              if (descuentosServicios[terapia.id]) {
+                                descuentoAplicado = descuentosServicios[terapia.id];
+                                precioFinal = precioOriginal * (1 - descuentoAplicado / 100);
+                              } else if (promocion?.activa) {
+                                descuentoAplicado = promocion.descuento;
+                                precioFinal = precioOriginal * (1 - descuentoAplicado / 100);
+                              }
+                              
+                              return (
+                                <>
+                                  {descuentoAplicado > 0 && (
+                                    <div className="text-xs text-red-600 font-semibold mb-1">
+                                      -{descuentoAplicado}% OFF
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2">
+                                    {descuentoAplicado > 0 && (
+                                      <span className="text-xs text-stone-400 line-through">
+                                        ${precioOriginal.toLocaleString('es-CO')}
+                                      </span>
+                                    )}
+                                    <span className="text-sm font-bold text-[#3d2817]">
+                                      ${Math.round(precioFinal).toLocaleString('es-CO')}
+                                    </span>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    <h4 className="font-semibold text-[#3d2817] text-sm mb-2">{terapia.nombre}</h4>
-                    <div className="flex items-center justify-between text-xs text-stone-600">
-                      <span>{terapia.duracion} min</span>
-                      <span className="font-bold text-amber-700">${terapia.precio.toLocaleString('es-CO')}</span>
+                      </div>
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        terapiasSeleccionadas.includes(terapia.id)
+                          ? 'border-[#3d2817] bg-[#3d2817]'
+                          : 'border-stone-300'
+                      }`}>
+                        {terapiasSeleccionadas.includes(terapia.id) && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
                   </button>
                 ))}
               </div>
 
-              {/* Servicios adicionales */}
-              <div className="border-t-2 border-stone-200 pt-8">
-                <h3 className="text-xl md:text-2xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  Servicios Adicionales
-                </h3>
-                
-                {/* Paquete de servicios */}
-                <div className="mb-6">
-                  <button
-                    onClick={togglePaquete}
-                    className={`w-full p-6 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                      paqueteSeleccionado
-                        ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
-                        : 'border-stone-200 hover:border-green-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="text-4xl">{paqueteServicios.icon}</div>
-                        <div className="text-left">
-                          <p className="font-semibold text-[#3d2817] mb-1">{paqueteServicios.nombre}</p>
-                          <p className="text-xs text-stone-600">Incluye: Sauna + Jacuzzi + Baño Turco</p>
+              {(terapiasSeleccionadas.length > 0 || paqueteSeleccionado || productosSeleccionados.length > 0) ? (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-[#3d2817] text-lg">Resumen de selección:</h3>
+                    <span className="text-sm text-stone-600">
+                      {terapiasSeleccionadas.length} terapia(s) • {paqueteSeleccionado ? '1 paquete' : '0 paquetes'} • {productosSeleccionados.length} producto(s)
+                    </span>
+                  </div>
+                  
+                  {/* Terapias */}
+                  {terapiasSeleccionadas.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Terapias:</p>
+                      <div className="space-y-2">
+                        {terapiasSeleccionadas.map((id) => {
+                          const terapia = terapiasActualizadas.find(t => t.id === id);
+                          return terapia ? (
+                            <div key={id} className="flex items-center justify-between bg-white rounded-lg p-3">
+                              <div className="flex items-center gap-3 flex-1">
+                                <span className="text-2xl">{terapia.icon}</span>
+                                <span className="text-sm font-semibold text-[#3d2817]">{terapia.nombre}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {(() => {
+                                  const precioOriginal = terapia.precioOriginal || terapia.precio;
+                                  let precioFinal = terapia.precio;
+                                  let descuentoAplicado = 0;
+                                  
+                                  if (descuentosServicios[id]) {
+                                    descuentoAplicado = descuentosServicios[id];
+                                    precioFinal = precioOriginal * (1 - descuentoAplicado / 100);
+                                  } else if (promocion?.activa) {
+                                    descuentoAplicado = promocion.descuento;
+                                    precioFinal = precioOriginal * (1 - descuentoAplicado / 100);
+                                  }
+                                  
+                                  return (
+                                    <div className="text-right">
+                                      {descuentoAplicado > 0 && (
+                                        <div className="text-xs text-red-600 font-semibold mb-1">
+                                          -{descuentoAplicado}% OFF
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-2">
+                                        {descuentoAplicado > 0 && (
+                                          <span className="text-xs text-stone-400 line-through">
+                                            ${(terapia.precioOriginal || terapia.precio).toLocaleString('es-CO')}
+                                          </span>
+                                        )}
+                                        <span className="text-sm font-bold text-[#3d2817]">
+                                          ${Math.round(precioFinal).toLocaleString('es-CO')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleTerapia(id);
+                                  }}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                  title="Quitar terapia"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Paquete */}
+                  {paqueteSeleccionado && (
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Servicios Adicionales:</p>
+                      <div className="flex items-center justify-between bg-white rounded-lg p-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="text-2xl">{paqueteServicios.icon}</span>
+                          <span className="text-sm font-semibold text-[#3d2817]">{paqueteServicios.nombre}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-bold text-[#3d2817]">
+                            ${(esAfiliado ? paqueteServicios.precioAfiliado : paqueteServicios.precioParticular).toLocaleString('es-CO')}
+                          </span>
+                          <button
+                            onClick={togglePaquete}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                            title="Quitar paquete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-green-700">
-                          ${(esAfiliado ? paqueteServicios.precioAfiliado : paqueteServicios.precioParticular).toLocaleString('es-CO')}
-                        </p>
-                        {paqueteSeleccionado && (
-                          <div className="mt-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mx-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 text-white">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          </div>
-                        )}
+                    </div>
+                  )}
+
+                  {/* Productos */}
+                  {productosSeleccionados.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Productos:</p>
+                      <div className="space-y-2">
+                        {productosSeleccionados.map((id) => {
+                          const producto = productosSpa.find(p => p.id === id);
+                          return producto ? (
+                            <div key={id} className="flex items-center justify-between bg-white rounded-lg p-3">
+                              <div className="flex items-center gap-3 flex-1">
+                                <span className="text-2xl">{producto.icon}</span>
+                                <span className="text-sm font-semibold text-[#3d2817]">{producto.nombre}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold text-[#3d2817]">${producto.precio.toLocaleString('es-CO')}</span>
+                                <button
+                                  onClick={() => toggleProducto(id)}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                  title="Quitar producto"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ) : null;
+                        })}
                       </div>
                     </div>
-                  </button>
-                </div>
+                  )}
 
-                {/* Servicios individuales */}
-                <p className="text-sm text-stone-600 mb-3">O selecciona servicios individuales:</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {serviciosAdicionales.map((servicio) => (
-                    <button
-                      key={servicio.id}
-                      onClick={() => toggleServicio(servicio.id)}
-                      disabled={paqueteSeleccionado && paqueteServicios.servicios.includes(servicio.id)}
-                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                        serviciosSeleccionados.includes(servicio.id)
-                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
-                          : 'border-stone-200 hover:border-green-300'
-                      } ${
-                        paqueteSeleccionado && paqueteServicios.servicios.includes(servicio.id)
-                          ? 'opacity-50 cursor-not-allowed'
-                          : ''
-                      }`}
-                    >
-                      <div className="text-3xl mb-2">{servicio.icon}</div>
-                      <p className="text-xs font-semibold text-[#3d2817] mb-1">{servicio.nombre}</p>
-                      <p className="text-xs font-bold text-green-700">
-                        ${(esAfiliado ? servicio.precioAfiliado : servicio.precioParticular).toLocaleString('es-CO')}
-                      </p>
-                      {paqueteSeleccionado && paqueteServicios.servicios.includes(servicio.id) && (
-                        <div className="absolute top-2 right-2 text-xs bg-green-500 text-white px-2 py-1 rounded">
-                          Incluido
-                        </div>
-                      )}
-                      {serviciosSeleccionados.includes(servicio.id) && !(paqueteSeleccionado && paqueteServicios.servicios.includes(servicio.id)) && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Productos del Spa */}
-                <div className="mt-8 border-t-2 border-stone-200 pt-8">
-                  <h4 className="text-lg font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-                    Productos del Spa
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {productosSpa.map((producto) => (
-                      <button
-                        key={producto.id}
-                        onClick={() => toggleProducto(producto.id)}
-                        className={`relative p-4 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                          productosSeleccionados.includes(producto.id)
-                            ? 'border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
-                            : 'border-stone-200 hover:border-amber-300'
-                        }`}
-                      >
-                        <div className="text-3xl mb-2">{producto.icon}</div>
-                        <p className="text-xs font-semibold text-[#3d2817] mb-1">{producto.nombre}</p>
-                        <p className="text-xs font-bold text-amber-700">
-                          ${producto.precio.toLocaleString('es-CO')}
-                        </p>
-                        {productosSeleccionados.includes(producto.id) && (
-                          <div className="absolute top-2 right-2 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3 text-white">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between pt-4 border-t-2 border-amber-300">
+                    <div>
+                      <p className="text-sm text-stone-600">Duración total:</p>
+                      <p className="text-lg font-bold text-[#3d2817]">{calcularDuracionTotal()} minutos</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-stone-600">Total a pagar:</p>
+                      <p className="text-2xl font-bold text-[#3d2817]">${calcularTotal().toLocaleString('es-CO')}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Botón Conocer Terapias */}
-              <div className="text-center pt-6">
-                <Link
-                  href="/servicios"
-                  className="inline-flex items-center gap-2 text-[#3d2817] hover:text-[color:var(--oliva-400)] font-semibold transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                  Conocer más terapias
-                </Link>
-              </div>
-
-              {/* Resumen */}
-              {(terapiasSeleccionadas.length > 0 || serviciosSeleccionados.length > 0 || productosSeleccionados.length > 0) && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6">
-                  <h4 className="font-semibold text-[#3d2817] mb-3">Resumen de selección:</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-stone-600">Terapias:</p>
-                      <p className="font-bold text-[#3d2817]">{terapiasSeleccionadas.length}</p>
-                    </div>
-                    <div>
-                      <p className="text-stone-600">Duración total:</p>
-                      <p className="font-bold text-[#3d2817]">{calcularDuracionTotal()} min</p>
-                    </div>
-                    <div>
-                      <p className="text-stone-600">Servicios adicionales:</p>
-                      <p className="font-bold text-[#3d2817]">
-                        {paqueteSeleccionado ? '1 paquete' : serviciosSeleccionados.length}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-stone-600">Productos:</p>
-                      <p className="font-bold text-[#3d2817]">{productosSeleccionados.length}</p>
-                    </div>
-                    <div className="col-span-2 pt-2 border-t border-stone-300">
-                      <p className="text-stone-600">Total:</p>
-                      <p className="font-bold text-2xl text-amber-700">${calcularTotal().toLocaleString('es-CO')}</p>
-                    </div>
-                  </div>
+              ) : (
+                <div className="bg-stone-50 rounded-2xl p-6 border-2 border-stone-200 text-center">
+                  <p className="text-stone-600 mb-2">💡 Selecciona una o más terapias haciendo clic en las tarjetas</p>
+                  <p className="text-sm text-stone-500">Puedes seleccionar múltiples terapias para tu sesión</p>
                 </div>
               )}
 
-              <div className="flex gap-4 justify-center pt-4">
+              {/* Servicios Adicionales - Paquete */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200">
+                <h3 className="text-xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  💆 Servicios Adicionales
+                </h3>
+                <button
+                  onClick={togglePaquete}
+                  className={`w-full p-6 rounded-xl border-4 transition-all duration-300 text-left ${
+                    paqueteSeleccionado
+                      ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
+                      : 'border-stone-200 hover:border-amber-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-4xl">{paqueteServicios.icon}</span>
+                      <div>
+                        <h4 className="font-bold text-[#3d2817] text-lg mb-1">{paqueteServicios.nombre}</h4>
+                        <p className="text-sm text-stone-600">Incluye: Sauna + Jacuzzi + Baño Turco</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-stone-600 mb-1">
+                        {esAfiliado ? 'Precio afiliado' : 'Precio particular'}
+                      </p>
+                      <p className="text-2xl font-bold text-[#3d2817]">
+                        ${(esAfiliado ? paqueteServicios.precioAfiliado : paqueteServicios.precioParticular).toLocaleString('es-CO')}
+                      </p>
+                      <div className={`mt-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        paqueteSeleccionado
+                          ? 'border-amber-500 bg-amber-500'
+                          : 'border-stone-300'
+                      }`}>
+                        {paqueteSeleccionado && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Productos del Spa */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200">
+                <h3 className="text-xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  🛍️ Productos Adicionales
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {productosSpa.map((producto) => (
+                    <button
+                      key={producto.id}
+                      onClick={() => toggleProducto(producto.id)}
+                      className={`p-4 rounded-xl border-4 transition-all duration-300 text-left ${
+                        productosSeleccionados.includes(producto.id)
+                          ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
+                          : 'border-stone-200 hover:border-amber-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{producto.icon}</span>
+                          <div>
+                            <h4 className="font-bold text-[#3d2817]">{producto.nombre}</h4>
+                            <p className="text-sm font-bold text-amber-700 mt-1">
+                              ${producto.precio.toLocaleString('es-CO')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          productosSeleccionados.includes(producto.id)
+                            ? 'border-amber-500 bg-amber-500'
+                            : 'border-stone-300'
+                        }`}>
+                          {productosSeleccionados.includes(producto.id) && (
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-between pt-4">
                 <button
                   onClick={() => setPaso(1)}
-                  className="bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-8 py-4 rounded-full font-semibold transition-all duration-300"
+                  className="bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-8 py-3 rounded-full font-semibold transition-all duration-300"
                 >
-                  ← Atrás
+                  ← Volver
                 </button>
                 <button
                   onClick={() => setPaso(3)}
                   disabled={terapiasSeleccionadas.length === 0}
-                  className="bg-[#3d2817] hover:bg-[#2d1f11] text-white px-12 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    terapiasSeleccionadas.length === 0
+                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                      : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
+                  }`}
                 >
                   Continuar →
                 </button>
@@ -658,79 +824,70 @@ export default function ReservasPage() {
             </div>
           )}
 
-          {/* Paso 3: Fecha y Hora */}
           {paso === 3 && (
-            <div className="space-y-8 max-w-3xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Selecciona fecha y hora
+            <div className="space-y-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Selecciona Fecha y Hora
               </h2>
 
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                    📅 Fecha de la cita
+                  <label className="block text-lg font-semibold text-[#3d2817] mb-4">
+                    📅 Fecha
                   </label>
                   <input
                     type="date"
                     value={fecha}
                     onChange={(e) => setFecha(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-6 py-4 rounded-xl border-2 border-stone-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all outline-none text-lg"
+                    className={`w-full p-4 rounded-2xl border-4 text-lg ${
+                      fecha && !esDiaValido(fecha)
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-stone-200 focus:border-[#3d2817]'
+                    }`}
                   />
                   {fecha && !esDiaValido(fecha) && (
-                    <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                      </svg>
-                      Lo sentimos, estamos cerrados los lunes, martes y miércoles. Por favor selecciona otro día.
-                    </p>
+                    <p className="mt-2 text-sm text-red-600">⚠️ Los lunes, martes y miércoles estamos cerrados</p>
                   )}
-                  <p className="mt-2 text-xs text-stone-500">
-                    🕗 Horario: Jueves a Domingo de 8:00 AM a 3:30 PM
-                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                    🕐 Hora de inicio
+                  <label className="block text-lg font-semibold text-[#3d2817] mb-4">
+                    ⏰ Horario
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                    {horariosDisponibles.map((hora) => (
+                  <div className="grid grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-2">
+                    {horariosDisponibles.map((horarioItem) => (
                       <button
-                        key={hora}
-                        onClick={() => setHorario(hora)}
-                        disabled={!esDiaValido(fecha) || !fecha}
-                        className={`py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 ${
-                          horario === hora
-                            ? 'bg-[#3d2817] text-white shadow-lg scale-105'
-                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:cursor-not-allowed'
+                        key={horarioItem}
+                        onClick={() => setHorario(horarioItem)}
+                        className={`p-3 rounded-xl border-2 transition-all duration-300 font-semibold ${
+                          horario === horarioItem
+                            ? 'border-[#3d2817] bg-[#3d2817] text-white'
+                            : 'border-stone-200 hover:border-amber-300 bg-white text-[#3d2817]'
                         }`}
                       >
-                        {hora}
+                        {horarioItem}
                       </button>
                     ))}
                   </div>
-                  {horario && (
-                    <div className="mt-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
-                      <p className="text-sm text-green-800">
-                        ✅ Tu cita comenzará a las <strong>{horario}</strong> y durará aproximadamente <strong>{calcularDuracionTotal()} minutos</strong>
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              <div className="flex gap-4 justify-center pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between pt-4">
                 <button
                   onClick={() => setPaso(2)}
-                  className="bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-8 py-4 rounded-full font-semibold transition-all duration-300"
+                  className="bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-8 py-3 rounded-full font-semibold transition-all duration-300"
                 >
-                  ← Atrás
+                  ← Volver
                 </button>
                 <button
                   onClick={() => setPaso(4)}
                   disabled={!fecha || !horario || !esDiaValido(fecha)}
-                  className="bg-[#3d2817] hover:bg-[#2d1f11] text-white px-12 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    !fecha || !horario || !esDiaValido(fecha)
+                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                      : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
+                  }`}
                 >
                   Continuar →
                 </button>
@@ -738,307 +895,224 @@ export default function ReservasPage() {
             </div>
           )}
 
-          {/* Paso 4: Datos personales */}
           {paso === 4 && (
-            <div className="space-y-8 max-w-3xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Completa tus datos
+            <div className="space-y-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Completa tus Datos
               </h2>
 
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                    👤 Nombre completo *
+                    Nombre completo *
                   </label>
                   <input
                     type="text"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Ej: María Rodríguez"
-                    className="w-full px-6 py-4 rounded-xl border-2 border-stone-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all outline-none"
+                    className="w-full p-4 rounded-xl border-2 border-stone-200 focus:border-[#3d2817] focus:outline-none"
+                    required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                    📱 Teléfono / WhatsApp *
+                    Teléfono *
                   </label>
                   <input
                     type="tel"
                     value={telefono}
                     onChange={(e) => setTelefono(e.target.value)}
-                    placeholder="Ej: +57 300 123 4567"
-                    className="w-full px-6 py-4 rounded-xl border-2 border-stone-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all outline-none"
+                    className="w-full p-4 rounded-xl border-2 border-stone-200 focus:border-[#3d2817] focus:outline-none"
+                    required
                   />
-                  <p className="mt-2 text-xs text-stone-500">
-                    Te contactaremos por este número para confirmar tu cita
-                  </p>
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                    📧 Email (opcional)
+                    Email *
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Ej: maria@email.com"
-                    className="w-full px-6 py-4 rounded-xl border-2 border-stone-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all outline-none"
+                    className="w-full p-4 rounded-xl border-2 border-stone-200 focus:border-[#3d2817] focus:outline-none"
+                    required
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                    📝 Notas adicionales / Observaciones (opcional)
+                    Método de pago *
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { id: 'wompi', label: '💳 Tarjeta (Wompi)', desc: 'Pago con tarjeta' },
+                      { id: 'nequi', label: '📱 Nequi', desc: 'Transferencia Nequi' },
+                      { id: 'efectivo', label: '💵 Efectivo', desc: 'Pago en el lugar' }
+                    ].map((metodo) => (
+                      <button
+                        key={metodo.id}
+                        onClick={() => setMetodoPago(metodo.id)}
+                        className={`p-4 rounded-xl border-4 transition-all duration-300 text-left ${
+                          metodoPago === metodo.id
+                            ? 'border-[#3d2817] bg-gradient-to-br from-amber-50 to-stone-100'
+                            : 'border-stone-200 hover:border-amber-300 bg-white'
+                        }`}
+                      >
+                        <div className="font-semibold text-[#3d2817] mb-1">{metodo.label}</div>
+                        <div className="text-xs text-stone-600">{metodo.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-[#3d2817] mb-2">
+                    Notas adicionales (opcional)
                   </label>
                   <textarea
                     value={notas}
                     onChange={(e) => setNotas(e.target.value)}
-                    placeholder="¿Tienes alguna condición especial, preferencia o observación que debamos saber?"
                     rows={4}
-                    className="w-full px-6 py-4 rounded-xl border-2 border-stone-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all outline-none resize-none"
+                    className="w-full p-4 rounded-xl border-2 border-stone-200 focus:border-[#3d2817] focus:outline-none resize-none"
+                    placeholder="Comparte cualquier información adicional que consideres importante..."
                   />
                 </div>
-
-                {/* Método de Pago */}
-                <div>
-                  <label className="block text-sm font-semibold text-[#3d2817] mb-4">
-                    💳 Método de Pago *
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setMetodoPago('wompi')}
-                      className={`p-6 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                        metodoPago === 'wompi'
-                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
-                          : 'border-stone-200 hover:border-green-300'
-                      }`}
-                    >
-                      <div className="text-4xl mb-2">💳</div>
-                      <p className="font-semibold text-[#3d2817] mb-1">Tarjeta de Crédito/Débito</p>
-                      <p className="text-xs text-stone-600">Wompi</p>
-                      {metodoPago === 'wompi' && (
-                        <div className="mt-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mx-auto">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMetodoPago('nequi')}
-                      className={`p-6 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                        metodoPago === 'nequi'
-                          ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg'
-                          : 'border-stone-200 hover:border-purple-300'
-                      }`}
-                    >
-                      <div className="text-4xl mb-2">📱</div>
-                      <p className="font-semibold text-[#3d2817] mb-1">Nequi</p>
-                      <p className="text-xs text-stone-600">Pago móvil</p>
-                      {metodoPago === 'nequi' && (
-                        <div className="mt-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center mx-auto">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMetodoPago('efectivo')}
-                      className={`p-6 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                        metodoPago === 'efectivo'
-                          ? 'border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
-                          : 'border-stone-200 hover:border-amber-300'
-                      }`}
-                    >
-                      <div className="text-4xl mb-2">💵</div>
-                      <p className="font-semibold text-[#3d2817] mb-1">Efectivo</p>
-                      <p className="text-xs text-stone-600">Pago en el spa</p>
-                      {metodoPago === 'efectivo' && (
-                        <div className="mt-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center mx-auto">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                  <p className="mt-2 text-xs text-stone-500">
-                    * Si eliges Wompi o Nequi, te enviaremos el link de pago después de confirmar tu reserva
-                  </p>
-                </div>
               </div>
 
-              {/* Resumen final */}
-              <div className="bg-gradient-to-br from-[#3d2817] to-[#2d1f11] rounded-2xl p-8 text-white">
-                <h3 className="text-2xl font-bold mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  📋 Resumen de tu Reserva
-                </h3>
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200">
+                <h3 className="font-bold text-[#3d2817] text-lg mb-4">Resumen de tu reserva:</h3>
                 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-start pb-4 border-b border-white/20">
-                    <div>
-                      <p className="text-sm text-white/70">Tipo de cliente</p>
-                      <p className="font-semibold">{esAfiliado ? '🏅 Afiliado' : '👤 Particular'}</p>
-                    </div>
+                <div className="space-y-3 mb-4">
+                  <div className="bg-white rounded-lg p-3">
+                    <p className="text-sm text-stone-600 mb-1"><strong>📅 Fecha:</strong> {fecha}</p>
+                    <p className="text-sm text-stone-600"><strong>⏰ Hora:</strong> {horario}</p>
                   </div>
 
-                  <div className="pb-4 border-b border-white/20">
-                    <p className="text-sm text-white/70 mb-2">Terapias seleccionadas</p>
-                    <div className="space-y-1">
-                      {terapiasSeleccionadas.map(id => {
-                        const terapia = terapias.find(t => t.id === id);
-                        return (
-                          <div key={id} className="flex justify-between text-sm">
-                            <span>{terapia?.icon} {terapia?.nombre}</span>
-                            <span>${terapia?.precio.toLocaleString('es-CO')}</span>
-                          </div>
-                        );
-                      })}
+                  {/* Terapias */}
+                  {terapiasSeleccionadas.length > 0 && (
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Terapias ({terapiasSeleccionadas.length}):</p>
+                      <div className="space-y-2">
+                        {terapiasSeleccionadas.map((id) => {
+                          const terapia = terapiasActualizadas.find(t => t.id === id);
+                          return terapia ? (
+                            <div key={id} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span>{terapia.icon}</span>
+                                <span className="text-[#3d2817]">{terapia.nombre}</span>
+                              </div>
+                              {(() => {
+                                const precioOriginal = terapia.precioOriginal || terapia.precio;
+                                let precioFinal = terapia.precio;
+                                let descuentoAplicado = 0;
+                                
+                                if (descuentosServicios[id]) {
+                                  descuentoAplicado = descuentosServicios[id];
+                                  precioFinal = precioOriginal * (1 - descuentoAplicado / 100);
+                                } else if (promocion?.activa) {
+                                  descuentoAplicado = promocion.descuento;
+                                  precioFinal = precioOriginal * (1 - descuentoAplicado / 100);
+                                }
+                                
+                                return (
+                                  <div className="text-right">
+                                    {descuentoAplicado > 0 && (
+                                      <span className="text-xs text-stone-400 line-through block">
+                                        ${precioOriginal.toLocaleString('es-CO')}
+                                      </span>
+                                    )}
+                                    <span className="font-bold text-[#3d2817]">
+                                      ${Math.round(precioFinal).toLocaleString('es-CO')}
+                                    </span>
+                                    {descuentoAplicado > 0 && (
+                                      <span className="text-xs text-red-600 font-semibold block">
+                                        -{descuentoAplicado}% OFF
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
+                  {/* Paquete */}
                   {paqueteSeleccionado && (
-                    <div className="pb-4 border-b border-white/20">
-                      <p className="text-sm text-white/70 mb-2">Paquete de servicios</p>
-                      <div className="flex justify-between text-sm">
-                        <span>{paqueteServicios.icon} {paqueteServicios.nombre}</span>
-                        <span>${(esAfiliado ? paqueteServicios.precioAfiliado : paqueteServicios.precioParticular).toLocaleString('es-CO')}</span>
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Servicios Adicionales:</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span>{paqueteServicios.icon}</span>
+                          <span className="text-[#3d2817]">{paqueteServicios.nombre}</span>
+                        </div>
+                        <span className="font-bold text-[#3d2817]">
+                          ${(esAfiliado ? paqueteServicios.precioAfiliado : paqueteServicios.precioParticular).toLocaleString('es-CO')}
+                        </span>
                       </div>
                     </div>
                   )}
 
-                  {serviciosSeleccionados.filter(s => !(paqueteSeleccionado && paqueteServicios.servicios.includes(s))).length > 0 && (
-                    <div className="pb-4 border-b border-white/20">
-                      <p className="text-sm text-white/70 mb-2">Servicios adicionales individuales</p>
-                      <div className="space-y-1">
-                        {serviciosSeleccionados.filter(s => !(paqueteSeleccionado && paqueteServicios.servicios.includes(s))).map(id => {
-                          const servicio = serviciosAdicionales.find(s => s.id === id);
-                          const precio = esAfiliado ? servicio?.precioAfiliado : servicio?.precioParticular;
-                          return (
-                            <div key={id} className="flex justify-between text-sm">
-                              <span>{servicio?.icon} {servicio?.nombre}</span>
-                              <span>${precio?.toLocaleString('es-CO')}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
+                  {/* Productos */}
                   {productosSeleccionados.length > 0 && (
-                    <div className="pb-4 border-b border-white/20">
-                      <p className="text-sm text-white/70 mb-2">Productos del spa</p>
-                      <div className="space-y-1">
-                        {productosSeleccionados.map(id => {
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Productos ({productosSeleccionados.length}):</p>
+                      <div className="space-y-2">
+                        {productosSeleccionados.map((id) => {
                           const producto = productosSpa.find(p => p.id === id);
-                          return (
-                            <div key={id} className="flex justify-between text-sm">
-                              <span>{producto?.icon} {producto?.nombre}</span>
-                              <span>${producto?.precio.toLocaleString('es-CO')}</span>
+                          return producto ? (
+                            <div key={id} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span>{producto.icon}</span>
+                                <span className="text-[#3d2817]">{producto.nombre}</span>
+                              </div>
+                              <span className="font-bold text-[#3d2817]">${producto.precio.toLocaleString('es-CO')}</span>
                             </div>
-                          );
+                          ) : null;
                         })}
                       </div>
                     </div>
                   )}
 
-                  {metodoPago && (
-                    <div className="pb-4 border-b border-white/20">
-                      <p className="text-sm text-white/70">Método de pago</p>
-                      <p className="font-semibold">
-                        {metodoPago === 'wompi' && '💳 Tarjeta (Wompi)'}
-                        {metodoPago === 'nequi' && '📱 Nequi'}
-                        {metodoPago === 'efectivo' && '💵 Efectivo'}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center py-4 border-t-2 border-white/40">
-                    <div>
-                      <p className="text-sm text-white/70">Fecha y hora</p>
-                      <p className="font-semibold">{fecha} a las {horario}</p>
-                    </div>
+                  {/* Duración total */}
+                  <div className="bg-white rounded-lg p-3">
+                    <p className="text-sm text-stone-600"><strong>⏱️ Duración total:</strong> {calcularDuracionTotal()} minutos</p>
                   </div>
+                </div>
 
-                  <div className="flex justify-between items-center pt-4 border-t-2 border-white/40">
-                    <p className="text-xl font-bold">TOTAL</p>
-                    <p className="text-3xl font-bold text-amber-400">${calcularTotal().toLocaleString('es-CO')}</p>
+                <div className="pt-4 border-t-2 border-amber-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-semibold text-[#3d2817]">Total a pagar:</span>
+                    <span className="text-3xl font-bold text-[#3d2817]">${calcularTotal().toLocaleString('es-CO')}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-4 justify-center pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between pt-4">
                 <button
                   onClick={() => setPaso(3)}
-                  className="bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-8 py-4 rounded-full font-semibold transition-all duration-300"
+                  className="bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-8 py-3 rounded-full font-semibold transition-all duration-300"
                 >
-                  ← Atrás
+                  ← Volver
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={!nombre || !telefono || !metodoPago || submitting}
-                  className="relative bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden"
+                  disabled={submitting || !nombre || !telefono || !email || !metodoPago}
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    submitting || !nombre || !telefono || !email || !metodoPago
+                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                      : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
+                  }`}
                 >
-                  {submitting ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Procesando...
-                    </span>
-                  ) : (
-                    '✅ Confirmar Reserva'
-                  )}
+                  {submitting ? 'Procesando...' : 'Confirmar Reserva'}
                 </button>
               </div>
-
-              <p className="text-center text-xs text-stone-500 mt-4">
-                Al confirmar, aceptas nuestras políticas de cancelación y reagendamiento (24 horas de anticipación)
-              </p>
             </div>
           )}
-        </div>
-
-        {/* Información adicional */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <div className="bg-white rounded-2xl p-6 shadow-lg text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-blue-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-[#3d2817] mb-2">Llega 20 min antes</h3>
-            <p className="text-sm text-stone-600">Para completar tu registro y cambiarte con calma</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-lg text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-green-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-[#3d2817] mb-2">Confirmación inmediata</h3>
-            <p className="text-sm text-stone-600">Te contactaremos por WhatsApp para confirmar</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-lg text-center">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-amber-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-[#3d2817] mb-2">Cancela con 24h</h3>
-            <p className="text-sm text-stone-600">Reagenda sin costo con anticipación</p>
-          </div>
         </div>
       </div>
     </main>

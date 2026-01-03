@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 
-const serviciosDestacados = [
+// Helper para codificar URLs de imágenes
+function getImagePath(filename: string): string {
+  return `/image/${encodeURIComponent(filename)}`;
+}
+
+const serviciosDestacadosBase = [
   {
     id: 1,
     key: "columna",
@@ -11,7 +18,7 @@ const serviciosDestacados = [
     price: 100000,
     priceLabel: "desde $100.000",
     duration: "30 min",
-    imagen: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=500&h=300&fit=crop",
+    imagen: getImagePath("therapy lesiones de columna 2.jpg"),
     description: "Tratamiento especializado para dolor lumbar, cervical y dorsalgia. Recupera tu movilidad y alivia el dolor crónico.",
     detalles: [
       "Evaluación postural completa",
@@ -29,7 +36,7 @@ const serviciosDestacados = [
     price: 140000,
     priceLabel: "$140.000",
     duration: "45 min",
-    imagen: "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=500&h=300&fit=crop",
+    imagen: getImagePath("masaje general.jfif"),
     description: "Masaje corporal completo que combina técnicas de relajación profunda para reducir estrés y tensión muscular.",
     detalles: [
       "Masaje corporal completo",
@@ -47,7 +54,7 @@ const serviciosDestacados = [
     price: 100000,
     priceLabel: "$100.000",
     duration: "40 min",
-    imagen: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=500&h=300&fit=crop",
+    imagen: getImagePath("masaje deportivo.jpg"),
     description: "Ideal para atletas y personas activas. Previene lesiones y mejora el rendimiento físico.",
     detalles: [
       "Preparación pre-competencia",
@@ -65,7 +72,7 @@ const serviciosDestacados = [
     price: 80000,
     priceLabel: "$80.000",
     duration: "30 min",
-    imagen: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=500&h=300&fit=crop",
+    imagen: getImagePath("therapy ocular.jpg"),
     description: "Tratamiento innovador para ojos cansados, ojeras y tensión ocular. Refresca y revitaliza tu mirada.",
     detalles: [
       "Masaje de contorno de ojos",
@@ -83,7 +90,7 @@ const serviciosDestacados = [
     price: 90000,
     priceLabel: "$90.000",
     duration: "30 min",
-    imagen: "https://images.unsplash.com/photo-1505944357768-0f83e8bb88ea?w=500&h=300&fit=crop",
+    imagen: getImagePath("skincare mano.jpg"),
     description: "Rejuvenecimiento de manos con exfoliación, hidratación profunda y masaje especializado.",
     detalles: [
       "Exfoliación suave",
@@ -101,7 +108,7 @@ const serviciosDestacados = [
     price: 90000,
     priceLabel: "$90.000",
     duration: "30 min",
-    imagen: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=500&h=300&fit=crop",
+    imagen: getImagePath("masaje facial.jpg"),
     description: "Masaje facial con técnicas lifting que mejoran la circulación y tonifican los músculos faciales.",
     detalles: [
       "Limpieza facial profunda",
@@ -120,6 +127,62 @@ const testimoniosQuick = [
 ];
 
 export default function HomePage() {
+  const [serviciosDestacados, setServiciosDestacados] = useState(serviciosDestacadosBase);
+  const [promocion, setPromocion] = useState<any>(null);
+
+  useEffect(() => {
+    // Cargar servicios y promoción desde la API
+    const loadData = async () => {
+      try {
+        const [serviciosRes, promocionRes] = await Promise.all([
+          fetch('/api/servicios'),
+          fetch('/api/admin/promociones')
+        ]);
+        
+        const serviciosData = await serviciosRes.json();
+        const promocionData = await promocionRes.json();
+        
+        if (serviciosData.servicios) {
+          // Mapear servicios de la API a formato de la página
+          const serviciosMapeados = serviciosData.servicios.map((s: any) => {
+            const servicioBase = serviciosDestacadosBase.find(sb => sb.key === s.id);
+            if (!servicioBase) return null;
+            
+            let precioFinal = s.precio;
+            let descuentoAplicado = 0;
+            
+            if (s.descuento) {
+              descuentoAplicado = s.descuento;
+              precioFinal = s.precio * (1 - s.descuento / 100);
+            } else if (s.promocionActiva && s.descuentoPromocion) {
+              descuentoAplicado = s.descuentoPromocion;
+              precioFinal = s.precio * (1 - s.descuentoPromocion / 100);
+            }
+            
+            return {
+              ...servicioBase,
+              price: precioFinal,
+              precioOriginal: s.precio,
+              descuento: descuentoAplicado,
+              priceLabel: descuentoAplicado > 0 
+                ? `$${Math.round(precioFinal).toLocaleString()} (${descuentoAplicado}% OFF)`
+                : `$${s.precio.toLocaleString()}`
+            };
+          }).filter(Boolean);
+          
+          setServiciosDestacados(serviciosMapeados.length > 0 ? serviciosMapeados : serviciosDestacadosBase);
+        }
+        
+        if (promocionData.promocion) {
+          setPromocion(promocionData.promocion);
+        }
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      }
+    };
+    
+    loadData();
+  }, []);
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
   const [currentTestimonio, setCurrentTestimonio] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -159,6 +222,14 @@ export default function HomePage() {
 
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
+          <Image 
+            src="/image/28a4ed9b-c783-4bca-9170-ac1fbf5cf12f.jpg" 
+            alt="Therapy Aqua Spa"
+            fill
+            className="object-cover opacity-20"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-50/80 via-stone-50/80 to-neutral-100/80"></div>
           <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
           <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-amber-200 to-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-pink-200 to-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
@@ -185,20 +256,26 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="group relative inline-flex items-center gap-3 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl overflow-hidden">
+            <Link 
+              href="/servicios"
+              className="group relative inline-flex items-center gap-3 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl overflow-hidden"
+            >
               <span className="relative z-10">Ver Terapias</span>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
               <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-            </button>
+            </Link>
             
-            <button className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl">
+            <Link 
+              href="/reservas"
+              className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
               Reservar Ahora
-            </button>
+            </Link>
           </div>
 
           <div className="mt-16 grid grid-cols-3 gap-8 max-w-3xl mx-auto">
@@ -253,14 +330,17 @@ export default function HomePage() {
                   }}
                 >
                   <div 
-                    className="absolute w-full h-full bg-gradient-to-br from-green-100 to-emerald-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+                    className="absolute w-full h-full bg-gradient-to-br from-amber-50 to-stone-100 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
                     style={{ backfaceVisibility: 'hidden' }}
                   >
                     <div className="relative h-48 overflow-hidden">
-                      <img 
-                        src={servicio.imagen} 
+                      <Image 
+                        src={servicio.imagen}
                         alt={servicio.title}
+                        width={500}
+                        height={300}
                         className="w-full h-full object-cover"
+                        unoptimized
                       />
                       <div className="absolute top-4 left-4 text-4xl filter drop-shadow-lg">{servicio.icon}</div>
                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
@@ -274,7 +354,21 @@ export default function HomePage() {
                           {servicio.title}
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-stone-600 mb-4">
-                          <span className="font-bold text-amber-700 text-lg">{servicio.priceLabel}</span>
+                          {servicio.descuento && servicio.descuento > 0 ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-stone-400 line-through">
+                                ${servicio.precioOriginal?.toLocaleString()}
+                              </span>
+                              <span className="font-bold text-green-600 text-lg">
+                                ${Math.round(servicio.price).toLocaleString()}
+                              </span>
+                              <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded">
+                                -{servicio.descuento}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="font-bold text-amber-700 text-lg">{servicio.priceLabel}</span>
+                          )}
                         </div>
                         <p className="text-sm text-stone-700 leading-relaxed line-clamp-3">
                           {servicio.description}
@@ -327,14 +421,34 @@ export default function HomePage() {
                       <div className="flex flex-col gap-2 pt-4 border-t border-stone-200 flex-shrink-0">
                         <div className="flex items-center justify-between text-sm mb-2">
                           <span className="text-stone-600">Duración: <strong>{servicio.duration}</strong></span>
-                          <span className="font-bold text-amber-700">{servicio.priceLabel}</span>
+                          {servicio.descuento && servicio.descuento > 0 ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-stone-400 line-through">
+                                ${servicio.precioOriginal?.toLocaleString()}
+                              </span>
+                              <span className="font-bold text-green-600">
+                                ${Math.round(servicio.price).toLocaleString()}
+                              </span>
+                              <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded">
+                                -{servicio.descuento}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="font-bold text-amber-700">{servicio.priceLabel}</span>
+                          )}
                         </div>
-                        <button className="w-full bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105">
+                        <Link 
+                          href="/servicios"
+                          className="w-full bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
+                        >
                           Ver Más Terapias
-                        </button>
-                        <button className="w-full bg-[#3d2817] hover:bg-[#2d1f11] text-white px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105">
+                        </Link>
+                        <Link 
+                          href={`/reservas?servicio=${servicio.key}`}
+                          className="w-full bg-[#3d2817] hover:bg-[#2d1f11] text-white px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
+                        >
                           Reservar Ahora
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -345,13 +459,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-gradient-to-br from-green-50 to-emerald-50">
+      <section className="py-20 px-4 bg-gradient-to-br from-amber-50 to-stone-50">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative">
               <div className="relative z-10 bg-white rounded-3xl shadow-2xl p-8">
-                <div className="w-48 h-48 mx-auto bg-gradient-to-br from-green-200 to-emerald-300 rounded-full flex items-center justify-center mb-6 shadow-xl">
-                  <span className="text-8xl">👩‍⚕️</span>
+                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mb-6 shadow-xl overflow-hidden">
+                  <img 
+                    src="/image/fisioterapeuta.jpg" 
+                    alt="Dra. Carolina Trujillo"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="text-center">
                   <h3 className="text-2xl font-bold text-[#3d2817] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -401,9 +519,12 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <button className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg">
+              <Link 
+                href="/reservas"
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+              >
                 Agendar con la Dra. Carolina
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -469,8 +590,8 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="group bg-white rounded-3xl shadow-lg p-8 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-purple-600">
+              <div className="w-20 h-20 bg-gradient-to-br from-stone-100 to-amber-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-[#3d2817]">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                 </svg>
               </div>
@@ -483,8 +604,8 @@ export default function HomePage() {
             </div>
 
             <div className="group bg-white rounded-3xl shadow-lg p-8 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-blue-600">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-amber-700">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                 </svg>
               </div>
@@ -536,20 +657,26 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <button className="group relative inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl">
+                <Link 
+                  href="/reservas"
+                  className="group relative inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                   </svg>
                   Reservar Cita
                   <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full"></span>
-                </button>
+                </Link>
                 
-                <button className="inline-flex items-center gap-2 bg-white hover:bg-stone-100 text-[#3d2817] px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl">
+                <Link 
+                  href="/servicios"
+                  className="inline-flex items-center gap-2 bg-white hover:bg-stone-100 text-[#3d2817] px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
+                >
                   Ver Todos los Servicios
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
-                </button>
+                </Link>
               </div>
 
               <div className="flex items-center justify-center gap-8 text-white/80 text-sm">

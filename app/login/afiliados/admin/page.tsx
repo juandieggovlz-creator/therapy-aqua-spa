@@ -1,17 +1,60 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-type TabType = 'dashboard' | 'usuarios' | 'reservas' | 'servicios' | 'finanzas' | 'comunicacion';
+type TabType = 'dashboard' | 'reservas' | 'servicios' | 'finanzas' | 'promociones';
+
+type Terapia = {
+  id: string;
+  nombre: string;
+  precio: number;
+  icon: string;
+};
+
+type Promocion = {
+  activa: boolean;
+  descuento: number;
+  fechaLimite: string;
+  titulo: string;
+  descripcion: string;
+};
+
+const terapiasList: Terapia[] = [
+  { id: 'columna', nombre: 'THERAPY LESIONES DE COLUMNA', precio: 100000, icon: '🦴' },
+  { id: 'brazos', nombre: 'THERAPY LESIONES MUSCULARES BRAZOS', precio: 60000, icon: '💪' },
+  { id: 'piernas', nombre: 'THERAPY LESIONES MUSCULARES PIERNAS', precio: 60000, icon: '🦵' },
+  { id: 'hombro', nombre: 'THERAPY TRAUMA HOMBRO, CODO, MUÑECA', precio: 250000, icon: '🤝' },
+  { id: 'cadera', nombre: 'THERAPY TRAUMA CADERA, RODILLA, TOBILLO', precio: 250000, icon: '🦿' },
+  { id: 'mano', nombre: 'SKINCARE MANO THERAPY', precio: 90000, icon: '🤲' },
+  { id: 'ocular', nombre: 'PRESO THERAPY OCULAR', precio: 80000, icon: '👁️' },
+  { id: 'bienestar', nombre: 'MASAJE BIENESTAR GENERAL', precio: 140000, icon: '🌿' },
+  { id: 'facial', nombre: 'MASAJE FACIAL', precio: 90000, icon: '✨' },
+  { id: 'espalda', nombre: 'MASAJE DE ESPALDA', precio: 120000, icon: '🧘' },
+  { id: 'hombros', nombre: 'MASAJE HOMBROS Y BRAZOS', precio: 100000, icon: '💆' },
+  { id: 'rodillas', nombre: 'MASAJE CADERAS Y RODILLAS', precio: 120000, icon: '🦴' },
+  { id: 'pies', nombre: 'MASAJE PANTORRILLAS Y PIES', precio: 120000, icon: '🦶' },
+  { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', precio: 100000, icon: '🏃' },
+];
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [precios, setPrecios] = useState<Record<string, number>>({});
+  const [promocion, setPromocion] = useState<Promocion | null>(null);
+  const [descuentos, setDescuentos] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [editingPrecio, setEditingPrecio] = useState<string | null>(null);
+  const [nuevoPrecio, setNuevoPrecio] = useState<number>(0);
+  const [editingDescuento, setEditingDescuento] = useState<string | null>(null);
+  const [nuevoDescuento, setNuevoDescuento] = useState<number>(0);
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [filtroFecha, setFiltroFecha] = useState<string>('todos');
+  const [fechaInicio, setFechaInicio] = useState<string>('');
+  const [fechaFin, setFechaFin] = useState<string>('');
+  const [serviciosMasSolicitados, setServiciosMasSolicitados] = useState<any[]>([]);
 
   // Verificar autenticación
   useEffect(() => {
@@ -30,16 +73,48 @@ export default function AdminDashboard() {
     }
 
     // Cargar datos
-    loadBookings();
+    loadData();
   }, [router]);
 
-  const loadBookings = async () => {
+  const loadData = async () => {
     try {
-      const response = await fetch('/api/bookings?role=admin');
-      const data = await response.json();
-      setBookings(data.bookings || []);
+      const [bookingsRes, preciosRes, promocionRes, descuentosRes] = await Promise.all([
+        fetch('/api/bookings?role=admin'),
+        fetch('/api/admin/precios'),
+        fetch('/api/admin/promociones'),
+        fetch('/api/admin/descuentos')
+      ]);
+
+      const bookingsData = await bookingsRes.json();
+      const preciosData = await preciosRes.json();
+      const promocionData = await promocionRes.json();
+      const descuentosData = await descuentosRes.json();
+
+      setBookings(bookingsData.bookings || []);
+      setPrecios(preciosData.precios || {});
+      setPromocion(promocionData.promocion || null);
+      setDescuentos(descuentosData.descuentos || {});
+
+      // Calcular servicios más solicitados
+      const serviciosCount: Record<string, number> = {};
+      (bookingsData.bookings || []).forEach((b: any) => {
+        if (b.servicio) {
+          serviciosCount[b.servicio] = (serviciosCount[b.servicio] || 0) + 1;
+        }
+      });
+
+      const serviciosMasSolicitados = Object.entries(serviciosCount)
+        .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .slice(0, 5)
+        .map(s => ({
+          ...s,
+          porcentaje: Math.round((s.cantidad / (bookingsData.bookings?.length || 1)) * 100)
+        }));
+
+      setServiciosMasSolicitados(serviciosMasSolicitados);
     } catch (error) {
-      console.error('Error cargando citas:', error);
+      console.error('Error cargando datos:', error);
     } finally {
       setLoading(false);
     }
@@ -51,85 +126,175 @@ export default function AdminDashboard() {
     router.push('/login/admin');
   };
 
-  // Calcular métricas desde bookings
-  const calcularMetricas = () => {
-    const hoy = new Date().toISOString().split('T')[0];
-    const ingresosHoy = bookings
-      .filter(b => b.fecha === hoy && b.estado === 'confirmada')
-      .reduce((sum, b) => sum + (b.precio || 0), 0);
+  const handleUpdatePrecio = async (terapiaId: string) => {
+    try {
+      const response = await fetch('/api/admin/precios', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ terapiaId, nuevoPrecio: nuevoPrecio }),
+      });
 
-    const ingresosSemana = bookings
-      .filter(b => {
-        const fechaCita = new Date(b.fecha);
-        const fechaActual = new Date();
-        const diffTime = fechaActual.getTime() - fechaCita.getTime();
-        const diffDays = diffTime / (1000 * 60 * 60 * 24);
-        return diffDays <= 7 && b.estado === 'confirmada';
-      })
-      .reduce((sum, b) => sum + (b.precio || 0), 0);
-
-    const ingresosMes = bookings
-      .filter(b => {
-        const fechaCita = new Date(b.fecha);
-        const fechaActual = new Date();
-        return fechaCita.getMonth() === fechaActual.getMonth() && 
-               fechaCita.getFullYear() === fechaActual.getFullYear() &&
-               b.estado === 'confirmada';
-      })
-      .reduce((sum, b) => sum + (b.precio || 0), 0);
-
-    const reservasActivas = bookings.filter(b => 
-      b.estado === 'confirmada' || b.estado === 'pendiente'
-    ).length;
-
-    const reservasConfirmadas = bookings.filter(b => b.estado === 'confirmada').length;
-    const reservasCanceladas = bookings.filter(b => b.estado === 'cancelada').length;
-    const reservasPendientes = bookings.filter(b => b.estado === 'pendiente').length;
-
-    // Servicios más solicitados
-    const serviciosCount: Record<string, number> = {};
-    bookings.forEach(b => {
-      if (b.servicio) {
-        serviciosCount[b.servicio] = (serviciosCount[b.servicio] || 0) + 1;
+      if (response.ok) {
+        const data = await response.json();
+        setPrecios(data.precios);
+        setEditingPrecio(null);
+        setNuevoPrecio(0);
+        alert('Precio actualizado exitosamente');
       }
-    });
-
-    const serviciosMasSolicitados = Object.entries(serviciosCount)
-      .map(([nombre, cantidad]) => ({ nombre, cantidad }))
-      .sort((a, b) => b.cantidad - a.cantidad)
-      .slice(0, 4)
-      .map(s => ({
-        ...s,
-        porcentaje: Math.round((s.cantidad / bookings.length) * 100)
-      }));
-
-    return {
-      ingresosHoy,
-      ingresosSemana,
-      ingresosMes,
-      reservasActivas,
-      reservasConfirmadas,
-      reservasCanceladas,
-      reservasPendientes,
-      totalReservas: bookings.length,
-      fisioterapeutasActivos: 1,
-      satisfaccionPromedio: 4.8,
-      serviciosMasSolicitados
-    };
+    } catch (error) {
+      console.error('Error actualizando precio:', error);
+      alert('Error al actualizar precio');
+    }
   };
 
-  const kpis = calcularMetricas();
+  const handleTogglePromocion = async () => {
+    if (!promocion) return;
+    
+    try {
+      const response = await fetch('/api/admin/promociones', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activa: !promocion.activa }),
+      });
 
-  const reservasRecientes = bookings
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 10);
+      if (response.ok) {
+        const data = await response.json();
+        setPromocion(data.promocion);
+        alert(promocion.activa ? 'Promoción desactivada' : 'Promoción activada');
+      }
+    } catch (error) {
+      console.error('Error actualizando promoción:', error);
+      alert('Error al actualizar promoción');
+    }
+  };
+
+  const handleUpdateDescuento = async (servicioId: string) => {
+    try {
+      const response = await fetch('/api/admin/descuentos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servicioId, descuento: nuevoDescuento }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDescuentos(data.descuentos);
+        setEditingDescuento(null);
+        setNuevoDescuento(0);
+        alert('Descuento actualizado exitosamente');
+      }
+    } catch (error) {
+      console.error('Error actualizando descuento:', error);
+      alert('Error al actualizar descuento');
+    }
+  };
+
+  const handleUpdatePromocion = async (campo: string, valor: any) => {
+    if (!promocion) return;
+    
+    try {
+      const response = await fetch('/api/admin/promociones', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [campo]: valor }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPromocion(data.promocion);
+        alert('Promoción actualizada exitosamente');
+      }
+    } catch (error) {
+      console.error('Error actualizando promoción:', error);
+      alert('Error al actualizar promoción');
+    }
+  };
+
+  const handleUpdateEstadoCita = async (id: string, nuevoEstado: string) => {
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, accion: nuevoEstado }),
+      });
+
+      if (response.ok) {
+        await loadData();
+        alert(`Cita ${nuevoEstado} exitosamente`);
+      }
+    } catch (error) {
+      console.error('Error actualizando cita:', error);
+      alert('Error al actualizar cita');
+    }
+  };
+
+  // Citas del día
+  const hoy = new Date().toISOString().split('T')[0];
+  const citasHoy = bookings.filter(b => b.fecha === hoy);
+  const citasAceptadas = citasHoy.filter(b => b.estado === 'confirmada');
+  const citasCompletadas = citasHoy.filter(b => b.estado === 'completada');
+  const citasPendientes = citasHoy.filter(b => b.estado === 'pendiente');
+
+  // Transacciones
+  const todasLasTransacciones = bookings
+    .filter(b => b.estado === 'confirmada' || b.estado === 'completada')
+    .map(b => ({
+      ...b,
+      serviciosAdicionales: b.serviciosAdicionales || [],
+      productos: b.productos || [],
+      total: b.precio + (b.serviciosAdicionales?.length || 0) * 20000 + (b.productos?.length || 0) * 5000
+    }));
+
+  // Filtrar transacciones por fecha
+  const filtrarPorFecha = (transacciones: any[]) => {
+    if (filtroFecha === 'todos') {
+      return transacciones;
+    }
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    return transacciones.filter(trans => {
+      const fechaTrans = new Date(trans.fecha);
+      fechaTrans.setHours(0, 0, 0, 0);
+
+      switch (filtroFecha) {
+        case 'hoy':
+          return fechaTrans.getTime() === hoy.getTime();
+        
+        case 'semana':
+          const inicioSemana = new Date(hoy);
+          inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+          return fechaTrans >= inicioSemana;
+        
+        case 'mes':
+          return fechaTrans.getMonth() === hoy.getMonth() && 
+                 fechaTrans.getFullYear() === hoy.getFullYear();
+        
+        case 'rango':
+          if (!fechaInicio || !fechaFin) return true;
+          const inicio = new Date(fechaInicio);
+          const fin = new Date(fechaFin);
+          fin.setHours(23, 59, 59, 999);
+          return fechaTrans >= inicio && fechaTrans <= fin;
+        
+        default:
+          return true;
+      }
+    });
+  };
+
+  const transacciones = filtrarPorFecha(todasLasTransacciones);
+
+  const citasFiltradas = filtroEstado === 'todos' 
+    ? citasHoy 
+    : citasHoy.filter(b => b.estado === filtroEstado);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex" style={{ marginTop: '-64px' }}>
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-[#3d2817] to-[#2d1f11] text-white transition-all duration-300 fixed h-screen overflow-y-auto`}>
-        {/* Header Sidebar */}
-        <div className="p-6 border-b border-white/10">
+      <aside className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-[#3d2817] to-[#2d1f11] text-white transition-all duration-300 fixed top-0 left-0 h-screen flex flex-col z-[100] shadow-2xl`}>
+        <div className="p-6 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center justify-between">
             {sidebarOpen && (
               <div>
@@ -150,95 +315,40 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'dashboard' ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
-            {sidebarOpen && <span className="font-semibold">Dashboard</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('usuarios')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'usuarios' ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-            </svg>
-            {sidebarOpen && <span className="font-semibold">Usuarios</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('reservas')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'reservas' ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-            </svg>
-            {sidebarOpen && <span className="font-semibold">Reservas</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('servicios')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'servicios' ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 005.4-5.4 2.25 2.25 0 012.4-2.245 3 3 0 005.78 1.128m-15.482.017a4.5 4.5 0 011.41-.513m11.851 0a4.5 4.5 0 01.494-.902l1.562-1.562a4.5 4.5 0 00-6.364-6.364l-1.562 1.562a4.5 4.5 0 01-.902.494m-16.5.41a4.5 4.5 0 00-1.41.513m14.095 0a4.5 4.5 0 011.41-.513m-16.5.41a4.5 4.5 0 011.085.802m14.095 0a4.5 4.5 0 00.802 1.085m-11.851 0a4.5 4.5 0 01-.513-1.41m11.851 0a4.5 4.5 0 00.902-.494l1.562-1.562a4.5 4.5 0 006.364 6.364l1.562-1.562a4.5 4.5 0 01.494-.902m-14.095 0a4.5 4.5 0 00-.802-1.085m14.095 0a4.5 4.5 0 011.085.802" />
-            </svg>
-            {sidebarOpen && <span className="font-semibold">Servicios</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('finanzas')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'finanzas' ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {sidebarOpen && <span className="font-semibold">Finanzas</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('comunicacion')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'comunicacion' ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-            </svg>
-            {sidebarOpen && <span className="font-semibold">Comunicación</span>}
-          </button>
+        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+            { id: 'reservas', label: 'Citas del Día', icon: '📅' },
+            { id: 'servicios', label: 'Precios Terapias', icon: '💆' },
+            { id: 'promociones', label: 'Promociones', icon: '🎁' },
+            { id: 'finanzas', label: 'Transacciones', icon: '💰' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabType)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                activeTab === tab.id ? 'bg-amber-500 text-white shadow-lg' : 'hover:bg-white/5'
+              }`}
+            >
+              <span className="text-xl">{tab.icon}</span>
+              {sidebarOpen && <span className="font-semibold">{tab.label}</span>}
+            </button>
+          ))}
         </nav>
 
-        {/* User Info */}
         {sidebarOpen && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-black/20">
+          <div className="mt-auto p-4 border-t border-white/10 bg-gradient-to-t from-[#2d1f11] to-transparent flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-xl">👨‍💼</span>
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-sm">Admin Principal</p>
-                <p className="text-xs text-white/60">admin@therapyspa.com</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">Admin Principal</p>
+                <p className="text-xs text-white/60 truncate">admin@therapyspa.com</p>
               </div>
               <button 
                 onClick={handleLogout}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
                 title="Cerrar sesión"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
@@ -252,104 +362,70 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className={`flex-1 ${sidebarOpen ? 'ml-72' : 'ml-20'} transition-all duration-300 p-8`}>
-        {/* Header */}
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-[#3d2817] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
             {activeTab === 'dashboard' && '📊 Dashboard General'}
-            {activeTab === 'usuarios' && '👥 Gestión de Usuarios'}
-            {activeTab === 'reservas' && '📅 Gestión de Reservas'}
-            {activeTab === 'servicios' && '💆 Gestión de Servicios'}
-            {activeTab === 'finanzas' && '💰 Finanzas y Reportes'}
-            {activeTab === 'comunicacion' && '📢 Comunicación'}
+            {activeTab === 'reservas' && '📅 Citas del Día'}
+            {activeTab === 'servicios' && '💆 Gestión de Precios'}
+            {activeTab === 'promociones' && '🎁 Gestión de Promociones'}
+            {activeTab === 'finanzas' && '💰 Transacciones y Pagos'}
           </h1>
           <p className="text-stone-600">
             {activeTab === 'dashboard' && 'Vista general del rendimiento del spa'}
-            {activeTab === 'usuarios' && 'Administra fisioterapeutas, afiliados y clientes'}
-            {activeTab === 'reservas' && 'Calendario y gestión de citas'}
-            {activeTab === 'servicios' && 'Administra terapias, paquetes y precios'}
-            {activeTab === 'finanzas' && 'Análisis financiero y reportes detallados'}
-            {activeTab === 'comunicacion' && 'Notificaciones y mensajes a clientes'}
+            {activeTab === 'reservas' && 'Gestiona las citas del día de hoy'}
+            {activeTab === 'servicios' && 'Actualiza los precios de las terapias'}
+            {activeTab === 'promociones' && 'Activa o desactiva promociones'}
+            {activeTab === 'finanzas' && 'Revisa todas las transacciones y pagos'}
           </p>
         </header>
 
-        {/* Dashboard Content */}
+        {/* Dashboard */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
-            {/* KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Ingresos Hoy</h3>
-                  <span className="text-3xl">💰</span>
-                </div>
-                <p className="text-3xl font-bold">${(kpis.ingresosHoy / 1000).toFixed(0)}K</p>
-                <p className="text-xs opacity-75 mt-2">Ingresos del día</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Ingresos Semana</h3>
-                  <span className="text-3xl">📊</span>
-                </div>
-                <p className="text-3xl font-bold">${(kpis.ingresosSemana / 1000).toFixed(0)}K</p>
-                <p className="text-xs opacity-75 mt-2">Últimos 7 días</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Ingresos Mes</h3>
-                  <span className="text-3xl">💵</span>
-                </div>
-                <p className="text-3xl font-bold">${(kpis.ingresosMes / 1000000).toFixed(1)}M</p>
-                <p className="text-xs opacity-75 mt-2">Mes actual</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Satisfacción</h3>
-                  <span className="text-3xl">⭐</span>
-                </div>
-                <p className="text-3xl font-bold">{kpis.satisfaccionPromedio}/5</p>
-                <p className="text-xs opacity-75 mt-2">Promedio mensual</p>
-              </div>
-            </div>
-
-            {/* Segunda fila de KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Reservas Activas</h3>
+                  <h3 className="text-sm font-semibold opacity-90">Citas Hoy</h3>
                   <span className="text-3xl">📅</span>
                 </div>
-                <p className="text-3xl font-bold">{kpis.reservasActivas}</p>
-                <p className="text-xs opacity-75 mt-2">Confirmadas + Pendientes</p>
+                <p className="text-4xl font-bold">{citasHoy.length}</p>
+                <p className="text-xs opacity-75 mt-2">Total de citas programadas</p>
               </div>
 
-              <div className="bg-gradient-to-br from-teal-500 to-green-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Confirmadas</h3>
+                  <h3 className="text-sm font-semibold opacity-90">Aceptadas</h3>
                   <span className="text-3xl">✅</span>
                 </div>
-                <p className="text-3xl font-bold">{kpis.reservasConfirmadas}</p>
+                <p className="text-4xl font-bold">{citasAceptadas.length}</p>
                 <p className="text-xs opacity-75 mt-2">Citas confirmadas</p>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-xl">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold opacity-90">Pendientes</h3>
                   <span className="text-3xl">⏳</span>
                 </div>
-                <p className="text-3xl font-bold">{kpis.reservasPendientes}</p>
+                <p className="text-4xl font-bold">{citasPendientes.length}</p>
                 <p className="text-xs opacity-75 mt-2">Por confirmar</p>
               </div>
+            </div>
 
-              <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold opacity-90">Canceladas</h3>
-                  <span className="text-3xl">❌</span>
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Resumen del Día
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-stone-50 rounded-xl p-4">
+                  <p className="text-sm text-stone-600 mb-1">Total Transacciones</p>
+                  <p className="text-2xl font-bold text-[#3d2817]">{transacciones.length}</p>
                 </div>
-                <p className="text-3xl font-bold">{kpis.reservasCanceladas}</p>
-                <p className="text-xs opacity-75 mt-2">Total canceladas</p>
+                <div className="bg-stone-50 rounded-xl p-4">
+                  <p className="text-sm text-stone-600 mb-1">Ingresos del Día</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${transacciones.reduce((sum, t) => sum + (t.total || 0), 0).toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -358,22 +434,17 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-bold text-[#3d2817] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
                 🏆 Servicios Más Solicitados
               </h2>
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--cafe-900)] mx-auto"></div>
-                  <p className="mt-4 text-stone-600">Cargando datos...</p>
-                </div>
-              ) : kpis.serviciosMasSolicitados.length > 0 ? (
+              {serviciosMasSolicitados.length > 0 ? (
                 <div className="space-y-4">
-                  {kpis.serviciosMasSolicitados.map((servicio: any, idx: number) => (
+                  {serviciosMasSolicitados.map((servicio: any, idx: number) => (
                     <div key={idx}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-stone-700">{servicio.nombre}</span>
-                        <span className="text-sm text-stone-500">{servicio.cantidad} reservas</span>
+                        <span className="text-sm text-stone-500">{servicio.cantidad} reservas ({servicio.porcentaje}%)</span>
                       </div>
                       <div className="w-full bg-stone-200 rounded-full h-3">
                         <div 
-                          className="bg-gradient-to-r from-[color:var(--oliva-400)] to-green-600 h-3 rounded-full transition-all duration-500"
+                          className="bg-gradient-to-r from-amber-400 to-orange-500 h-3 rounded-full transition-all duration-500"
                           style={{ width: `${servicio.porcentaje}%` }}
                         />
                       </div>
@@ -384,85 +455,491 @@ export default function AdminDashboard() {
                 <p className="text-center text-stone-600 py-8">No hay datos disponibles</p>
               )}
             </div>
+          </div>
+        )}
 
-            {/* Reservas Recientes */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  📋 Reservas Recientes
-                </h2>
-                <button className="text-sm text-amber-600 hover:text-amber-700 font-semibold">
-                  Ver todas →
+        {/* Citas del Día */}
+        {activeTab === 'reservas' && (
+          <div className="space-y-6">
+            <div className="flex gap-4 mb-6">
+              {['todos', 'pendiente', 'confirmada', 'completada'].map((estado) => (
+                <button
+                  key={estado}
+                  onClick={() => setFiltroEstado(estado)}
+                  className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                    filtroEstado === estado
+                      ? 'bg-[#3d2817] text-white shadow-lg'
+                      : 'bg-white text-stone-700 hover:bg-stone-100'
+                  }`}
+                >
+                  {estado === 'todos' ? 'Todas' : estado.charAt(0).toUpperCase() + estado.slice(1)}
                 </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-stone-200">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-stone-600">Cliente</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-stone-600">Servicio</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-stone-600">Fisioterapeuta</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-stone-600">Fecha</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-stone-600">Estado</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-stone-600">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[color:var(--cafe-900)] mx-auto"></div>
-                        </td>
-                      </tr>
-                    ) : reservasRecientes.length > 0 ? (
-                      reservasRecientes.map((reserva) => (
-                        <tr key={reserva.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
-                          <td className="py-4 px-4 text-sm font-medium text-stone-800">{reserva.cliente}</td>
-                          <td className="py-4 px-4 text-sm text-stone-600">{reserva.servicio}</td>
-                          <td className="py-4 px-4 text-sm text-stone-600">{reserva.fisio}</td>
-                          <td className="py-4 px-4 text-sm text-stone-600">{reserva.fecha} {reserva.hora}</td>
-                          <td className="py-4 px-4">
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                              reserva.estado === 'confirmada' ? 'bg-green-100 text-green-700' : 
-                              reserva.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-700' :
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3d2817] mx-auto"></div>
+                </div>
+              ) : citasFiltradas.length > 0 ? (
+                <div className="space-y-4">
+                  {citasFiltradas.map((cita) => (
+                    <div key={cita.id} className="border border-stone-200 rounded-xl p-4 hover:shadow-md transition-all">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-bold text-lg text-[#3d2817]">{cita.cliente}</h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              cita.estado === 'confirmada' ? 'bg-green-100 text-green-700' : 
+                              cita.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-700' :
+                              cita.estado === 'completada' ? 'bg-blue-100 text-blue-700' :
                               'bg-red-100 text-red-700'
                             }`}>
-                              {reserva.estado}
+                              {cita.estado}
                             </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <button className="text-[color:var(--cafe-900)] hover:text-[color:var(--oliva-400)] text-sm font-semibold transition-colors">
-                              Ver detalles
+                          </div>
+                          <p className="text-stone-600 mb-1"><strong>Servicio:</strong> {cita.servicio}</p>
+                          <p className="text-stone-600 mb-1"><strong>Fecha:</strong> {cita.fecha} a las {cita.hora}</p>
+                          <p className="text-stone-600 mb-1"><strong>Precio:</strong> ${cita.precio?.toLocaleString()}</p>
+                          {cita.serviciosAdicionales && cita.serviciosAdicionales.length > 0 && (
+                            <p className="text-stone-600 mb-1">
+                              <strong>Servicios adicionales:</strong> {cita.serviciosAdicionales.join(', ')}
+                            </p>
+                          )}
+                          {cita.productos && cita.productos.length > 0 && (
+                            <p className="text-stone-600">
+                              <strong>Productos:</strong> {cita.productos.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          {cita.estado === 'pendiente' && (
+                            <button
+                              onClick={() => handleUpdateEstadoCita(cita.id, 'confirmar')}
+                              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                            >
+                              Aceptar
                             </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-stone-600">
-                          No hay reservas recientes
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                          {cita.estado === 'confirmada' && (
+                            <button
+                              onClick={() => handleUpdateEstadoCita(cita.id, 'completar')}
+                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                              Completar
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleUpdateEstadoCita(cita.id, 'cancelar')}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-stone-600 text-lg">No hay citas para mostrar</p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Otros tabs (placeholder) */}
-        {activeTab !== 'dashboard' && (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <div className="w-24 h-24 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-5xl">🚧</span>
+        {/* Gestión de Precios */}
+        {activeTab === 'servicios' && (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-[#3d2817] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Precios y Descuentos de Terapias
+            </h2>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3d2817] mx-auto"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {terapiasList.map((terapia) => {
+                  const precioActual = precios[terapia.id] || terapia.precio;
+                  const descuentoActual = descuentos[terapia.id] || 0;
+                  const isEditing = editingPrecio === terapia.id;
+                  const isEditingDescuento = editingDescuento === terapia.id;
+                  const precioConDescuento = descuentoActual > 0 
+                    ? precioActual * (1 - descuentoActual / 100) 
+                    : precioActual;
+
+                  return (
+                    <div key={terapia.id} className="border border-stone-200 rounded-xl p-4 hover:shadow-md transition-all">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-4 flex-1">
+                          <span className="text-3xl">{terapia.icon}</span>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-[#3d2817]">{terapia.nombre}</h3>
+                            {isEditing ? (
+                              <div className="flex items-center gap-2 mt-2">
+                                <input
+                                  type="number"
+                                  value={nuevoPrecio || precioActual}
+                                  onChange={(e) => setNuevoPrecio(Number(e.target.value))}
+                                  className="border border-stone-300 rounded-lg px-3 py-2 w-32"
+                                />
+                                <button
+                                  onClick={() => handleUpdatePrecio(terapia.id)}
+                                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                >
+                                  Guardar
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingPrecio(null);
+                                    setNuevoPrecio(0);
+                                  }}
+                                  className="px-4 py-2 bg-stone-300 text-stone-700 rounded-lg hover:bg-stone-400 transition-colors"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="mt-1">
+                                <p className="text-2xl font-bold text-green-600">
+                                  ${precioActual.toLocaleString()}
+                                </p>
+                                {descuentoActual > 0 && (
+                                  <div className="mt-1">
+                                    <span className="text-sm text-red-600 font-semibold">
+                                      -{descuentoActual}% OFF
+                                    </span>
+                                    <p className="text-lg font-bold text-amber-600">
+                                      ${Math.round(precioConDescuento).toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {!isEditing && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingPrecio(terapia.id);
+                                setNuevoPrecio(precioActual);
+                              }}
+                              className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold text-sm"
+                            >
+                              Editar Precio
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Sección de descuento */}
+                      <div className="border-t border-stone-200 pt-3 mt-3">
+                        {isEditingDescuento ? (
+                          <div className="flex items-center gap-2">
+                            <label className="text-sm text-stone-600">Descuento (%):</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={nuevoDescuento || descuentoActual}
+                              onChange={(e) => setNuevoDescuento(Number(e.target.value))}
+                              className="border border-stone-300 rounded-lg px-3 py-2 w-24"
+                            />
+                            <button
+                              onClick={() => handleUpdateDescuento(terapia.id)}
+                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingDescuento(null);
+                                setNuevoDescuento(0);
+                              }}
+                              className="px-4 py-2 bg-stone-300 text-stone-700 rounded-lg hover:bg-stone-400 transition-colors text-sm"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-sm text-stone-600">Descuento individual: </span>
+                              {descuentoActual > 0 ? (
+                                <span className="text-sm font-semibold text-red-600">
+                                  {descuentoActual}% OFF
+                                </span>
+                              ) : (
+                                <span className="text-sm text-stone-400">Sin descuento</span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setEditingDescuento(terapia.id);
+                                setNuevoDescuento(descuentoActual);
+                              }}
+                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold text-sm"
+                            >
+                              {descuentoActual > 0 ? 'Editar Descuento' : 'Agregar Descuento'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Gestión de Promociones */}
+        {activeTab === 'promociones' && (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-[#3d2817] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Gestión de Promociones
+            </h2>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3d2817] mx-auto"></div>
+              </div>
+            ) : promocion ? (
+              <div className="space-y-6">
+                <div className="border border-stone-200 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold text-[#3d2817]">Promoción General</h3>
+                    <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                      promocion.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {promocion.activa ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-stone-700 mb-2">Título</label>
+                      <input
+                        type="text"
+                        value={promocion.titulo}
+                        onChange={(e) => handleUpdatePromocion('titulo', e.target.value)}
+                        className="w-full border border-stone-300 rounded-lg px-4 py-2"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-stone-700 mb-2">Descripción</label>
+                      <textarea
+                        value={promocion.descripcion}
+                        onChange={(e) => handleUpdatePromocion('descripcion', e.target.value)}
+                        className="w-full border border-stone-300 rounded-lg px-4 py-2"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-stone-700 mb-2">Descuento (%)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={promocion.descuento}
+                          onChange={(e) => handleUpdatePromocion('descuento', Number(e.target.value))}
+                          className="w-full border border-stone-300 rounded-lg px-4 py-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-stone-700 mb-2">Fecha Límite</label>
+                        <input
+                          type="datetime-local"
+                          value={new Date(promocion.fechaLimite).toISOString().slice(0, 16)}
+                          onChange={(e) => handleUpdatePromocion('fechaLimite', new Date(e.target.value).toISOString())}
+                          className="w-full border border-stone-300 rounded-lg px-4 py-2"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-stone-200">
+                      <button
+                        onClick={handleTogglePromocion}
+                        className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                          promocion.activa
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-green-500 text-white hover:bg-green-600'
+                        }`}
+                      >
+                        {promocion.activa ? 'Desactivar Promoción' : 'Activar Promoción'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-stone-600">No hay promociones configuradas</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Transacciones */}
+        {activeTab === 'finanzas' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Transacciones y Pagos
+                </h2>
+                <div className="text-right">
+                  <p className="text-sm text-stone-600">Total: <span className="font-bold text-green-600">${transacciones.reduce((sum, t) => sum + (t.total || 0), 0).toLocaleString()}</span></p>
+                  <p className="text-xs text-stone-500">{transacciones.length} transacción(es)</p>
+                </div>
+              </div>
+
+              {/* Filtros de Fecha */}
+              <div className="mb-6 p-4 bg-stone-50 rounded-xl border border-stone-200">
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  <label className="text-sm font-semibold text-stone-700">Filtrar por fecha:</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: 'todos', label: 'Todas' },
+                      { value: 'hoy', label: 'Hoy' },
+                      { value: 'semana', label: 'Esta Semana' },
+                      { value: 'mes', label: 'Este Mes' },
+                      { value: 'rango', label: 'Rango Personalizado' },
+                    ].map((opcion) => (
+                      <button
+                        key={opcion.value}
+                        onClick={() => {
+                          setFiltroFecha(opcion.value);
+                          if (opcion.value !== 'rango') {
+                            setFechaInicio('');
+                            setFechaFin('');
+                          }
+                        }}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                          filtroFecha === opcion.value
+                            ? 'bg-[#3d2817] text-white shadow-lg'
+                            : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-300'
+                        }`}
+                      >
+                        {opcion.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rango de fechas personalizado */}
+                {filtroFecha === 'rango' && (
+                  <div className="flex flex-wrap items-center gap-4 p-4 bg-white rounded-lg border border-stone-300">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-semibold text-stone-700">Desde:</label>
+                      <input
+                        type="date"
+                        value={fechaInicio}
+                        onChange={(e) => setFechaInicio(e.target.value)}
+                        className="px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-semibold text-stone-700">Hasta:</label>
+                      <input
+                        type="date"
+                        value={fechaFin}
+                        onChange={(e) => setFechaFin(e.target.value)}
+                        className="px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    {(fechaInicio || fechaFin) && (
+                      <button
+                        onClick={() => {
+                          setFechaInicio('');
+                          setFechaFin('');
+                        }}
+                        className="px-3 py-2 text-sm text-red-600 hover:text-red-700 font-semibold"
+                      >
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3d2817] mx-auto"></div>
+                </div>
+              ) : transacciones.length > 0 ? (
+                <div className="space-y-4">
+                  {transacciones
+                    .sort((a, b) => {
+                      const fechaA = new Date(`${a.fecha}T${a.hora}`);
+                      const fechaB = new Date(`${b.fecha}T${b.hora}`);
+                      return fechaB.getTime() - fechaA.getTime();
+                    })
+                    .map((trans) => (
+                      <div key={trans.id} className="border border-stone-200 rounded-xl p-6 hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg text-[#3d2817]">{trans.cliente}</h3>
+                            <p className="text-stone-600 text-sm">{trans.fecha} a las {trans.hora}</p>
+                          </div>
+                          <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                            trans.estado === 'completada' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {trans.estado}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm text-stone-600 mb-1"><strong>Servicio:</strong> {trans.servicio}</p>
+                            <p className="text-sm text-stone-600"><strong>Precio base:</strong> ${trans.precio?.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            {trans.serviciosAdicionales && trans.serviciosAdicionales.length > 0 && (
+                              <div className="mb-2">
+                                <p className="text-sm font-semibold text-stone-700 mb-1">Servicios Adicionales:</p>
+                                <ul className="text-sm text-stone-600 list-disc list-inside">
+                                  {trans.serviciosAdicionales.map((s: string, idx: number) => (
+                                    <li key={idx}>{s}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {trans.productos && trans.productos.length > 0 && (
+                              <div>
+                                <p className="text-sm font-semibold text-stone-700 mb-1">Productos:</p>
+                                <ul className="text-sm text-stone-600 list-disc list-inside">
+                                  {trans.productos.map((p: string, idx: number) => (
+                                    <li key={idx}>{p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-stone-200 pt-4">
+                          <div className="flex items-center justify-between">
+                            <p className="text-stone-600"><strong>Total:</strong></p>
+                            <p className="text-2xl font-bold text-green-600">${trans.total?.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-stone-600 text-lg">No hay transacciones para mostrar</p>
+                </div>
+              )}
             </div>
-            <h3 className="text-2xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Sección en Construcción
-            </h3>
-            <p className="text-stone-600 mb-6">
-              Esta funcionalidad estará disponible próximamente
-            </p>
           </div>
         )}
       </main>

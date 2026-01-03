@@ -1,7 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+
+// Helper para codificar URLs de imágenes
+function getImagePath(filename: string): string {
+  return `/image/${encodeURIComponent(filename)}`;
+}
 
 const servicios = [
   {
@@ -15,7 +21,7 @@ const servicios = [
         price: 100000,
         priceLabel: "desde $100.000", 
         icon: "🦴",
-        imagen: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=500&h=350&fit=crop",
+        imagen: getImagePath("therapy lesiones de columna 2.jpg"),
         detalles: [
           "Evaluación postural completa",
           "Terapia manual especializada",
@@ -31,7 +37,7 @@ const servicios = [
         price: 60000,
         priceLabel: "paquete 3 sesiones $180.000", 
         icon: "💪",
-        imagen: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&h=350&fit=crop",
+        imagen: getImagePath("lesiones de brazo.jpg"),
         detalles: [
           "Masaje profundo de tejidos",
           "Liberación miofascial",
@@ -47,7 +53,7 @@ const servicios = [
         price: 60000,
         priceLabel: "paquete 3 sesiones $180.000", 
         icon: "🦵",
-        imagen: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje de piernas.jpg") + "?v=2",
         detalles: [
           "Terapia de tejidos blandos",
           "Movilización articular",
@@ -63,7 +69,7 @@ const servicios = [
         price: 250000,
         priceLabel: "desde $250.000", 
         icon: "🤝",
-        imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje hombro, codo.jpg"),
         detalles: [
           "Evaluación biomecánica",
           "Terapia manual avanzada",
@@ -79,7 +85,7 @@ const servicios = [
         price: 250000,
         priceLabel: "$250.000", 
         icon: "🦿",
-        imagen: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje cadera.jpg"),
         detalles: [
           "Evaluación funcional",
           "Terapia de estabilización",
@@ -101,7 +107,7 @@ const servicios = [
         price: 140000,
         priceLabel: "$140.000", 
         icon: "🌿",
-        imagen: "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje general.jfif"),
         detalles: [
           "Masaje corporal completo",
           "Aromaterapia relajante",
@@ -117,7 +123,7 @@ const servicios = [
         price: 100000,
         priceLabel: "$100.000", 
         icon: "🏃",
-        imagen: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje deportivo.jpg"),
         detalles: [
           "Preparación pre-competencia",
           "Recuperación post-entrenamiento",
@@ -133,7 +139,7 @@ const servicios = [
         price: 120000,
         priceLabel: "$120.000", 
         icon: "🧘",
-        imagen: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje de espalda.jpg"),
         detalles: [
           "Masaje profundo de espalda",
           "Liberación de nudos musculares",
@@ -149,7 +155,7 @@ const servicios = [
         price: 100000,
         priceLabel: "$100.000", 
         icon: "💆",
-        imagen: "https://images.unsplash.com/photo-1591343395082-e120087004b4?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje hombros y brazos.jpg"),
         detalles: [
           "Liberación de tensión cervical",
           "Masaje de cuello y hombros",
@@ -165,7 +171,7 @@ const servicios = [
         price: 120000,
         priceLabel: "$120.000", 
         icon: "🦴",
-        imagen: "https://images.unsplash.com/photo-1612351991916-36a445c0b5e7?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje cadera 2.jpg"),
         detalles: [
           "Masaje de miembros inferiores",
           "Liberación de tensión articular",
@@ -181,7 +187,7 @@ const servicios = [
         price: 120000,
         priceLabel: "$120.000", 
         icon: "🦶",
-        imagen: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje piernas.jpg"),
         detalles: [
           "Reflexología podal",
           "Masaje de pantorrillas",
@@ -203,7 +209,7 @@ const servicios = [
         price: 90000,
         priceLabel: "$90.000", 
         icon: "✨",
-        imagen: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=500&h=350&fit=crop",
+        imagen: getImagePath("masaje facial.jpg"),
         detalles: [
           "Limpieza facial profunda",
           "Masaje linfático facial",
@@ -219,7 +225,7 @@ const servicios = [
         price: 90000,
         priceLabel: "$90.000", 
         icon: "🤲",
-        imagen: "https://images.unsplash.com/photo-1505944357768-0f83e8bb88ea?w=500&h=350&fit=crop",
+        imagen: getImagePath("skincare mano.jpg"),
         detalles: [
           "Exfoliación suave",
           "Masaje de manos y antebrazos",
@@ -235,7 +241,7 @@ const servicios = [
         price: 80000,
         priceLabel: "$80.000", 
         icon: "👁️",
-        imagen: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=500&h=350&fit=crop",
+        imagen: getImagePath("therapy ocular.jpg"),
         detalles: [
           "Masaje de contorno de ojos",
           "Reducción de ojeras",
@@ -251,10 +257,57 @@ const servicios = [
 export default function ServiciosPage() {
   const [categoriaActiva, setCategoriaActiva] = useState(0);
   const [cardFlipped, setCardFlipped] = useState<string | null>(null);
+  const [descuentosIndividuales, setDescuentosIndividuales] = useState<Record<string, number>>({});
+  const [precios, setPrecios] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // Cargar descuentos individuales y precios desde la API
+    const loadData = async () => {
+      try {
+        const [descuentosRes, preciosRes] = await Promise.all([
+          fetch('/api/admin/descuentos'),
+          fetch('/api/admin/precios')
+        ]);
+        
+        const descuentosData = await descuentosRes.json();
+        const preciosData = await preciosRes.json();
+        
+        setDescuentosIndividuales(descuentosData.descuentos || {});
+        setPrecios(preciosData.precios || {});
+      } catch (error) {
+        console.error('Error cargando descuentos:', error);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   const handleReservar = (servicio: any) => {
     // Redirigir a reservas con el servicio precargado
     window.location.href = `/reservas?servicio=${servicio.key}`;
+  };
+
+  const getPrecioConDescuento = (servicio: any) => {
+    const servicioId = servicio.key;
+    const precioBase = precios[servicioId] || servicio.price;
+    const descuento = descuentosIndividuales[servicioId];
+    
+    if (descuento && descuento > 0) {
+      const precioConDescuento = precioBase * (1 - descuento / 100);
+      return {
+        precioOriginal: precioBase,
+        precioConDescuento: Math.round(precioConDescuento),
+        descuento: descuento,
+        tieneDescuento: true
+      };
+    }
+    
+    return {
+      precioOriginal: precioBase,
+      precioConDescuento: precioBase,
+      descuento: 0,
+      tieneDescuento: false
+    };
   };
 
   return (
@@ -315,7 +368,7 @@ export default function ServiciosPage() {
             {servicios[categoriaActiva].servicios.map((servicio, index) => (
               <div
                 key={servicio.key}
-                className="perspective-1000 h-[450px]"
+                className="perspective-1000 h-[480px]"
                 onMouseEnter={() => setCardFlipped(servicio.key)}
                 onMouseLeave={() => setCardFlipped(null)}
               >
@@ -326,11 +379,19 @@ export default function ServiciosPage() {
                   {/* FRENTE de la tarjeta */}
                   <div className="absolute w-full h-full backface-hidden bg-white rounded-3xl shadow-xl overflow-hidden">
                     {/* Imagen */}
-                    <div className="relative h-48 overflow-hidden">
-                      <img 
+                    <div className="relative h-52 overflow-hidden flex-shrink-0 bg-stone-100">
+                      <Image 
                         src={servicio.imagen} 
                         alt={servicio.title}
-                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                        fill
+                        className="object-cover transform group-hover:scale-110 transition-transform duration-500"
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        onError={(e) => {
+                          console.error('Error loading image:', servicio.imagen);
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
                       />
                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
                         <p className="text-xs font-bold text-[#3d2817]">{servicio.duration}</p>
@@ -341,36 +402,52 @@ export default function ServiciosPage() {
                     </div>
 
                     {/* Contenido */}
-                    <div className="p-6">
-                      <h3 className="text-lg font-bold text-[#3d2817] mb-4 leading-tight min-h-[60px]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    <div className="p-5 flex flex-col flex-1">
+                      <h3 className="text-base font-bold text-[#3d2817] mb-3 leading-tight line-clamp-2" style={{ fontFamily: "'Playfair Display', serif" }}>
                         {servicio.title}
                       </h3>
                       
-                      <div className="space-y-3 mb-6">
-                        <div className="flex items-center gap-2 text-sm text-stone-600">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-green-600">
+                      <div className="space-y-2 mb-4 flex-shrink-0">
+                        <div className="flex items-center gap-2 text-xs text-stone-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-600 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span>Profesionales certificados</span>
+                          <span className="truncate">Profesionales certificados</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-stone-600">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-green-600">
+                        <div className="flex items-center gap-2 text-xs text-stone-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-600 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span>Equipos de última tecnología</span>
+                          <span className="truncate">Equipos de última tecnología</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t border-stone-200">
-                        <div>
-                          <p className="text-xs text-stone-500 mb-1">Precio</p>
-                          <p className="text-xl font-bold text-amber-700">
-                            {servicio.priceLabel}
-                          </p>
-                        </div>
-                        <div className="text-xs text-stone-400 italic">
-                          Hover para ver más
-                        </div>
+                      <div className="mt-auto pt-3 border-t border-stone-200">
+                        <p className="text-xs text-stone-500 mb-1">Precio</p>
+                        {(() => {
+                          const precioInfo = getPrecioConDescuento(servicio);
+                          if (precioInfo.tieneDescuento) {
+                            return (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-stone-400 line-through">
+                                  ${precioInfo.precioOriginal.toLocaleString()}
+                                </span>
+                                <span className="text-lg font-bold text-green-600 leading-tight">
+                                  ${precioInfo.precioConDescuento.toLocaleString()}
+                                </span>
+                                <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded">
+                                  -{precioInfo.descuento}%
+                                </span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <p className="text-lg font-bold text-amber-700 leading-tight">
+                              {servicio.priceLabel}
+                            </p>
+                          );
+                        })()}
+                        <p className="text-xs text-stone-400 italic mt-2 text-center">Hover para ver más</p>
                       </div>
                     </div>
                   </div>
@@ -405,7 +482,29 @@ export default function ServiciosPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-white/70">Precio</p>
-                          <p className="text-lg font-bold text-amber-400">{servicio.priceLabel}</p>
+                          {(() => {
+                            const precioInfo = getPrecioConDescuento(servicio);
+                            if (precioInfo.tieneDescuento) {
+                              return (
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className="text-sm font-semibold text-white/50 line-through">
+                                    ${precioInfo.precioOriginal.toLocaleString()}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg font-bold text-amber-400">
+                                      ${precioInfo.precioConDescuento.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs font-semibold text-green-300 bg-green-500/30 px-2 py-0.5 rounded">
+                                      -{precioInfo.descuento}%
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <p className="text-lg font-bold text-amber-400">{servicio.priceLabel}</p>
+                            );
+                          })()}
                         </div>
                       </div>
 

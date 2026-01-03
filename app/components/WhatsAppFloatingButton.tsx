@@ -1,8 +1,17 @@
 "use client";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function WhatsAppFloatingButton() {
 	const [isHovered, setIsHovered] = useState(false);
+	const pathname = usePathname();
+	
+	// Ocultar solo en el panel de admin (no en login)
+	const isAdminPanel = pathname?.startsWith('/login/afiliados/admin');
+	
+	if (isAdminPanel) {
+		return null;
+	}
 
 	return (
 		<a

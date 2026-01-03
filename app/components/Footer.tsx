@@ -1,11 +1,33 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+	const pathname = usePathname();
+	
+	// Ocultar footer solo en el panel de admin (no en login)
+	const isAdminPanel = pathname?.startsWith('/login/afiliados/admin');
+	
+	if (isAdminPanel) {
+		return null;
+	}
+
 	return (
 		<footer className="mt-20 border-t border-[var(--color-border)] bg-[color:var(--cafe-900)] py-10 text-[color:var(--blanco)]">
 			<div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 sm:grid-cols-3">
 				<div>
-					<p className="text-lg font-semibold" style={{ fontFamily: "var(--font-playfair)" }}>Therapy Aqua Spa</p>
+					<div className="flex items-center gap-3 mb-2">
+						<Image 
+							src="/image/logo-oficial.jpg" 
+							alt="Therapy Aqua Spa Logo" 
+							width={40} 
+							height={40}
+							className="rounded-full object-cover"
+						/>
+						<p className="text-lg font-semibold" style={{ fontFamily: "var(--font-playfair)" }}>Therapy Aqua Spa</p>
+					</div>
 					<p className="mt-2 text-sm opacity-80">Respira. Relájate. Renueva.</p>
 				</div>
 				<div>

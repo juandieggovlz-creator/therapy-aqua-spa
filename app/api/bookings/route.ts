@@ -16,7 +16,8 @@ const BOOKINGS = [
     precio: 140000,
     estado: "confirmada",
     esAfiliado: false,
-    serviciosAdicionales: ["sauna"],
+    serviciosAdicionales: ["Sauna"],
+    productos: [],
     notas: "Cliente prefiere presión media",
     createdAt: "2024-01-15T08:00:00Z"
   },
@@ -35,6 +36,7 @@ const BOOKINGS = [
     estado: "pendiente",
     esAfiliado: true,
     serviciosAdicionales: [],
+    productos: [],
     notas: "",
     createdAt: "2024-01-16T10:30:00Z"
   },
@@ -52,7 +54,8 @@ const BOOKINGS = [
     precio: 90000,
     estado: "confirmada",
     esAfiliado: false,
-    serviciosAdicionales: ["jacuzzi"],
+    serviciosAdicionales: ["Jacuzzi"],
+    productos: [],
     notas: "Primera vez",
     createdAt: "2024-01-17T14:20:00Z"
   },
@@ -71,6 +74,7 @@ const BOOKINGS = [
     estado: "confirmada",
     esAfiliado: false,
     serviciosAdicionales: [],
+    productos: [],
     notas: "Atleta, necesita recuperación post-entrenamiento",
     createdAt: "2024-01-18T09:15:00Z"
   },
@@ -88,7 +92,8 @@ const BOOKINGS = [
     precio: 140000,
     estado: "cancelada",
     esAfiliado: true,
-    serviciosAdicionales: ["sauna", "jacuzzi"],
+    serviciosAdicionales: ["Sauna", "Jacuzzi"],
+    productos: ["Candado para casillero"],
     notas: "",
     createdAt: "2024-01-19T11:00:00Z"
   }
@@ -123,6 +128,45 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    
+    // Crear nueva reserva
+    const nuevaReserva = {
+      id: `RES-${Date.now().toString(36).toUpperCase()}`,
+      cliente: body.nombre || 'Cliente',
+      telefono: body.telefono || '',
+      email: body.email || '',
+      servicio: body.terapias?.[0]?.nombre || 'Servicio',
+      servicioId: body.terapias?.[0]?.id || '',
+      fisio: "Dra. Carolina Trujillo",
+      fecha: body.fecha || '',
+      hora: body.horario || '',
+      duracion: body.duracionTotal || 0,
+      precio: body.total || 0,
+      estado: "pendiente",
+      esAfiliado: body.esAfiliado || false,
+      serviciosAdicionales: body.serviciosAdicionales?.map((s: any) => s.nombre || s.id) || [],
+      productos: body.productos?.map((p: any) => p.nombre || p.id) || [],
+      notas: body.notas || '',
+      createdAt: body.fechaCreacion || new Date().toISOString()
+    };
+
+    BOOKINGS.push(nuevaReserva);
+
+    return NextResponse.json(
+      { success: true, booking: nuevaReserva },
+      { status: 201 }
+    );
+  } catch (e) {
+    return NextResponse.json(
+      { error: "Error al crear reserva" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
@@ -135,8 +179,18 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // En producción, aquí actualizaríamos la BD
-    // Por ahora retornamos éxito
+    // Actualizar estado de la reserva
+    const reserva = BOOKINGS.find(b => b.id === id);
+    if (reserva) {
+      if (accion === "cancelar") {
+        reserva.estado = "cancelada";
+      } else if (accion === "confirmar") {
+        reserva.estado = "confirmada";
+      } else if (accion === "completar") {
+        reserva.estado = "completada";
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,

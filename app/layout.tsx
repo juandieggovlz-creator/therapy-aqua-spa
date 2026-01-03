@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Poppins } from "next/font/google";
 import "./globals.css";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import StickyBar from "./components/StickyBar";
-import WhatsAppFloatingButton from "./components/WhatsAppFloatingButton";
+import ConditionalLayoutClient from "./components/ConditionalLayoutClient";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -22,6 +19,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Therapy Aqua Spa",
   description: "Respira. Relájate. Renueva.",
+  icons: {
+    icon: '/image/logo-oficial.jpg',
+  },
 };
 
 export default function RootLayout({
@@ -32,11 +32,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${playfair.variable} ${poppins.variable} antialiased`}>
-        <Header />
-        <div className="pt-16">{children}</div>
-        <Footer />
-        <StickyBar />
-        <WhatsAppFloatingButton />
+        <ConditionalLayoutClient>
+          {children}
+        </ConditionalLayoutClient>
       </body>
     </html>
   );
