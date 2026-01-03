@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -70,7 +70,7 @@ const horariosDisponibles = [
   '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'
 ];
 
-export default function ReservasContent() {
+function ReservasContentInner() {
   const searchParams = useSearchParams();
   const [paso, setPaso] = useState(1);
   const [esAfiliado, setEsAfiliado] = useState(false);
@@ -1116,5 +1116,20 @@ export default function ReservasContent() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ReservasContent() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3d2817] mx-auto mb-4"></div>
+          <p className="text-stone-600">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <ReservasContentInner />
+    </Suspense>
   );
 }
