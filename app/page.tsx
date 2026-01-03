@@ -9,7 +9,22 @@ function getImagePath(filename: string): string {
   return `/image/${encodeURIComponent(filename)}`;
 }
 
-const serviciosDestacadosBase = [
+type ServicioDestacado = {
+  id: number;
+  key: string;
+  title: string;
+  icon: string;
+  price: number;
+  priceLabel: string;
+  duration: string;
+  imagen: string;
+  description: string;
+  detalles: string[];
+  precioOriginal?: number;
+  descuento?: number;
+};
+
+const serviciosDestacadosBase: ServicioDestacado[] = [
   {
     id: 1,
     key: "columna",
@@ -127,7 +142,7 @@ const testimoniosQuick = [
 ];
 
 export default function HomePage() {
-  const [serviciosDestacados, setServiciosDestacados] = useState(serviciosDestacadosBase);
+  const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
   const [promocion, setPromocion] = useState<any>(null);
 
   useEffect(() => {
