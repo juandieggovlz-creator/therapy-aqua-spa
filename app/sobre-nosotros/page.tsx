@@ -2,6 +2,27 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useCMS } from '@/app/hooks/useCMS';
+
+type SobreNosotros = {
+  titulo?: string;
+  subtitulo?: string;
+  descripcion?: string;
+  valores?: string[];
+};
+
+type Ubicacion = {
+  direccion?: string;
+  lugar?: string;
+  ciudad?: string;
+  googleMapsLink?: string;
+  codigoEmbed?: string;
+  mapaEmbed?: string;
+  mapaLink?: string;
+  parqueadero?: boolean;
+  infoAcceso?: string;
+  acceso?: string;
+};
 
 const instalaciones = [
   {
@@ -232,6 +253,10 @@ function GaleriaInstalaciones() {
 }
 
 export default function SobreNosotrosPage() {
+  const { contenido } = useCMS();
+  const sobreNosotros: SobreNosotros = contenido?.sobreNosotros || {};
+  const ubicacion: Ubicacion = contenido?.ubicacion || {};
+  
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100">
       {/* Elementos decorativos flotantes */}
@@ -252,12 +277,12 @@ export default function SobreNosotrosPage() {
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#3d2817] mb-6 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Bienvenido a Therapy Aqua Spa
+            {sobreNosotros.titulo || 'Bienvenido a Therapy Aqua Spa'}
             <br />
-            <span className="text-3xl md:text-4xl lg:text-5xl text-amber-700">Tu refugio de bienestar integral</span>
+            <span className="text-3xl md:text-4xl lg:text-5xl text-amber-700">{sobreNosotros.subtitulo || 'Tu refugio de bienestar integral'}</span>
           </h1>
           <p className="mx-auto mt-6 max-w-4xl text-base md:text-lg leading-relaxed text-stone-600">
-            En Therapy Aqua Spa transformamos la fisioterapia y los tratamientos de bienestar en una experiencia de renovación profunda para cuerpo y mente. Ubicados en el <strong>Círculo de Suboficiales de las Fuerzas Militares</strong> (Calle 138 Nro. 55-38, Bogotá D.C.), ofrecemos un entorno exclusivo donde técnicas terapéuticas avanzadas se combinan con un ambiente de calma y cuidado personalizado.
+            {sobreNosotros.descripcion || 'En Therapy Aqua Spa transformamos la fisioterapia y los tratamientos de bienestar en una experiencia de renovación profunda para cuerpo y mente.'} Ubicados en el <strong>{ubicacion.lugar || 'Círculo de Suboficiales de las Fuerzas Militares'}</strong> ({ubicacion.direccion || 'Calle 138 Nro. 55-38'}, {ubicacion.ciudad || 'Bogotá D.C., Colombia'}), ofrecemos un entorno exclusivo donde técnicas terapéuticas avanzadas se combinan con un ambiente de calma y cuidado personalizado.
           </p>
         </div>
 
@@ -312,30 +337,31 @@ export default function SobreNosotrosPage() {
                 ✅ Nuestro compromiso
               </h2>
               <ul className="space-y-3 text-stone-600">
-                <li className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  <span>Atención personalizada desde tu primer contacto.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  <span>Ambiente premium, higiénico y con equipo de última generación.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  <span>Resultados reales que mejoran tu salud, movimiento y calidad de vida.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  <span>Transparencia en precios y procedimientos, porque tu tranquilidad importa.</span>
-                </li>
+                {sobreNosotros.valores && sobreNosotros.valores.length > 0 ? (
+                  sobreNosotros.valores.map((valor: string, index: number) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span>{valor}</span>
+                    </li>
+                  ))
+                ) : (
+                  <>
+                    <li className="flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span>Atención personalizada desde tu primer contacto.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span>Ambiente premium, higiénico y con equipo de última generación.</span>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>

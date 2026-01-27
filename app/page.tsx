@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCMS } from '@/app/hooks/useCMS';
+import { useContentPolling } from '@/app/hooks/useContentPolling';
 
 // Helper para codificar URLs de imágenes
 function getImagePath(filename: string): string {
@@ -142,65 +144,344 @@ const testimoniosQuick = [
 ];
 
 export default function HomePage() {
+  const { contenido } = useCMS();
   const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
-  const [promocion, setPromocion] = useState<any>(null);
+  const [promocionActiva, setPromocionActiva] = useState<any>(null);
 
-  useEffect(() => {
-    // Cargar servicios y promoción desde la API
-    const loadData = async () => {
-      try {
-        const [serviciosRes, promocionRes] = await Promise.all([
-          fetch('/api/servicios'),
-          fetch('/api/admin/promociones')
-        ]);
+  // 🆕 POLLING AUTOMÁTICO CADA 15 SEGUNDOS
+  // Este hook actualiza automáticamente el contenido cuando hay cambios en el JSON
+  const { contenido: contenidoPolling } = useContentPolling({
+    intervalo: 15000, // 15 segundos
+    onUpdate: (nuevoContenido) => {
+      console.log('🔄 Polling detectó cambios en contenido');
+      // Forzar actualización con los nuevos datos
+      if (nuevoContenido.servicios) {
+        actualizarServiciosDesdeAPI(nuevoContenido.servicios, nuevoContenido.descuentos || {});
+      }
+      if (nuevoContenido.promociones) {
+        actualizarPromocionActiva(nuevoContenido.promociones);
+      }
+    }
+  });
+
+  // Función auxiliar para actualizar servicios desde los datos de la API
+  const actualizarServiciosDesdeAPI = useCallback((serviciosAPI: any[], descuentos: any) => {
+    try {
+      const serviciosActivos = serviciosAPI.filter((s: any) => s.activo === true);
+      const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
+      
+      let serviciosAMostrar: any[] = [];
+      if (serviciosDestacadosAPI.length > 0) {
+        serviciosAMostrar = [...serviciosDestacadosAPI];
+        const otrosServicios = serviciosActivos.filter((s: any) => !s.destacado);
+        const serviciosNecesarios = 6 - serviciosAMostrar.length;
+        serviciosAMostrar = [...serviciosAMostrar, ...otrosServicios.slice(0, serviciosNecesarios)];
+      } else {
+        serviciosAMostrar = serviciosActivos.slice(0, 6);
+      }
+      
+      const serviciosMapeados = serviciosAMostrar
+        .map((s: any, index: number) => {
+          const servicioBase = serviciosDestacadosBase.find(sb => sb.key === s.id);
+          const precioBase = s.precio || s.precioOriginal || 0;
+          const descuentoInfo = descuentos[s.id];
+          const descuentoAplicado = descuentoInfo?.porcentaje || 0;
+          const precioFinal = descuentoAplicado > 0 
+            ? precioBase * (1 - descuentoAplicado / 100)
+            : precioBase;
+          
+          return {
+            id: index + 1,
+            key: s.id,
+            title: s.nombre,
+            icon: s.icon || servicioBase?.icon || "✨",
+            price: Math.round(precioFinal),
+            precioOriginal: precioBase,
+            descuento: descuentoAplicado,
+            priceLabel: descuentoAplicado > 0 
+              ? `$${Math.round(precioFinal).toLocaleString()} (${descuentoAplicado}% OFF)`
+              : `$${precioBase.toLocaleString()}`,
+            duration: `${s.duracion || servicioBase?.duration?.replace(' min', '') || 30} min`,
+            imagen: s.imagen ? getImagePath(s.imagen) : (servicioBase?.imagen || getImagePath('default-service.jpg')),
+            description: s.descripcion || servicioBase?.description || 'Servicio de terapia especializada',
+            detalles: s.descripcion 
+              ? s.descripcion.split('.').filter((d: string) => d.trim()).map((d: string) => d.trim())
+              : (servicioBase?.detalles || [])
+          };
+        })
+        .filter(Boolean);
+      
+      if (serviciosMapeados.length > 0) {
+        console.log(`📊 Actualizando ${serviciosMapeados.length} servicios desde polling/API`);
+        setServiciosDestacados(serviciosMapeados);
+      }
+    } catch (error) {
+      console.error('❌ Error actualizando servicios:', error);
+    }
+  }, []);
+
+  // Función auxiliar para actualizar promoción activa
+  const actualizarPromocionActiva = useCallback((promociones: any[]) => {
+    try {
+      const ahora = new Date().toISOString();
+      const promocionesActivas = promociones.filter((p: any) => 
+        p.activa && 
+        !p.pausada && 
+        p.fechaInicio <= ahora && 
+        p.fechaFin >= ahora
+      );
+      
+      const promocionActiva = promocionesActivas.length > 0 
+        ? promocionesActivas.sort((a: any, b: any) => {
+            if (a.tipo === 'porcentaje' && b.tipo === 'porcentaje') {
+              return b.valor - a.valor;
+            }
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          })[0]
+        : null;
+      
+      setPromocionActiva(promocionActiva);
+      console.log('📣 Promoción actualizada:', promocionActiva?.titulo || 'ninguna');
+    } catch (error) {
+      console.error('❌ Error actualizando promoción:', error);
+    }
+  }, []);
+
+  // Función para cargar servicios y descuentos desde las APIs
+  const loadServiciosYDescuentos = useCallback(async () => {
+    try {
+      // Cargar servicios y descuentos desde la API
+      const [serviciosRes, descuentosRes] = await Promise.all([
+        fetch('/api/admin/servicios?cache=' + new Date().getTime(), { cache: 'no-store' }),
+        fetch('/api/admin/descuentos?cache=' + new Date().getTime(), { cache: 'no-store' })
+      ]);
+      
+      const serviciosData = await serviciosRes.json();
+      const descuentosData = await descuentosRes.json();
+      
+      const serviciosAPI = serviciosData.servicios || [];
+      const descuentos = descuentosData.descuentos || {};
+      
+      console.log(`🏠 HomePage - Servicios cargados: ${serviciosAPI.length}, Descuentos: ${Object.keys(descuentos).length}`);
+      
+      if (serviciosAPI.length > 0) {
+        // Mapear servicios de la API a formato de la página
+        // Priorizar servicios destacados, luego completar con otros servicios activos hasta 6
+        // IMPORTANTE: Solo mostrar servicios con activo === true
+        const serviciosActivos = serviciosAPI.filter((s: any) => s.activo === true);
+        const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
         
-        const serviciosData = await serviciosRes.json();
-        const promocionData = await promocionRes.json();
+        // Si hay destacados, priorizarlos y completar con otros hasta 6
+        let serviciosAMostrar: any[] = [];
+        if (serviciosDestacadosAPI.length > 0) {
+          // Agregar destacados primero
+          serviciosAMostrar = [...serviciosDestacadosAPI];
+          // Completar con otros servicios activos (que no sean destacados) hasta llegar a 6
+          const otrosServicios = serviciosActivos.filter((s: any) => !s.destacado);
+          const serviciosNecesarios = 6 - serviciosAMostrar.length;
+          serviciosAMostrar = [...serviciosAMostrar, ...otrosServicios.slice(0, serviciosNecesarios)];
+        } else {
+          // Si no hay destacados, mostrar los primeros 6 activos
+          serviciosAMostrar = serviciosActivos.slice(0, 6);
+        }
         
-        if (serviciosData.servicios) {
-          // Mapear servicios de la API a formato de la página
-          const serviciosMapeados = serviciosData.servicios.map((s: any) => {
+        // Limitar siempre a máximo 6 servicios
+        serviciosAMostrar = serviciosAMostrar.slice(0, 6);
+        
+        const serviciosMapeados = serviciosAMostrar
+          .map((s: any, index: number) => {
+            // SIEMPRE usar datos de la API como fuente principal
             const servicioBase = serviciosDestacadosBase.find(sb => sb.key === s.id);
-            if (!servicioBase) return null;
             
-            let precioFinal = s.precio;
-            let descuentoAplicado = 0;
+            // Obtener descuento del servicio
+            const descuentoAplicado = descuentos[s.id] || 0;
+            // Usar el precio del servicio (que ya está sincronizado con precioOriginal)
+            const precioBase = s.precio || 0;
+            let precioFinal = precioBase;
             
-            if (s.descuento) {
-              descuentoAplicado = s.descuento;
-              precioFinal = s.precio * (1 - s.descuento / 100);
-            } else if (s.promocionActiva && s.descuentoPromocion) {
-              descuentoAplicado = s.descuentoPromocion;
-              precioFinal = s.precio * (1 - s.descuentoPromocion / 100);
+            if (descuentoAplicado > 0) {
+              precioFinal = precioBase * (1 - descuentoAplicado / 100);
+              console.log(`🏠 HomePage - Descuento aplicado a ${s.nombre}: ${descuentoAplicado}% (${precioBase} -> ${Math.round(precioFinal)})`);
             }
             
-            return {
-              ...servicioBase,
-              price: precioFinal,
-              precioOriginal: s.precio,
+            // SIEMPRE priorizar datos de la API, usar servicioBase solo para campos que no vengan de la API
+            const servicioMapeado = {
+              id: servicioBase?.id || (serviciosDestacadosBase.length + index + 1),
+              key: s.id,
+              title: s.nombre || servicioBase?.title || 'Servicio sin nombre', // PRIORIDAD: API primero
+              icon: s.icon || servicioBase?.icon || '✨', // PRIORIDAD: API primero
+              price: Math.round(precioFinal),
+              precioOriginal: precioBase, // Usar precio base, no precioOriginal desactualizado
               descuento: descuentoAplicado,
               priceLabel: descuentoAplicado > 0 
                 ? `$${Math.round(precioFinal).toLocaleString()} (${descuentoAplicado}% OFF)`
-                : `$${s.precio.toLocaleString()}`
+                : `$${precioBase.toLocaleString()}`,
+              duration: `${s.duracion || servicioBase?.duration?.replace(' min', '') || 30} min`, // PRIORIDAD: API primero
+              imagen: s.imagen ? getImagePath(s.imagen) : (servicioBase?.imagen || getImagePath('default-service.jpg')),
+              description: s.descripcion || servicioBase?.description || 'Servicio de terapia especializada', // PRIORIDAD: API primero
+              detalles: s.descripcion 
+                ? s.descripcion.split('.').filter((d: string) => d.trim()).map((d: string) => d.trim())
+                : (servicioBase?.detalles || [])
             };
-          }).filter(Boolean);
-          
-          setServiciosDestacados(serviciosMapeados.length > 0 ? serviciosMapeados : serviciosDestacadosBase);
-        }
+            
+            console.log(`🏠 HomePage - Servicio mapeado: ${servicioMapeado.title} - Precio: ${servicioMapeado.price} - Duración: ${servicioMapeado.duration}`);
+            return servicioMapeado;
+          })
+          .filter(Boolean);
         
-        if (promocionData.promocion) {
-          setPromocion(promocionData.promocion);
+        if (serviciosMapeados.length > 0) {
+          console.log(`🏠 HomePage - Servicios mapeados: ${serviciosMapeados.length}`);
+          setServiciosDestacados(serviciosMapeados);
+        } else {
+          console.warn('🏠 HomePage - No hay servicios activos, usando valores por defecto');
+          setServiciosDestacados(serviciosDestacadosBase);
         }
-      } catch (error) {
-        console.error('Error cargando datos:', error);
+      } else {
+        console.warn('🏠 HomePage - No se recibieron servicios, usando valores por defecto');
+        setServiciosDestacados(serviciosDestacadosBase);
       }
-    };
-    
-    loadData();
+    } catch (error) {
+      console.error('❌ Error cargando datos:', error);
+      // En caso de error, usar valores por defecto
+      setServiciosDestacados(serviciosDestacadosBase);
+    }
   }, []);
+
+  useEffect(() => {
+    loadServiciosYDescuentos();
+    
+    // Verificar si hay cambios pendientes en localStorage
+    const necesitaRecarga = localStorage.getItem('necesita_recarga');
+    const ultimaActualizacion = localStorage.getItem('servicios_actualizados');
+    
+    if (necesitaRecarga === 'true') {
+      console.log('🔔 Página Principal detectó cambios pendientes en localStorage');
+      console.log('📅 Última actualización:', new Date(parseInt(ultimaActualizacion || '0')).toLocaleTimeString());
+      console.log('🔄 Recargando datos automáticamente...');
+      
+      // Recargar datos múltiples veces
+      setTimeout(() => loadServiciosYDescuentos(), 100);
+      setTimeout(() => loadServiciosYDescuentos(), 500);
+      setTimeout(() => loadServiciosYDescuentos(), 1000);
+      
+      // Limpiar el flag después de 10 segundos para dar tiempo a otras pestañas
+      setTimeout(() => {
+        localStorage.removeItem('necesita_recarga');
+        console.log('🧹 Flag de recarga limpiado (HomePage)');
+      }, 10000);
+    }
+  }, [loadServiciosYDescuentos]);
+
+  // Escuchar eventos de actualización de servicios, promociones y CMS
+  useEffect(() => {
+    const forzarRecarga = () => {
+      console.log('🔄🔄🔄 FORZANDO RECARGA COMPLETA DE PÁGINA PRINCIPAL 🔄🔄🔄');
+      const timestamp = new Date().getTime();
+      
+      // Recargar promoción activa con cache busting
+      const loadPromocion = async () => {
+        try {
+          const res = await fetch(`/api/admin/promociones?cache=${timestamp}`, { cache: 'no-store' });
+          const data = await res.json();
+          setPromocionActiva(data.promocion);
+          console.log('✅ Promoción recargada en HomePage');
+        } catch (error) {
+          console.error('❌ Error cargando promoción:', error);
+        }
+      };
+      
+      // Ráfaga de recargas para asegurar actualización
+      console.log('📥 Recarga #1 - Inmediata (0ms)');
+      loadServiciosYDescuentos();
+      loadPromocion();
+      
+      setTimeout(() => {
+        console.log('📥 Recarga #2 - Delay 100ms');
+        loadServiciosYDescuentos();
+        loadPromocion();
+      }, 100);
+      
+      setTimeout(() => {
+        console.log('📥 Recarga #3 - Delay 300ms');
+        loadServiciosYDescuentos();
+        loadPromocion();
+      }, 300);
+      
+      setTimeout(() => {
+        console.log('📥 Recarga #4 - Delay 600ms');
+        loadServiciosYDescuentos();
+      }, 600);
+      
+      setTimeout(() => {
+        console.log('📥 Recarga #5 - Final (1000ms)');
+        loadServiciosYDescuentos();
+        console.log('✅✅✅ RECARGA COMPLETA FINALIZADA ✅✅✅');
+      }, 1000);
+    };
+
+    const handleServicioActualizado = (event: any) => {
+      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: servicioActualizado', event.detail);
+      forzarRecarga();
+    };
+
+    const handleDescuentoActualizado = (event: any) => {
+      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: descuentoActualizado', event.detail);
+      forzarRecarga();
+    };
+
+    const handlePromocionActualizada = (event: any) => {
+      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: promocionActualizada', event.detail);
+      forzarRecarga();
+    };
+
+    const handleCmsActualizado = (event: any) => {
+      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: cmsActualizado', event.detail);
+      forzarRecarga();
+    };
+
+    // Evento global para actualizar toda la página principal
+    const handleActualizarPaginaPrincipal = (event: any) => {
+      console.log('🏠 HomePage - ⚡⚡⚡ EVENTO GLOBAL CAPTURADO: actualizarPaginaPrincipal ⚡⚡⚡', event.detail);
+      forzarRecarga();
+    };
+
+    // Agregar listeners
+    window.addEventListener('servicioActualizado', handleServicioActualizado, true);
+    window.addEventListener('descuentoActualizado', handleDescuentoActualizado, true);
+    window.addEventListener('promocionActualizada', handlePromocionActualizada, true);
+    window.addEventListener('cmsActualizado', handleCmsActualizado, true);
+    window.addEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
+
+    console.log('✅ HomePage - Event listeners registrados');
+
+    return () => {
+      window.removeEventListener('servicioActualizado', handleServicioActualizado, true);
+      window.removeEventListener('descuentoActualizado', handleDescuentoActualizado, true);
+      window.removeEventListener('promocionActualizada', handlePromocionActualizada, true);
+      window.removeEventListener('cmsActualizado', handleCmsActualizado, true);
+      window.removeEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
+    };
+  }, [loadServiciosYDescuentos]);
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
   const [currentTestimonio, setCurrentTestimonio] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [loadingPromocion, setLoadingPromocion] = useState(true);
+
+  // Cargar promoción activa
+  useEffect(() => {
+    const loadPromocion = async () => {
+      try {
+        const res = await fetch('/api/admin/promociones');
+        const data = await res.json();
+        setPromocionActiva(data.promocion);
+      } catch (error) {
+        console.error('Error cargando promoción:', error);
+      } finally {
+        setLoadingPromocion(false);
+      }
+    };
+    loadPromocion();
+  }, []);
 
   useEffect(() => {
     setIsVisible(true);
@@ -258,7 +539,7 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-[#3d2817] mb-6 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Therapy Aqua Spa
+            {contenido?.banner?.texto || 'Therapy Aqua Spa'}
           </h1>
           
           <p className="text-xl md:text-3xl text-amber-700 mb-8 font-semibold">
@@ -275,7 +556,7 @@ export default function HomePage() {
               href="/servicios"
               className="group relative inline-flex items-center gap-3 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl overflow-hidden"
             >
-              <span className="relative z-10">Ver Terapias</span>
+              <span className="relative z-10">{contenido?.botones?.verServicios || 'Ver Terapias'}</span>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -289,7 +570,7 @@ export default function HomePage() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
-              Reservar Ahora
+              {contenido?.botones?.reservar || 'Reservar Ahora'}
             </Link>
           </div>
 
@@ -316,11 +597,76 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Banner de Promoción Activa */}
+      {!loadingPromocion && promocionActiva && (
+        <section className="py-8 px-4 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-y-2 border-green-200">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-2xl p-8 md:p-12 relative overflow-hidden">
+              {/* Decoración de fondo */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -ml-24 -mb-24"></div>
+              </div>
+              
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex-1 text-center md:text-left">
+                  <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+                    <span className="text-white font-bold text-sm uppercase tracking-wider">🎁 Promoción Especial</span>
+                  </div>
+                  <h3 className="text-2xl md:text-4xl font-bold text-white mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    {promocionActiva.textoPromocional || promocionActiva.titulo}
+                  </h3>
+                  <div className="flex items-center justify-center md:justify-start gap-4 flex-wrap">
+                    <span className="text-3xl md:text-4xl font-bold text-white">
+                      {promocionActiva.tipo === 'porcentaje' 
+                        ? `${promocionActiva.valor}% OFF`
+                        : `$${promocionActiva.valor.toLocaleString('es-CO')} OFF`}
+                    </span>
+                    {promocionActiva.tipoAplicacion === 'monto_minimo' && promocionActiva.montoMinimo && (
+                      <span className="text-white/90 text-sm md:text-base">
+                        En reservas con total superior a ${promocionActiva.montoMinimo.toLocaleString('es-CO')}
+                      </span>
+                    )}
+                    {promocionActiva.tipoAplicacion === 'servicios_especificos' && promocionActiva.serviciosIds && (
+                      <span className="text-white/90 text-sm md:text-base">
+                        En servicios seleccionados
+                      </span>
+                    )}
+                    {promocionActiva.tipoAplicacion === 'todos' && (
+                      <span className="text-white/90 text-sm md:text-base">
+                        Aplica a todos nuestros servicios
+                      </span>
+                    )}
+                  </div>
+                  {promocionActiva.descripcion && (
+                    <p className="text-white/90 mt-3 text-sm md:text-base">
+                      {promocionActiva.descripcion}
+                    </p>
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <Link
+                    href="/reservas"
+                    className="inline-flex items-center gap-2 bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-green-50 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl"
+                  >
+                    <span>Reservar Ahora</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {contenido?.secciones?.serviciosDestacados?.mostrar !== false && (
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-              💎 Terapias Más Solicitadas
+              {contenido?.secciones?.serviciosDestacados?.titulo || '💎 Terapias Más Solicitadas'}
             </h2>
             <p className="text-lg text-stone-600 max-w-2xl mx-auto">
               Descubre nuestros tratamientos estrella diseñados para tu bienestar integral
@@ -456,13 +802,13 @@ export default function HomePage() {
                           href="/servicios"
                           className="w-full bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
                         >
-                          Ver Más Terapias
+                          {contenido?.botones?.verServicios || 'Ver Más Terapias'}
                         </Link>
                         <Link 
                           href={`/reservas?servicio=${servicio.key}`}
                           className="w-full bg-[#3d2817] hover:bg-[#2d1f11] text-white px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
                         >
-                          Reservar Ahora
+                          {contenido?.botones?.reservar || 'Reservar Ahora'}
                         </Link>
                       </div>
                     </div>
@@ -473,6 +819,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       <section className="py-20 px-4 bg-gradient-to-br from-amber-50 to-stone-50">
         <div className="max-w-6xl mx-auto">
@@ -545,10 +892,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      {contenido?.secciones?.testimonios?.mostrar !== false && (
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-            💬 Lo Que Dicen Nuestros Clientes
+            {contenido?.secciones?.testimonios?.titulo || '💬 Lo Que Dicen Nuestros Clientes'}
           </h2>
           <p className="text-lg text-stone-600 mb-12">
             Historias reales de transformación y bienestar
@@ -591,6 +939,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       <section className="py-20 px-4 bg-gradient-to-br from-amber-100 to-stone-100">
         <div className="max-w-7xl mx-auto">
@@ -650,6 +999,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {contenido?.anuncio?.activo && (
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="relative bg-gradient-to-br from-[#3d2817] to-[#2d1f11] rounded-3xl shadow-2xl overflow-hidden">
@@ -657,61 +1007,48 @@ export default function HomePage() {
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500 rounded-full opacity-10 blur-3xl"></div>
             
             <div className="relative z-10 text-center py-16 px-8">
-              <div className="inline-block mb-6">
-                <span className="bg-gradient-to-r from-amber-400 to-orange-400 text-[#3d2817] px-6 py-2 rounded-full text-sm font-bold">
-                  🎉 Oferta Especial
-                </span>
-              </div>
-              
-              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Tu Primera Sesión te Está Esperando
-              </h2>
-              
-              <p className="text-xl text-stone-200 mb-8 max-w-3xl mx-auto">
-                Agenda hoy y descubre por qué somos el spa de confianza para cientos de personas en Bogotá
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <Link 
-                  href="/reservas"
-                  className="group relative inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                  </svg>
-                  Reservar Cita
-                  <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full"></span>
-                </Link>
-                
-                <Link 
-                  href="/servicios"
-                  className="inline-flex items-center gap-2 bg-white hover:bg-stone-100 text-[#3d2817] px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
-                >
-                  Ver Todos los Servicios
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </Link>
-              </div>
-
-              <div className="flex items-center justify-center gap-8 text-white/80 text-sm">
-                <div className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Respuesta inmediata</span>
+              {contenido.anuncio.etiqueta && (
+                <div className="inline-block mb-6">
+                  <span className="bg-gradient-to-r from-amber-400 to-orange-400 text-[#3d2817] px-6 py-2 rounded-full text-sm font-bold">
+                    {contenido.anuncio.etiqueta}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Horarios flexibles</span>
+              )}
+              
+              {contenido.anuncio.titulo && (
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  {contenido.anuncio.titulo}
+                </h2>
+              )}
+              
+              {contenido.anuncio.descripcion && (
+                <p className="text-xl text-stone-200 mb-8 max-w-3xl mx-auto">
+                  {contenido.anuncio.descripcion}
+                </p>
+              )}
+
+              {contenido.anuncio.mostrarBoton && (
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+                  {contenido.anuncio.botonTexto && contenido.anuncio.botonEnlace && (
+                    <Link 
+                      href={contenido.anuncio.botonEnlace}
+                      className="group relative inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                      </svg>
+                      {contenido.anuncio.botonTexto}
+                      <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full"></span>
+                    </Link>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </section>
+      )}
+
     </main>
   );
 }

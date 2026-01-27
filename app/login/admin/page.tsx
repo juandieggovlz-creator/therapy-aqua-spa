@@ -31,11 +31,17 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Todos los usuarios entran como admin completo
+      const userData = {
+        ...data.user,
+        role: 'admin' // Forzar rol admin para todos
+      };
+
       // Guardar en sessionStorage
       sessionStorage.setItem('auth_token', data.token);
-      sessionStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('user', JSON.stringify(userData));
 
-      // Redirigir al dashboard
+      // Redirigir al panel general unificado
       router.push('/login/afiliados/admin');
     } catch (err) {
       setError('Error de conexión. Intenta nuevamente.');
@@ -82,22 +88,23 @@ export default function AdminLoginPage() {
 
             <div>
               <label htmlFor="username" className="block text-sm font-semibold text-stone-700 mb-2">
-                Usuario
+                Correo Electrónico
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-stone-400">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                   </svg>
                 </div>
                 <input
                   id="username"
-                  type="text"
+                  type="email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
+                  autoComplete="username"
                   className="w-full pl-12 pr-4 py-3 border border-[color:var(--arena-300)] rounded-xl focus:ring-2 focus:ring-[color:var(--oliva-400)] focus:border-[color:var(--oliva-400)] outline-none transition-all bg-white text-stone-700"
-                  placeholder="Ingresa tu usuario"
+                  placeholder="correo@ejemplo.com"
                 />
               </div>
             </div>
@@ -118,8 +125,9 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                   className="w-full pl-12 pr-4 py-3 border border-[color:var(--arena-300)] rounded-xl focus:ring-2 focus:ring-[color:var(--oliva-400)] focus:border-[color:var(--oliva-400)] outline-none transition-all bg-white text-stone-700"
-                  placeholder="Ingresa tu contraseña"
+                  placeholder="••••••••••"
                 />
               </div>
             </div>
@@ -159,17 +167,14 @@ export default function AdminLoginPage() {
               Volver al inicio
             </Link>
           </div>
-
-          {/* Credenciales de prueba */}
-          <div className="mt-8 p-4 bg-[color:var(--crema-50)] rounded-xl border border-[color:var(--arena-300)]/30">
-            <p className="text-xs font-semibold text-[color:var(--cafe-900)] mb-2">🔑 Credenciales de prueba:</p>
-            <p className="text-xs text-stone-600">Usuario: <span className="font-mono font-semibold">admin</span></p>
-            <p className="text-xs text-stone-600">Contraseña: <span className="font-mono font-semibold">admin123</span></p>
-          </div>
         </div>
       </div>
     </main>
   );
 }
+
+
+
+
 
 

@@ -20,7 +20,7 @@ export default function StickyBar() {
 					Reservar
 				</Link>
 				<a
-					href="https://wa.link/mlbr4z"
+					href="https://wa.me/573014185239"
 					target="_blank"
 					rel="noopener noreferrer"
 					className="flex-1 rounded-full border border-[color:var(--arena-300)] bg-[color:var(--blanco)] py-3 text-center text-[color:var(--cafe-900)] transition-all hover:scale-105 hover:shadow-md active:scale-95"

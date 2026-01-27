@@ -7,7 +7,7 @@ const AFILIADOS = [
     email: "afiliado@example.com",
     password: "afiliado123",
     nombre: "Juan Pérez",
-    telefono: "+57 300 123 4567",
+    telefono: "+57 301 4185239",
     esAfiliado: true,
   },
   {

@@ -277,7 +277,7 @@ export default function TerminosPage() {
 								<div className="space-y-3">
 									<div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-l-4 border-green-500">
 										<p className="leading-relaxed text-stone-700">
-											<strong className="text-[#3d2817]">WhatsApp:</strong> <a href="https://wa.link/mlbr4z" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 hover:underline font-semibold">wa.link/mlbr4z</a>
+											<strong className="text-[#3d2817]">WhatsApp:</strong> <a href="https://wa.me/573014185239" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 hover:underline font-semibold">+57 301 4185239</a>
 										</p>
 									</div>
 									<div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border-l-4 border-amber-500">

@@ -2,6 +2,45 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useCMS } from '@/app/hooks/useCMS';
+
+type DiaHorario = {
+  abierto: boolean;
+  apertura: string;
+  cierre: string;
+};
+
+type Horarios = {
+  lunes?: DiaHorario;
+  martes?: DiaHorario;
+  miercoles?: DiaHorario;
+  jueves?: DiaHorario;
+  viernes?: DiaHorario;
+  sabado?: DiaHorario;
+  domingo?: DiaHorario;
+};
+
+type Ubicacion = {
+  direccion?: string;
+  lugar?: string;
+  ciudad?: string;
+  googleMapsLink?: string;
+  codigoEmbed?: string;
+  mapaEmbed?: string;
+  mapaLink?: string;
+  parqueadero?: boolean;
+  infoAcceso?: string;
+  acceso?: string;
+};
+
+type Contacto = {
+  telefono?: string;
+  email?: string;
+  whatsapp?: string;
+  whatsappLink?: string;
+  mensajeContacto?: string;
+  horariosAtencion?: string;
+};
 
 const faqs = [
   {
@@ -73,7 +112,7 @@ const faqs = [
   {
     id: 12,
     pregunta: "¿Cuál es el horario de atención?",
-    respuesta: "🕗 Lunes y Martes: Cerrado\n🕗 Miércoles: Cerrado\n🕗 Jueves a Domingo: 08:00 AM – 03:30 PM",
+    respuesta: "🕗 Lunes: Cerrado\n🕗 Martes: Cerrado\n🕗 Miércoles: Cerrado\n🕗 Jueves a Domingo: 08:00 AM – 04:00 PM",
     icon: "🕗"
   },
   {
@@ -85,17 +124,94 @@ const faqs = [
   {
     id: 14,
     pregunta: "¿Cómo puedo comunicarme directamente?",
-    respuesta: "📲 WhatsApp directo: wa.link/mlbr4z\nSiempre hay alguien dispuesto a orientarte y ayudarte con tu reserva.",
+    respuesta: "📲 WhatsApp directo: wa.me/573014185239 o llámanos al +57 301 4185239\nSiempre hay alguien dispuesto a orientarte y ayudarte con tu reserva.",
     icon: "📲"
   }
 ];
 
 export default function FaqsPage() {
   const [openId, setOpenId] = useState<number | null>(null);
+  const { contenido } = useCMS();
 
   const toggleFaq = (id: number) => {
     setOpenId(openId === id ? null : id);
   };
+
+  // Generar horarios desde CMS
+  const generarHorariosTexto = () => {
+    const horariosCMS: Horarios = contenido?.horarios || {};
+    const diasMap = [
+      { key: 'lunes', label: 'Lunes' },
+      { key: 'martes', label: 'Martes' },
+      { key: 'miercoles', label: 'Miércoles' },
+      { key: 'jueves', label: 'Jueves' },
+      { key: 'viernes', label: 'Viernes' },
+      { key: 'sabado', label: 'Sábado' },
+      { key: 'domingo', label: 'Domingo' }
+    ];
+
+    const formatearHora = (hora: string) => {
+      if (!hora) return '';
+      const [h, m] = hora.split(':');
+      const horaNum = parseInt(h);
+      const periodo = horaNum >= 12 ? 'PM' : 'AM';
+      const hora12 = horaNum % 12 || 12;
+      return `${hora12.toString().padStart(2, '0')}:${m} ${periodo}`;
+    };
+
+    return diasMap.map(({ key, label }) => {
+      const diaData = horariosCMS[key as keyof typeof horariosCMS] || { abierto: false, apertura: '08:00', cierre: '16:00' };
+      if (diaData.abierto) {
+        const apertura = formatearHora(diaData.apertura || '08:00');
+        const cierre = formatearHora(diaData.cierre || '16:00');
+        return `🕗 ${label}: ${apertura} – ${cierre}`;
+      } else {
+        return `🕗 ${label}: Cerrado`;
+      }
+    }).join('\n');
+  };
+
+  // Actualizar FAQs dinámicamente
+  const faqsActualizados = faqs.map(faq => {
+    if (faq.id === 12) {
+      // Horario de atención
+      const horariosTexto = generarHorariosTexto();
+      if (horariosTexto) {
+        return {
+          ...faq,
+          respuesta: horariosTexto
+        };
+      }
+    }
+    if (faq.id === 13) {
+      // Ubicación
+      const ubicacion: Ubicacion = contenido?.ubicacion || {};
+      if (ubicacion.lugar || ubicacion.direccion) {
+        return {
+          ...faq,
+          respuesta: `📍 ${ubicacion.lugar || 'Círculo de Suboficiales FF.MM.'}\n${ubicacion.direccion || 'Calle 138 Nro. 55-38'}, ${ubicacion.ciudad || 'Bogotá D.C.'}`
+        };
+      }
+    }
+    if (faq.id === 14) {
+      // Contacto
+      const contacto: Contacto = contenido?.contacto || {};
+      if (contacto.whatsappLink || contacto.telefono || contacto.email) {
+        const whatsappLink = contacto.whatsappLink || 'https://wa.me/573014185239';
+        const telefono = contacto.telefono || '';
+        const email = contacto.email || '';
+        let respuesta = `📲 WhatsApp directo: ${whatsappLink}`;
+        if (telefono) respuesta += `\n📞 Teléfono: ${telefono}`;
+        if (email) respuesta += `\n✉️ Email: ${email}`;
+        respuesta += '\nSiempre hay alguien dispuesto a orientarte y ayudarte con tu reserva.';
+        return {
+          ...faq,
+          respuesta
+        };
+      }
+    }
+    return faq;
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100">
@@ -124,7 +240,7 @@ export default function FaqsPage() {
 
         {/* Acordeón de FAQs */}
         <div className="space-y-4">
-          {faqs.map((faq) => (
+          {faqsActualizados.map((faq) => (
             <div
               key={faq.id}
               className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl"
@@ -167,9 +283,9 @@ export default function FaqsPage() {
                     </p>
                     
                     {/* Enlaces especiales */}
-                    {faq.id === 13 && (
+                    {faq.id === 13 && contenido?.ubicacion?.mapaLink && (
                       <a
-                        href="https://maps.google.com/?q=Calle+138+55-38+Bogotá"
+                        href={contenido.ubicacion.mapaLink}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-block mt-4 text-amber-700 hover:text-amber-900 font-medium underline"
@@ -178,9 +294,9 @@ export default function FaqsPage() {
                       </a>
                     )}
                     
-                    {faq.id === 14 && (
+                    {faq.id === 14 && contenido?.contacto?.whatsappLink && (
                       <a
-                        href="https://wa.link/mlbr4z"
+                        href={contenido.contacto.whatsappLink}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-block mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105"
@@ -205,7 +321,7 @@ export default function FaqsPage() {
           </p>
           <div className="flex justify-center items-center">
             <a
-              href="https://wa.link/mlbr4z"
+              href="https://wa.me/573014185239"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"

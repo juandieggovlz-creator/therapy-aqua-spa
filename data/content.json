@@ -1,0 +1,356 @@
+{
+  "lastUpdated": "2026-01-17T18:53:48.172Z",
+  "version": 10,
+  "servicios": [
+    {
+      "id": "columna",
+      "nombre": "THERAPY LESIONES DE COLUMNA",
+      "precio": 100000,
+      "precioOriginal": 100000,
+      "duracion": 30,
+      "descripcion": "Tratamiento especializado para dolor lumbar, cervical y dorsalgia. Recupera tu movilidad y alivia el dolor crónico.",
+      "imagen": "therapy lesiones de columna 2.jpg",
+      "icon": "🦴",
+      "activo": true,
+      "destacado": true,
+      "categoria": "Terapias de Rehabilitación",
+      "orden": 1
+    },
+    {
+      "id": "bienestar-general",
+      "nombre": "MASAJE BIENESTAR GENERAL",
+      "precio": 140000,
+      "precioOriginal": 140000,
+      "duracion": 45,
+      "descripcion": "Masaje corporal completo que combina técnicas de relajación profunda para reducir estrés y tensión muscular.",
+      "imagen": "masaje general.jfif",
+      "icon": "🌿",
+      "activo": true,
+      "destacado": true,
+      "categoria": "Masajes Relajantes",
+      "orden": 2
+    },
+    {
+      "id": "deportivo",
+      "nombre": "MASAJE THERAPY DEPORTIVO",
+      "precio": 100000,
+      "precioOriginal": 100000,
+      "duracion": 40,
+      "descripcion": "Ideal para atletas y personas activas. Previene lesiones y mejora el rendimiento físico.",
+      "imagen": "masaje deportivo.jpg",
+      "icon": "🏃",
+      "activo": true,
+      "destacado": true,
+      "categoria": "Masajes Deportivos",
+      "orden": 3
+    },
+    {
+      "id": "preso-ocular",
+      "nombre": "PRESO THERAPY OCULAR",
+      "precio": 80000,
+      "precioOriginal": 80000,
+      "duracion": 30,
+      "descripcion": "Tratamiento innovador para ojos cansados, ojeras y tensión ocular. Refresca y revitaliza tu mirada.",
+      "imagen": "therapy ocular.jpg",
+      "icon": "👁️",
+      "activo": true,
+      "destacado": true,
+      "categoria": "Terapias Especializadas",
+      "orden": 4
+    },
+    {
+      "id": "skincare-mano",
+      "nombre": "SKINCARE MANO THERAPY",
+      "precio": 90000,
+      "precioOriginal": 90000,
+      "duracion": 30,
+      "descripcion": "Rejuvenecimiento de manos con exfoliación, hidratación profunda y masaje especializado.",
+      "imagen": "skincare mano.jpg",
+      "icon": "🤲",
+      "activo": true,
+      "destacado": true,
+      "categoria": "Tratamientos de Belleza",
+      "orden": 5
+    },
+    {
+      "id": "facial",
+      "nombre": "MASAJE FACIAL",
+      "precio": 90000,
+      "precioOriginal": 90000,
+      "duracion": 30,
+      "descripcion": "Masaje facial con técnicas lifting que mejoran la circulación y tonifican los músculos faciales.",
+      "imagen": "masaje facial.jpg",
+      "icon": "✨",
+      "activo": true,
+      "destacado": true,
+      "categoria": "Tratamientos de Belleza",
+      "orden": 6
+    },
+    {
+      "id": "brazos",
+      "nombre": "THERAPY LESIONES MUSCULARES BRAZOS",
+      "precio": 180000,
+      "precioOriginal": 180000,
+      "duracion": 30,
+      "descripcion": "Masaje profundo de tejidos, liberación miofascial y estiramientos terapéuticos.",
+      "imagen": "lesiones de brazo.jpg",
+      "icon": "💪",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Terapias de Rehabilitación",
+      "orden": 7
+    },
+    {
+      "id": "piernas",
+      "nombre": "THERAPY LESIONES MUSCULARES PIERNAS",
+      "precio": 180000,
+      "precioOriginal": 180000,
+      "duracion": 30,
+      "descripcion": "Terapia de tejidos blandos, movilización articular y ejercicios de rehabilitación.",
+      "imagen": "masaje de piernas.jpg",
+      "icon": "🦵",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Terapias de Rehabilitación",
+      "orden": 8
+    },
+    {
+      "id": "hombro",
+      "nombre": "THERAPY TRAUMA HOMBRO, CODO, MUÑECA",
+      "precio": 250000,
+      "precioOriginal": 250000,
+      "duracion": 30,
+      "descripcion": "Tratamiento especializado para lesiones traumáticas en miembros superiores.",
+      "imagen": "masaje hombro, codo.jpg",
+      "icon": "🤝",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Terapias de Rehabilitación",
+      "orden": 9
+    },
+    {
+      "id": "cadera",
+      "nombre": "THERAPY TRAUMA CADERA, RODILLA, TOBILLO",
+      "precio": 250000,
+      "precioOriginal": 250000,
+      "duracion": 30,
+      "descripcion": "Tratamiento especializado para lesiones traumáticas en miembros inferiores.",
+      "imagen": "masaje cadera 2.jpg",
+      "icon": "🦿",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Terapias de Rehabilitación",
+      "orden": 10
+    },
+    {
+      "id": "cuello",
+      "nombre": "MASAJE DE CUELLO",
+      "precio": 90000,
+      "precioOriginal": 90000,
+      "duracion": 30,
+      "descripcion": "Alivio de tensión cervical y mejora de movilidad del cuello.",
+      "imagen": "masaje cuello.jpg",
+      "icon": "💆",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Masajes Relajantes",
+      "orden": 11
+    },
+    {
+      "id": "espalda",
+      "nombre": "MASAJE DE ESPALDA",
+      "precio": 120000,
+      "precioOriginal": 120000,
+      "duracion": 30,
+      "descripcion": "Masaje profundo de espalda para aliviar tensión y dolor muscular.",
+      "imagen": "masaje de espalda.jpg",
+      "icon": "🧘",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Masajes Relajantes",
+      "orden": 12
+    },
+    {
+      "id": "hombros",
+      "nombre": "MASAJE HOMBROS Y BRAZOS",
+      "precio": 100000,
+      "precioOriginal": 100000,
+      "duracion": 30,
+      "descripcion": "Liberación de tensión en hombros y brazos con técnicas de masaje profundo.",
+      "imagen": "masaje hombros y brazos.jpg",
+      "icon": "💆",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Masajes Relajantes",
+      "orden": 13
+    },
+    {
+      "id": "rodillas",
+      "nombre": "MASAJE CADERAS Y RODILLAS",
+      "precio": 120000,
+      "precioOriginal": 120000,
+      "duracion": 30,
+      "descripcion": "Tratamiento para aliviar dolor y mejorar movilidad de caderas y rodillas.",
+      "imagen": "masaje cadera.jpg",
+      "icon": "🦴",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Masajes Terapéuticos",
+      "orden": 14
+    },
+    {
+      "id": "pies",
+      "nombre": "MASAJE PANTORRILLAS Y PIES",
+      "precio": 120000,
+      "precioOriginal": 120000,
+      "duracion": 30,
+      "descripcion": "Masaje relajante de pantorrillas y pies para mejorar circulación.",
+      "imagen": "masaje piernas.jpg",
+      "icon": "🦶",
+      "activo": true,
+      "destacado": false,
+      "categoria": "Masajes Relajantes",
+      "orden": 15
+    }
+  ],
+  "descuentos": {},
+  "promociones": [],
+  "cms": {
+    "logo": {
+      "imagen": "/image/logo-oficial.jpg",
+      "texto": "Therapy Aqua Spa"
+    },
+    "sobreNosotros": {
+      "titulo": "Sobre Nosotros",
+      "subtitulo": "Tu Bienestar es Nuestra Prioridad",
+      "descripcion": "En Therapy Aqua Spa, nos dedicamos a proporcionar servicios de terapia física y bienestar de la más alta calidad. Con años de experiencia y un equipo comprometido con tu salud, ofrecemos tratamientos personalizados que se adaptan a tus necesidades específicas.",
+      "mision": "Proporcionar servicios de terapia física y bienestar de excelencia, mejorando la calidad de vida de nuestros pacientes mediante tratamientos personalizados y un enfoque integral.",
+      "vision": "Ser el centro de terapia física y bienestar más reconocido y confiable de la región, destacándonos por la calidad de nuestros servicios y el compromiso con nuestros pacientes.",
+      "valores": [
+        "Compromiso con tu bienestar y recuperación",
+        "Excelencia en cada tratamiento",
+        "Profesionalismo y dedicación",
+        "Transparencia en precios y procedimientos"
+      ]
+    },
+    "ubicacion": {
+      "direccion": "Calle 138 Nro. 55-38",
+      "lugar": "Círculo de Suboficiales de las Fuerzas Militares",
+      "ciudad": "Bogotá D.C., Colombia",
+      "mapaEmbed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.862596289032!2d-74.1048!3d4.7108!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDInMzguOSJOIDc0wrAwNicyOC44Ilc!5e0!3m2!1ses!2sco!4v1234567890123!5m2!1ses!2sco",
+      "mapaLink": "https://maps.app.goo.gl/gDk47ksiJij6ACfE6",
+      "parqueadero": true,
+      "acceso": "Acceso seguro"
+    },
+    "contacto": {
+      "telefono": "+57 301 4185239",
+      "email": "info@therapyaquaspa.com",
+      "whatsapp": "+573014185239",
+      "whatsappLink": "https://wa.me/573014185239",
+      "horariosAtencion": "Jueves a Domingo: 08:00 AM - 04:00 PM",
+      "mensajeContacto": "Estamos aquí para atenderte. Visítanos, escríbenos o llámanos."
+    },
+    "horarios": {
+      "lunes": {
+        "abierto": false,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      },
+      "martes": {
+        "abierto": false,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      },
+      "miercoles": {
+        "abierto": false,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      },
+      "jueves": {
+        "abierto": true,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      },
+      "viernes": {
+        "abierto": true,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      },
+      "sabado": {
+        "abierto": true,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      },
+      "domingo": {
+        "abierto": true,
+        "apertura": "08:00",
+        "cierre": "16:00"
+      }
+    },
+    "redesSociales": {
+      "instagram": "https://www.instagram.com/therapyaquaspa",
+      "facebook": "",
+      "tiktok": "",
+      "youtube": "",
+      "twitter": ""
+    },
+    "banner": {
+      "imagen": "/image/hero-banner.jpg",
+      "texto": "Therapy Aqua Spa",
+      "textoBoton": "Reservar Mi Cita",
+      "mostrar": true
+    },
+    "secciones": {
+      "testimonios": {
+        "mostrar": true,
+        "titulo": "Lo que dicen nuestros clientes"
+      },
+      "serviciosDestacados": {
+        "mostrar": true,
+        "titulo": "Nuestros Servicios"
+      }
+    },
+    "anuncio": {
+      "activo": false,
+      "etiqueta": "🎉 Oferta Especial",
+      "titulo": "Tu Primera Sesión te Está Esperando",
+      "descripcion": "Agenda hoy y descubre por qué somos el spa de confianza para cientos de personas en Bogotá",
+      "mostrarBoton": true,
+      "botonTexto": "Reservar Mi Cita",
+      "botonEnlace": "/reservas"
+    },
+    "whatsapp": {
+      "numero": "+573014185239",
+      "mensaje": "Hola, me interesa conocer más sobre sus servicios",
+      "mostrar": true
+    },
+    "botones": {
+      "reservar": "Reservar Mi Cita",
+      "verServicios": "Ver Servicios",
+      "contactar": "Contáctanos",
+      "escribir": "Escríbenos"
+    },
+    "mensajes": {
+      "urgencia": "",
+      "campanas": []
+    }
+  },
+  "productos": [
+    {
+      "id": "candado",
+      "nombre": "Candado para casillero",
+      "precio": 5000,
+      "icon": "🔐",
+      "activo": true,
+      "orden": 1
+    },
+    {
+      "id": "ropa",
+      "nombre": "Kit ropa interior desechable",
+      "precio": 8000,
+      "icon": "👕",
+      "activo": true,
+      "orden": 2
+    }
+  ]
+}

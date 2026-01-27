@@ -276,12 +276,9 @@ export default function TestimoniosPage() {
           <p className="text-stone-600 mb-4 text-sm md:text-base">
             ¿Listo para tu propia experiencia de transformación?
           </p>
-          <Link 
-            href="/servicios"
-            className="inline-block bg-[#3d2817] hover:bg-[#2d1f11] text-white px-8 md:px-12 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-          >
+          <button className="bg-[#3d2817] hover:bg-[#2d1f11] text-white px-8 md:px-12 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
             Conocer las terapias
-          </Link>
+          </button>
         </div>
       </div>
 

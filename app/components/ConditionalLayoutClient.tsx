@@ -5,6 +5,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import StickyBar from "./StickyBar";
 import WhatsAppFloatingButton from "./WhatsAppFloatingButton";
+import NotificationSystem from "./NotificationSystem";
 
 export default function ConditionalLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export default function ConditionalLayoutClient({ children }: { children: React.
       <Footer />
       <StickyBar />
       <WhatsAppFloatingButton />
+      <NotificationSystem />
     </>
   );
 }
