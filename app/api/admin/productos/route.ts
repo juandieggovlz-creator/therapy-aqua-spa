@@ -1,33 +1,5 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-
-const CONTENT_PATH = path.join(process.cwd(), "data", "content.json");
-
-// Leer content.json
-function leerContent() {
-  try {
-    const fileContent = fs.readFileSync(CONTENT_PATH, "utf-8");
-    return JSON.parse(fileContent);
-  } catch (error) {
-    console.error("❌ Error leyendo content.json:", error);
-    return null;
-  }
-}
-
-// Escribir content.json
-function escribirContent(data: any) {
-  try {
-    data.lastUpdated = new Date().toISOString();
-    data.version = (data.version || 0) + 1;
-    fs.writeFileSync(CONTENT_PATH, JSON.stringify(data, null, 2), "utf-8");
-    console.log("✅ content.json actualizado correctamente");
-    return true;
-  } catch (error) {
-    console.error("❌ Error escribiendo content.json:", error);
-    return false;
-  }
-}
+import { leerContenido, escribirContenido } from "@/lib/content-helpers";
 
 /**
  * GET /api/admin/productos
@@ -35,7 +7,7 @@ function escribirContent(data: any) {
  */
 export async function GET() {
   try {
-    const content = leerContent();
+    const content = await leerContenido();
     
     if (!content) {
       return NextResponse.json(
@@ -66,7 +38,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const content = leerContent();
+    const content = await leerContenido();
     
     if (!content) {
       return NextResponse.json(
@@ -119,7 +91,7 @@ export async function POST(request: Request) {
       console.log(`➕ Nuevo producto creado: ${nuevoProducto.nombre}`);
     }
     
-    const exito = escribirContent(content);
+    const exito = await escribirContenido(content);
     
     if (!exito) {
       return NextResponse.json(
@@ -160,7 +132,7 @@ export async function DELETE(request: Request) {
       );
     }
     
-    const content = leerContent();
+    const content = await leerContenido();
     
     if (!content) {
       return NextResponse.json(
@@ -188,7 +160,7 @@ export async function DELETE(request: Request) {
     const productoEliminado = content.productos[index];
     content.productos.splice(index, 1);
     
-    const exito = escribirContent(content);
+    const exito = await escribirContenido(content);
     
     if (!exito) {
       return NextResponse.json(

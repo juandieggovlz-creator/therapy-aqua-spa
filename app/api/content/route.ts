@@ -1,63 +1,88 @@
 import { NextResponse } from "next/server";
+import { getContent, setContent } from "@/lib/kv";
 import fs from "fs";
 import path from "path";
 
-// Ruta al archivo JSON
+// Fallback a JSON en desarrollo si KV no está disponible
+const USE_JSON_FALLBACK = !process.env.REDIS_URL;
 const CONTENT_PATH = path.join(process.cwd(), "data", "content.json");
 
-// Función helper para leer el contenido
-function leerContenido() {
-  try {
-    const fileContent = fs.readFileSync(CONTENT_PATH, "utf-8");
-    return JSON.parse(fileContent);
-  } catch (error) {
-    console.error("❌ Error leyendo content.json:", error);
-    // Si no existe, retornar estructura vacía
+/**
+ * Helper: Leer contenido (KV o JSON fallback)
+ */
+async function leerContenido() {
+  if (USE_JSON_FALLBACK) {
+    try {
+      const fileContent = fs.readFileSync(CONTENT_PATH, "utf-8");
+      return JSON.parse(fileContent);
+    } catch (error) {
+      console.error("❌ Error leyendo content.json:", error);
+      return {
+        lastUpdated: new Date().toISOString(),
+        version: 1,
+        servicios: [],
+        promociones: [],
+        productos: [],
+        cms: {},
+        descuentos: [],
+      };
+    }
+  }
+  
+  // Usar Vercel KV
+  const content = await getContent();
+  if (!content) {
     return {
       lastUpdated: new Date().toISOString(),
       version: 1,
       servicios: [],
-      descuentos: {},
       promociones: [],
-      cms: {}
+      productos: [],
+      cms: {},
+      descuentos: [],
     };
   }
+  return content;
 }
 
-// Función helper para escribir el contenido
-function escribirContenido(contenido: any) {
-  try {
-    // Actualizar timestamp
-    contenido.lastUpdated = new Date().toISOString();
-    contenido.version = (contenido.version || 0) + 1;
-    
-    // Escribir al archivo
-    fs.writeFileSync(
-      CONTENT_PATH,
-      JSON.stringify(contenido, null, 2),
-      "utf-8"
-    );
-    
-    console.log("✅ content.json actualizado correctamente");
-    return true;
-  } catch (error) {
-    console.error("❌ Error escribiendo content.json:", error);
-    return false;
+/**
+ * Helper: Escribir contenido (KV o JSON fallback)
+ */
+async function escribirContenido(contenido: any) {
+  if (USE_JSON_FALLBACK) {
+    try {
+      contenido.lastUpdated = new Date().toISOString();
+      contenido.version = (contenido.version || 0) + 1;
+      fs.writeFileSync(
+        CONTENT_PATH,
+        JSON.stringify(contenido, null, 2),
+        "utf-8"
+      );
+      console.log("✅ content.json actualizado (JSON fallback)");
+      return true;
+    } catch (error) {
+      console.error("❌ Error escribiendo content.json:", error);
+      return false;
+    }
   }
+  
+  // Usar Vercel KV
+  const success = await setContent(contenido);
+  return success;
 }
 
 /**
  * GET /api/content
  * Obtener todo el contenido (servicios, promociones, CMS, etc.)
  * Query params opcionales:
- *   - section: 'servicios' | 'promociones' | 'cms' | 'descuentos' (para obtener solo una sección)
+ *   - section: 'servicios' | 'promociones' | 'cms' | 'descuentos' | 'productos' (para obtener solo una sección)
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const section = searchParams.get("section");
     
-    const contenido = leerContenido();
+    const contenido = await leerContenido();
     
     // Si se solicita una sección específica
     if (section && contenido[section]) {
@@ -86,7 +111,7 @@ export async function GET(request: Request) {
  * POST /api/content
  * Actualizar todo el contenido o una sección específica
  * Body:
- *   - section: 'servicios' | 'promociones' | 'cms' | 'descuentos' (opcional)
+ *   - section: 'servicios' | 'promociones' | 'cms' | 'descuentos' | 'productos' (opcional)
  *   - data: contenido a actualizar
  */
 export async function POST(request: Request) {
@@ -94,7 +119,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { section, data } = body;
     
-    const contenido = leerContenido();
+    const contenido = await leerContenido();
     
     if (section) {
       // Actualizar solo una sección
@@ -108,7 +133,7 @@ export async function POST(request: Request) {
       });
     }
     
-    const exito = escribirContenido(contenido);
+    const exito = await escribirContenido(contenido);
     
     if (!exito) {
       return NextResponse.json(
@@ -146,7 +171,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { section, updates } = body;
     
-    const contenido = leerContenido();
+    const contenido = await leerContenido();
     
     if (section && contenido[section]) {
       // Merge de la sección específica
@@ -168,7 +193,7 @@ export async function PATCH(request: Request) {
       });
     }
     
-    const exito = escribirContenido(contenido);
+    const exito = await escribirContenido(contenido);
     
     if (!exito) {
       return NextResponse.json(
@@ -193,7 +218,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
-
-
-

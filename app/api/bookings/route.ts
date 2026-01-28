@@ -1,61 +1,15 @@
 // API de compatibilidad para el sistema de reservas
-// Lee/escribe en reservas.json
+// Usa Vercel Postgres en producción y JSON en desarrollo
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-
-const RESERVAS_PATH = path.join(process.cwd(), "data", "reservas.json");
-
-// Leer reservas del archivo JSON
-function leerReservas() {
-  try {
-    const fileContent = fs.readFileSync(RESERVAS_PATH, "utf-8");
-    const data = JSON.parse(fileContent);
-    return data.reservas || [];
-  } catch (error) {
-    console.error("❌ Error leyendo reservas.json:", error);
-    return [];
-  }
-}
-
-// Escribir reservas al archivo JSON
-function escribirReservas(reservas: any[]) {
-  try {
-    const data = {
-      reservas: reservas,
-      lastUpdated: new Date().toISOString()
-    };
-    fs.writeFileSync(RESERVAS_PATH, JSON.stringify(data, null, 2), "utf-8");
-    console.log("✅ reservas.json actualizado correctamente");
-    return true;
-  } catch (error) {
-    console.error("❌ Error escribiendo reservas.json:", error);
-    return false;
-  }
-}
-
-// Función para liberar reservas pendientes expiradas (más de 30 minutos)
-function liberarReservasExpiradas(reservas: any[]): any[] {
-  const ahora = new Date().getTime();
-  const TIEMPO_EXPIRACION = 30 * 60 * 1000; // 30 minutos en milisegundos
-  
-  return reservas.map(reserva => {
-    if (reserva.estado === "pendiente" && reserva.createdAt) {
-      const tiempoCreacion = new Date(reserva.createdAt).getTime();
-      const tiempoTranscurrido = ahora - tiempoCreacion;
-      
-      if (tiempoTranscurrido > TIEMPO_EXPIRACION) {
-        console.log(`🔓 Liberando reserva expirada: ${reserva.reservationId || reserva.id}`);
-        return {
-          ...reserva,
-          estado: "cancelada",
-          updatedAt: new Date().toISOString()
-        };
-      }
-    }
-    return reserva;
-  });
-}
+import {
+  leerReservas,
+  crearReserva,
+  actualizarEstadoReserva,
+  actualizarReserva,
+  eliminarReserva,
+  verificarConflicto,
+  liberarExpiradas,
+} from "@/lib/reservas-helpers";
 
 export async function GET(request: Request) {
   try {
@@ -63,21 +17,10 @@ export async function GET(request: Request) {
     const role = searchParams.get("role");
     const estado = searchParams.get("estado");
 
-    let reservas = leerReservas();
-    
     // Liberar reservas expiradas
-    const reservasActualizadas = liberarReservasExpiradas(reservas);
-    const huboCambios = reservasActualizadas.some((r, i) => 
-      reservas[i] && r.estado !== reservas[i].estado
-    );
+    await liberarExpiradas();
     
-    // Guardar solo si hubo liberaciones
-    if (huboCambios) {
-      escribirReservas(reservasActualizadas);
-      console.log("✅ Reservas expiradas liberadas en GET /api/bookings");
-    }
-    
-    reservas = reservasActualizadas;
+    let reservas = await leerReservas();
 
     // Filtrar por estado si se proporciona
     if (estado) {
@@ -144,66 +87,27 @@ export async function POST(request: Request) {
       );
     }
 
-    let reservas = leerReservas();
-    
-    // Liberar reservas expiradas y guardar el estado actualizado
-    const reservasActualizadas = liberarReservasExpiradas(reservas);
-    const huboCambios = reservasActualizadas.some((r, i) => 
-      reservas[i] && r.estado !== reservas[i].estado
-    );
-    
-    if (huboCambios) {
-      escribirReservas(reservasActualizadas);
-      console.log("✅ Reservas expiradas liberadas antes de verificar choque");
-    }
-    
-    reservas = reservasActualizadas;
-
-    // Normalizar fecha de la nueva reserva (solo YYYY-MM-DD)
+    // Normalizar fecha y verificar conflictos
     const fechaNuevaNormalizada = body.fecha.split('T')[0];
     const horarioNuevo = body.horario;
     
     console.log(`🔍 Verificando choque para: ${fechaNuevaNormalizada} ${horarioNuevo}`);
-    console.log(`📋 Total de reservas activas: ${reservas.filter((r: any) => 
-      r.estado === 'pendiente' || r.estado === 'pendiente de pago' || r.estado === 'confirmada'
-    ).length}`);
+    
+    const { hayConflicto, reservaConflictiva } = await verificarConflicto(
+      fechaNuevaNormalizada,
+      horarioNuevo
+    );
 
-    // Verificar choque de horarios con normalización correcta
-    const reservaConflictiva = reservas.find((b: any) => {
-      // Solo considerar reservas activas
-      if (b.estado !== 'pendiente' && b.estado !== 'pendiente de pago' && b.estado !== 'confirmada') {
-        return false;
-      }
-      
-      // Normalizar fecha de la reserva existente (sin conversión a Date para evitar problemas de timezone)
-      const fechaExistenteNormalizada = b.fecha.split('T')[0];
-      
-      // Comparar fechas normalizadas
-      if (fechaExistenteNormalizada !== fechaNuevaNormalizada) {
-        return false;
-      }
-      
-      // Comparar horarios (usar tanto 'hora' como 'horario' para compatibilidad)
-      const horaExistente = b.hora || b.horario || '';
-      
-      if (horaExistente === horarioNuevo) {
-        console.log(`⚠️ CHOQUE DETECTADO: Reserva ${b.reservationId || b.id} ya ocupa ${fechaExistenteNormalizada} ${horaExistente} [${b.estado}]`);
-        return true;
-      }
-      
-      return false;
-    });
-
-    if (reservaConflictiva) {
+    if (hayConflicto) {
       console.log(`🚫 Rechazando reserva por choque de horario`);
       return NextResponse.json(
         { 
           error: 'Este horario ya está ocupado. Por favor selecciona otra hora.',
           reservaConflictiva: {
-            id: reservaConflictiva.reservationId || reservaConflictiva.id,
-            fecha: reservaConflictiva.fecha,
-            horario: reservaConflictiva.hora || reservaConflictiva.horario,
-            estado: reservaConflictiva.estado
+            id: reservaConflictiva?.reservationId || reservaConflictiva?.id,
+            fecha: reservaConflictiva?.fecha,
+            horario: reservaConflictiva?.hora || reservaConflictiva?.horario,
+            estado: reservaConflictiva?.estado
           }
         },
         { status: 409 }
@@ -219,8 +123,7 @@ export async function POST(request: Request) {
       : 'Servicio';
     const servicioId = terapias.length > 0 ? terapias[0]?.id || '' : '';
     
-    const nuevaReserva: any = {
-      id: `RES-${Date.now().toString(36).toUpperCase()}`,
+    const reservaData: any = {
       reservationId: `RES-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
       cliente: body.nombre || 'Cliente sin nombre',
       nombre: body.nombre || 'Cliente sin nombre',
@@ -228,6 +131,7 @@ export async function POST(request: Request) {
       email: body.email || 'Sin email',
       servicio: nombreServicio,
       servicioId: servicioId,
+      fisioterapeuta: "Dra. Carolina Trujillo",
       fisio: "Dra. Carolina Trujillo",
       fecha: body.fecha || '',
       hora: body.horario || '',
@@ -239,8 +143,18 @@ export async function POST(request: Request) {
       estado: "pendiente",
       esAfiliado: body.esAfiliado || false,
       productos: body.productos || [],
-      notas: body.notas || '',
-      createdAt: new Date().toISOString(),
+      servicios: Array.isArray(terapias) && terapias.length > 0 
+        ? terapias.filter((t: any) => t !== null && t !== undefined && (t.id || t.nombre))
+            .map((t: any) => ({
+              id: t.id || t.servicioId || 'desconocido',
+              nombre: t.nombre || t.id || 'Servicio sin nombre',
+              precio: t.precio || t.precioOriginal || 0,
+              precioOriginal: t.precioOriginal || t.precio || 0,
+              duracion: t.duracion || 30,
+              icon: t.icon || '💆',
+              servicioId: t.servicioId || t.id || 'desconocido'
+            }))
+        : [],
       terapias: Array.isArray(terapias) && terapias.length > 0 
         ? terapias.filter((t: any) => t !== null && t !== undefined && (t.id || t.nombre))
             .map((t: any) => ({
@@ -252,19 +166,21 @@ export async function POST(request: Request) {
               icon: t.icon || '💆',
               servicioId: t.servicioId || t.id || 'desconocido'
             }))
-        : []
+        : [],
+      notas: body.notas || '',
+      createdAt: new Date().toISOString(),
     };
 
-    reservas.push(nuevaReserva);
+    const nuevaReserva = await crearReserva(reservaData);
     
-    if (!escribirReservas(reservas)) {
+    if (!nuevaReserva) {
       return NextResponse.json(
         { error: "Error al guardar la reserva" },
         { status: 500 }
       );
     }
 
-    console.log('✅ Reserva creada:', nuevaReserva.id);
+    console.log('✅ Reserva creada:', nuevaReserva.reservation_id || nuevaReserva.reservationId);
 
     return NextResponse.json(
       { 
@@ -295,24 +211,27 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const reservas = leerReservas();
-    const index = reservas.findIndex((b: any) => b.id === id || b.reservationId === id);
-
-    if (index === -1) {
+    // Si solo se está actualizando el estado, usar helper específico
+    if (updates.estado && Object.keys(updates).length === 1) {
+      const success = await actualizarEstadoReserva(id, updates.estado);
+      
+      if (!success) {
+        return NextResponse.json(
+          { error: "Error al actualizar estado" },
+          { status: 500 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: "Reserva no encontrada" },
-        { status: 404 }
+        { success: true, message: "Estado actualizado" },
+        { status: 200 }
       );
     }
 
-    // Actualizar la reserva
-    reservas[index] = {
-      ...reservas[index],
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
-    
-    if (!escribirReservas(reservas)) {
+    // Actualización completa
+    const success = await actualizarReserva(id, updates);
+
+    if (!success) {
       return NextResponse.json(
         { error: "Error al actualizar reserva" },
         { status: 500 }
@@ -320,7 +239,7 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json(
-      { success: true, booking: reservas[index] },
+      { success: true, message: "Reserva actualizada" },
       { status: 200 }
     );
   } catch (error) {
@@ -349,10 +268,9 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const reservas = leerReservas();
-    const nuevasReservas = reservas.filter((b: any) => b.id !== id && b.reservationId !== id);
+    const success = await eliminarReserva(id);
     
-    if (!escribirReservas(nuevasReservas)) {
+    if (!success) {
       return NextResponse.json(
         { error: "Error al eliminar reserva" },
         { status: 500 }
