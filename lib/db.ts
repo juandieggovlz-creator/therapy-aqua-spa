@@ -281,6 +281,9 @@ export async function verificarConflictoHorario(
  */
 export async function liberarReservasExpiradas(): Promise<number> {
   try {
+    console.log('🔧 DEBUG: POSTGRES_URL configurada:', process.env.POSTGRES_URL ? 'SÍ' : 'NO');
+    console.log('🔧 DEBUG: POSTGRES_URL (primeros 50 chars):', process.env.POSTGRES_URL?.substring(0, 50));
+    
     const result = await sql`
       UPDATE public.reservas
       SET estado = 'cancelada', updated_at = CURRENT_TIMESTAMP
@@ -379,5 +382,6 @@ export async function migrateReservasFromJSON(reservas: any[]): Promise<number> 
     return 0;
   }
 }
+
 
 
