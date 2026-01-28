@@ -34,7 +34,7 @@ export interface Reserva {
 export async function initReservasTable(): Promise<boolean> {
   try {
     await sql`
-      CREATE TABLE IF NOT EXISTS reservas (
+      CREATE TABLE IF NOT EXISTS public.reservas (
         id SERIAL PRIMARY KEY,
         reservation_id VARCHAR(50) UNIQUE NOT NULL,
         nombre VARCHAR(255) NOT NULL,
@@ -56,9 +56,9 @@ export async function initReservasTable(): Promise<boolean> {
         descuento_promocion DECIMAL(10, 2) DEFAULT 0
       );
       
-      CREATE INDEX IF NOT EXISTS idx_fecha_horario ON reservas(fecha, horario);
-      CREATE INDEX IF NOT EXISTS idx_estado ON reservas(estado);
-      CREATE INDEX IF NOT EXISTS idx_reservation_id ON reservas(reservation_id);
+      CREATE INDEX IF NOT EXISTS idx_fecha_horario ON public.reservas(fecha, horario);
+      CREATE INDEX IF NOT EXISTS idx_estado ON public.reservas(estado);
+      CREATE INDEX IF NOT EXISTS idx_reservation_id ON public.reservas(reservation_id);
     `;
     
     console.log('✅ Tabla de reservas inicializada');
@@ -75,7 +75,7 @@ export async function initReservasTable(): Promise<boolean> {
 export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
   try {
     const result = await sql`
-      INSERT INTO reservas (
+      INSERT INTO public.reservas (
         reservation_id, nombre, telefono, email, fecha, horario,
         servicios, productos, total, estado, notas, fisioterapeuta,
         codigo_afiliado, descuento_afiliado, descuento_individual, descuento_promocion
@@ -114,7 +114,7 @@ export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
 export async function getAllReservas(): Promise<Reserva[]> {
   try {
     const result = await sql`
-      SELECT * FROM reservas
+      SELECT * FROM public.reservas
       ORDER BY created_at DESC;
     `;
     
@@ -131,7 +131,7 @@ export async function getAllReservas(): Promise<Reserva[]> {
 export async function getReservaById(reservationId: string): Promise<Reserva | null> {
   try {
     const result = await sql`
-      SELECT * FROM reservas
+      SELECT * FROM public.reservas
       WHERE reservation_id = ${reservationId}
       LIMIT 1;
     `;
@@ -152,7 +152,7 @@ export async function updateReservaEstado(
 ): Promise<boolean> {
   try {
     await sql`
-      UPDATE reservas
+      UPDATE public.reservas
       SET estado = ${nuevoEstado}, updated_at = CURRENT_TIMESTAMP
       WHERE reservation_id = ${reservationId};
     `;
@@ -210,7 +210,7 @@ export async function updateReserva(
     values.push(reservationId);
 
     const query = `
-      UPDATE reservas
+      UPDATE public.reservas
       SET ${fields.join(', ')}
       WHERE reservation_id = $${paramIndex}
     `;
@@ -243,7 +243,7 @@ export async function verificarConflictoHorario(
     let query;
     if (excludeId) {
       query = sql`
-        SELECT * FROM reservas
+        SELECT * FROM public.reservas
         WHERE DATE(fecha) = ${fechaNormalizada}
         AND horario = ${horario}
         AND estado IN ('pendiente', 'pendiente de pago', 'confirmada')
@@ -252,7 +252,7 @@ export async function verificarConflictoHorario(
       `;
     } else {
       query = sql`
-        SELECT * FROM reservas
+        SELECT * FROM public.reservas
         WHERE DATE(fecha) = ${fechaNormalizada}
         AND horario = ${horario}
         AND estado IN ('pendiente', 'pendiente de pago', 'confirmada')
@@ -282,7 +282,7 @@ export async function verificarConflictoHorario(
 export async function liberarReservasExpiradas(): Promise<number> {
   try {
     const result = await sql`
-      UPDATE reservas
+      UPDATE public.reservas
       SET estado = 'cancelada', updated_at = CURRENT_TIMESTAMP
       WHERE estado = 'pendiente'
       AND created_at < NOW() - INTERVAL '30 minutes'
@@ -309,7 +309,7 @@ export async function getReservasActivas(): Promise<Reserva[]> {
     await liberarReservasExpiradas();
     
     const result = await sql`
-      SELECT * FROM reservas
+      SELECT * FROM public.reservas
       WHERE estado IN ('pendiente', 'pendiente de pago', 'confirmada')
       ORDER BY fecha, horario;
     `;
@@ -327,7 +327,7 @@ export async function getReservasActivas(): Promise<Reserva[]> {
 export async function deleteReserva(reservationId: string): Promise<boolean> {
   try {
     await sql`
-      DELETE FROM reservas
+      DELETE FROM public.reservas
       WHERE reservation_id = ${reservationId};
     `;
     
