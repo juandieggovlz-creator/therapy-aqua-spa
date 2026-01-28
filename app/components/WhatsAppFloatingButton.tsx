@@ -1,25 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { useCMS } from "@/app/hooks/useCMS";
+import { useState } from "react";
 
 export default function WhatsAppFloatingButton() {
 	const [isHovered, setIsHovered] = useState(false);
-	const pathname = usePathname();
-	const { contenido } = useCMS();
-	
-	// Ocultar solo en el panel de admin (no en login)
-	const isAdminPanel = pathname?.startsWith('/login/afiliados/admin');
-	
-	if (isAdminPanel || !contenido?.whatsapp?.mostrar) {
-		return null;
-	}
-
-	const whatsappUrl = `https://wa.me/${contenido.whatsapp.numero.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(contenido.whatsapp.mensaje)}`;
 
 	return (
 		<a
-			href={whatsappUrl}
+			href="https://wa.link/mlbr4z"
 			target="_blank"
 			rel="noopener noreferrer"
 			className="group fixed bottom-20 right-4 z-40 flex items-center gap-2 overflow-hidden rounded-full bg-[#25D366] p-3 shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 md:bottom-8 md:right-8 md:p-4"

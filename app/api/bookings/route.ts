@@ -1,15 +1,98 @@
-// API de compatibilidad para el sistema de reservas
-// Usa Vercel Postgres en producción y JSON en desarrollo
 import { NextResponse } from "next/server";
-import {
-  leerReservas,
-  crearReserva,
-  actualizarEstadoReserva,
-  actualizarReserva,
-  eliminarReserva,
-  verificarConflicto,
-  liberarExpiradas,
-} from "@/lib/reservas-helpers";
+
+// Datos de ejemplo de citas (en producción vendría de BD)
+const BOOKINGS = [
+  {
+    id: "1",
+    cliente: "María González",
+    telefono: "+57 300 123 4567",
+    email: "maria@example.com",
+    servicio: "Masaje Bienestar General",
+    servicioId: "bienestar",
+    fisio: "Dra. Carolina Trujillo",
+    fecha: "2024-01-20",
+    hora: "10:00",
+    duracion: 45,
+    precio: 140000,
+    estado: "confirmada",
+    esAfiliado: false,
+    serviciosAdicionales: ["sauna"],
+    notas: "Cliente prefiere presión media",
+    createdAt: "2024-01-15T08:00:00Z"
+  },
+  {
+    id: "2",
+    cliente: "Carlos Ruiz",
+    telefono: "+57 301 234 5678",
+    email: "carlos@example.com",
+    servicio: "Therapy Lesiones de Columna",
+    servicioId: "columna",
+    fisio: "Dra. Carolina Trujillo",
+    fecha: "2024-01-20",
+    hora: "11:30",
+    duracion: 30,
+    precio: 100000,
+    estado: "pendiente",
+    esAfiliado: true,
+    serviciosAdicionales: [],
+    notas: "",
+    createdAt: "2024-01-16T10:30:00Z"
+  },
+  {
+    id: "3",
+    cliente: "Ana Martínez",
+    telefono: "+57 302 345 6789",
+    email: "ana@example.com",
+    servicio: "Masaje Facial",
+    servicioId: "facial",
+    fisio: "Dra. Carolina Trujillo",
+    fecha: "2024-01-20",
+    hora: "14:00",
+    duracion: 30,
+    precio: 90000,
+    estado: "confirmada",
+    esAfiliado: false,
+    serviciosAdicionales: ["jacuzzi"],
+    notas: "Primera vez",
+    createdAt: "2024-01-17T14:20:00Z"
+  },
+  {
+    id: "4",
+    cliente: "Pedro López",
+    telefono: "+57 303 456 7890",
+    email: "pedro@example.com",
+    servicio: "Masaje Therapy Deportivo",
+    servicioId: "deportivo",
+    fisio: "Dra. Carolina Trujillo",
+    fecha: "2024-01-21",
+    hora: "09:00",
+    duracion: 40,
+    precio: 100000,
+    estado: "confirmada",
+    esAfiliado: false,
+    serviciosAdicionales: [],
+    notas: "Atleta, necesita recuperación post-entrenamiento",
+    createdAt: "2024-01-18T09:15:00Z"
+  },
+  {
+    id: "5",
+    cliente: "Laura Sánchez",
+    telefono: "+57 304 567 8901",
+    email: "laura@example.com",
+    servicio: "Masaje Bienestar General",
+    servicioId: "bienestar",
+    fisio: "Dra. Carolina Trujillo",
+    fecha: "2024-01-21",
+    hora: "13:00",
+    duracion: 45,
+    precio: 140000,
+    estado: "cancelada",
+    esAfiliado: true,
+    serviciosAdicionales: ["sauna", "jacuzzi"],
+    notas: "",
+    createdAt: "2024-01-19T11:00:00Z"
+  }
+];
 
 export async function GET(request: Request) {
   try {
@@ -17,183 +100,24 @@ export async function GET(request: Request) {
     const role = searchParams.get("role");
     const estado = searchParams.get("estado");
 
-    // Liberar reservas expiradas
-    await liberarExpiradas();
-    
-    let reservas = await leerReservas();
+    let filteredBookings = [...BOOKINGS];
 
     // Filtrar por estado si se proporciona
     if (estado) {
-      reservas = reservas.filter((b: any) => b.estado === estado);
+      filteredBookings = filteredBookings.filter((b) => b.estado === estado);
     }
 
     // Para fisio, solo mostrar sus citas
     if (role === "fisio") {
-      reservas = reservas.filter(
-        (b: any) => b.fisio === "Dra. Carolina Trujillo"
+      filteredBookings = filteredBookings.filter(
+        (b) => b.fisio === "Dra. Carolina Trujillo"
       );
     }
 
-    // Compatibilidad: devolver como "bookings" para el frontend
-    return NextResponse.json({ bookings: reservas }, { status: 200 });
+    return NextResponse.json({ bookings: filteredBookings }, { status: 200 });
   } catch (e) {
-    console.error("Error en GET /api/bookings:", e);
     return NextResponse.json(
       { error: "Error al obtener citas" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    
-    // Validar campos requeridos
-    if (!body.fecha || !body.horario) {
-      return NextResponse.json(
-        { error: "Fecha y horario son requeridos" },
-        { status: 400 }
-      );
-    }
-
-    if (!body.terapias || body.terapias.length === 0) {
-      return NextResponse.json(
-        { error: "Debe seleccionar al menos una terapia" },
-        { status: 400 }
-      );
-    }
-
-    // Validar que la fecha y hora no sean en el pasado (con margen de 1 hora)
-    const fechaHoraReserva = new Date(body.fecha + 'T' + body.horario + ':00');
-    const ahora = new Date();
-    const margenTiempo = 60 * 60 * 1000; // 1 hora
-    const ahoraConMargen = new Date(ahora.getTime() + margenTiempo);
-    
-    if (fechaHoraReserva < ahoraConMargen) {
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-      const fechaSoloFecha = new Date(body.fecha + 'T00:00:00');
-      fechaSoloFecha.setHours(0, 0, 0, 0);
-      
-      const esFuturo = fechaSoloFecha > hoy;
-      const mensaje = esFuturo 
-        ? 'Este horario requiere al menos 1 hora de anticipación. Por favor selecciona otro horario.'
-        : 'No se pueden hacer reservas en el pasado. Por favor selecciona una fecha futura.';
-      
-      return NextResponse.json(
-        { error: mensaje },
-        { status: 400 }
-      );
-    }
-
-    // Normalizar fecha y verificar conflictos
-    const fechaNuevaNormalizada = body.fecha.split('T')[0];
-    const horarioNuevo = body.horario;
-    
-    console.log(`🔍 Verificando choque para: ${fechaNuevaNormalizada} ${horarioNuevo}`);
-    
-    const { hayConflicto, reservaConflictiva } = await verificarConflicto(
-      fechaNuevaNormalizada,
-      horarioNuevo
-    );
-
-    if (hayConflicto) {
-      console.log(`🚫 Rechazando reserva por choque de horario`);
-      return NextResponse.json(
-        { 
-          error: 'Este horario ya está ocupado. Por favor selecciona otra hora.',
-          reservaConflictiva: {
-            id: reservaConflictiva?.reservationId || reservaConflictiva?.id,
-            fecha: reservaConflictiva?.fecha,
-            horario: reservaConflictiva?.hora || reservaConflictiva?.horario,
-            estado: reservaConflictiva?.estado
-          }
-        },
-        { status: 409 }
-      );
-    }
-    
-    console.log(`✅ Horario disponible: ${fechaNuevaNormalizada} ${horarioNuevo}`);
-    
-    // Crear nueva reserva
-    const terapias = body.terapias || [];
-    const nombreServicio = terapias.length > 0 
-      ? terapias.map((t: any) => t.nombre || t.id).join(', ')
-      : 'Servicio';
-    const servicioId = terapias.length > 0 ? terapias[0]?.id || '' : '';
-    
-    const reservaData: any = {
-      reservationId: `RES-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-      cliente: body.nombre || 'Cliente sin nombre',
-      nombre: body.nombre || 'Cliente sin nombre',
-      telefono: body.telefono || 'Sin teléfono',
-      email: body.email || 'Sin email',
-      servicio: nombreServicio,
-      servicioId: servicioId,
-      fisioterapeuta: "Dra. Carolina Trujillo",
-      fisio: "Dra. Carolina Trujillo",
-      fecha: body.fecha || '',
-      hora: body.horario || '',
-      horario: body.horario || '',
-      duracion: body.duracionTotal || 0,
-      duracionTotal: body.duracionTotal || 0,
-      precio: body.total || 0,
-      total: body.total || 0,
-      estado: "pendiente",
-      esAfiliado: body.esAfiliado || false,
-      productos: body.productos || [],
-      servicios: Array.isArray(terapias) && terapias.length > 0 
-        ? terapias.filter((t: any) => t !== null && t !== undefined && (t.id || t.nombre))
-            .map((t: any) => ({
-              id: t.id || t.servicioId || 'desconocido',
-              nombre: t.nombre || t.id || 'Servicio sin nombre',
-              precio: t.precio || t.precioOriginal || 0,
-              precioOriginal: t.precioOriginal || t.precio || 0,
-              duracion: t.duracion || 30,
-              icon: t.icon || '💆',
-              servicioId: t.servicioId || t.id || 'desconocido'
-            }))
-        : [],
-      terapias: Array.isArray(terapias) && terapias.length > 0 
-        ? terapias.filter((t: any) => t !== null && t !== undefined && (t.id || t.nombre))
-            .map((t: any) => ({
-              id: t.id || t.servicioId || 'desconocido',
-              nombre: t.nombre || t.id || 'Servicio sin nombre',
-              precio: t.precio || t.precioOriginal || 0,
-              precioOriginal: t.precioOriginal || t.precio || 0,
-              duracion: t.duracion || 30,
-              icon: t.icon || '💆',
-              servicioId: t.servicioId || t.id || 'desconocido'
-            }))
-        : [],
-      notas: body.notas || '',
-      createdAt: new Date().toISOString(),
-    };
-
-    const nuevaReserva = await crearReserva(reservaData);
-    
-    if (!nuevaReserva) {
-      return NextResponse.json(
-        { error: "Error al guardar la reserva" },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ Reserva creada:', nuevaReserva.reservation_id || nuevaReserva.reservationId);
-
-    return NextResponse.json(
-      { 
-        success: true, 
-        booking: nuevaReserva,
-        message: "Reserva creada exitosamente"
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Error en POST /api/bookings:", error);
-    return NextResponse.json(
-      { error: "Error al crear cita" },
       { status: 500 }
     );
   }
@@ -202,48 +126,25 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, accion } = body; // accion: "cancelar", "confirmar", "completar"
 
-    if (!id) {
+    if (!id || !accion) {
       return NextResponse.json(
-        { error: "ID es requerido" },
+        { error: "ID y acción requeridos" },
         { status: 400 }
       );
     }
 
-    // Si solo se está actualizando el estado, usar helper específico
-    if (updates.estado && Object.keys(updates).length === 1) {
-      const success = await actualizarEstadoReserva(id, updates.estado);
-      
-      if (!success) {
-        return NextResponse.json(
-          { error: "Error al actualizar estado" },
-          { status: 500 }
-        );
-      }
-      
-      return NextResponse.json(
-        { success: true, message: "Estado actualizado" },
-        { status: 200 }
-      );
-    }
-
-    // Actualización completa
-    const success = await actualizarReserva(id, updates);
-
-    if (!success) {
-      return NextResponse.json(
-        { error: "Error al actualizar reserva" },
-        { status: 500 }
-      );
-    }
-
+    // En producción, aquí actualizaríamos la BD
+    // Por ahora retornamos éxito
     return NextResponse.json(
-      { success: true, message: "Reserva actualizada" },
+      {
+        success: true,
+        message: `Cita ${id} ${accion === "cancelar" ? "cancelada" : accion === "confirmar" ? "confirmada" : "completada"} exitosamente`
+      },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Error en PATCH /api/bookings:", error);
+  } catch (e) {
     return NextResponse.json(
       { error: "Error al actualizar cita" },
       { status: 500 }
@@ -251,41 +152,4 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
-  // Alias para PATCH
-  return PATCH(request);
-}
 
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "ID es requerido" },
-        { status: 400 }
-      );
-    }
-
-    const success = await eliminarReserva(id);
-    
-    if (!success) {
-      return NextResponse.json(
-        { error: "Error al eliminar reserva" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: true, message: "Reserva eliminada" },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error en DELETE /api/bookings:", error);
-    return NextResponse.json(
-      { error: "Error al eliminar cita" },
-      { status: 500 }
-    );
-  }
-}

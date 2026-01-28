@@ -2,88 +2,37 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useCMS } from '@/app/hooks/useCMS';
-
-type SobreNosotros = {
-  titulo?: string;
-  subtitulo?: string;
-  descripcion?: string;
-  valores?: string[];
-};
-
-type Ubicacion = {
-  direccion?: string;
-  lugar?: string;
-  ciudad?: string;
-  googleMapsLink?: string;
-  codigoEmbed?: string;
-  mapaEmbed?: string;
-  mapaLink?: string;
-  parqueadero?: boolean;
-  infoAcceso?: string;
-  acceso?: string;
-};
 
 const instalaciones = [
   {
     id: 1,
     titulo: "Sala de Terapias",
-    imagen: "/image/2c84dc0f-1af8-4160-9e2f-e504429fca2a.jpg",
+    imagen: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&h=600&fit=crop",
     descripcion: "Espacios amplios y cómodos para tus sesiones"
   },
   {
     id: 2,
     titulo: "Zona de Relajación",
-    imagen: "/image/1a8c1e64-22dc-423d-9c8f-48d88075d332.jpg",
+    imagen: "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=800&h=600&fit=crop",
     descripcion: "Ambiente tranquilo y acogedor"
   },
   {
     id: 3,
     titulo: "Equipos Profesionales",
-    imagen: "/image/5d5872a2-22b0-4868-b570-b8d5b99819ef.jpg",
+    imagen: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop",
     descripcion: "Tecnología de última generación"
   },
   {
     id: 4,
     titulo: "Salas de Masajes",
-    imagen: "/image/28a4ed9b-c783-4bca-9170-ac1fbf5cf12f.jpg",
+    imagen: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&h=600&fit=crop",
     descripcion: "Privacidad y confort garantizados"
   },
   {
     id: 5,
     titulo: "Recepción",
-    imagen: "/image/30bdda70-b307-4f03-aae7-d8fd5eb1f389.jpg",
+    imagen: "https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?w=800&h=600&fit=crop",
     descripcion: "Atención cálida desde tu llegada"
-  },
-  {
-    id: 6,
-    titulo: "Área de Tratamientos",
-    imagen: "/image/420e216b-ef7c-4e0d-b20d-8dac3642fc56.jpg",
-    descripcion: "Espacios diseñados para tu bienestar"
-  },
-  {
-    id: 7,
-    titulo: "Instalaciones Premium",
-    imagen: "/image/55bf92ed-bec7-40b3-91d3-5278ec868e3c.jpg",
-    descripcion: "Ambiente de lujo y comodidad"
-  },
-  {
-    id: 8,
-    titulo: "Zona de Descanso",
-    imagen: "/image/595725e3-0acc-47b5-899d-462272a2e598.jpg",
-    descripcion: "Relájate después de tu tratamiento"
-  },
-  {
-    id: 9,
-    titulo: "Espacios Modernos",
-    imagen: "/image/622cb65a-87c3-46f8-bbf9-26b78a4a22e3.jpg",
-    descripcion: "Diseño contemporáneo y funcional"
-  },
-  {
-    id: 10,
-    titulo: "Ambiente Acogedor",
-    imagen: "/image/663d9950-161d-45ac-bc64-e8882ed90b9f.jpg",
-    descripcion: "Cada detalle pensado para ti"
   }
 ];
 
@@ -101,16 +50,9 @@ function GaleriaInstalaciones() {
   return (
     <div className="bg-gradient-to-br from-stone-900 to-[#3d2817] rounded-3xl shadow-2xl overflow-hidden mb-16 p-8 md:p-12">
       <div className="text-center mb-12">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <img 
-            src="/image/logo-oficial.jpg" 
-            alt="Therapy Aqua Spa Logo" 
-            className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover shadow-lg"
-          />
-          <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-            📸 Conoce Nuestras Instalaciones
-          </h2>
-        </div>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+          📸 Conoce Nuestras Instalaciones
+        </h2>
         <p className="text-stone-300 max-w-2xl mx-auto">
           Un espacio diseñado para tu comodidad y bienestar
         </p>
@@ -178,28 +120,6 @@ function GaleriaInstalaciones() {
               ))}
             </div>
           </div>
-          
-          {/* Galería de miniaturas */}
-          <div className="mt-6 grid grid-cols-5 gap-2">
-            {instalaciones.map((foto, index) => (
-              <button
-                key={foto.id}
-                onClick={() => setCurrentSlide(index)}
-                className={`relative h-20 md:h-24 rounded-lg overflow-hidden transition-all duration-300 transform hover:scale-110 ${
-                  index === currentSlide ? 'ring-4 ring-amber-400 scale-110' : 'opacity-70 hover:opacity-100'
-                }`}
-              >
-                <img
-                  src={foto.imagen}
-                  alt={foto.titulo}
-                  className="w-full h-full object-cover"
-                />
-                <div className={`absolute inset-0 ${
-                  index === currentSlide ? 'bg-amber-400/20' : 'bg-black/30'
-                } transition-all duration-300`} />
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* QR de Instagram */}
@@ -253,10 +173,6 @@ function GaleriaInstalaciones() {
 }
 
 export default function SobreNosotrosPage() {
-  const { contenido } = useCMS();
-  const sobreNosotros: SobreNosotros = contenido?.sobreNosotros || {};
-  const ubicacion: Ubicacion = contenido?.ubicacion || {};
-  
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100">
       {/* Elementos decorativos flotantes */}
@@ -277,12 +193,12 @@ export default function SobreNosotrosPage() {
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#3d2817] mb-6 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {sobreNosotros.titulo || 'Bienvenido a Therapy Aqua Spa'}
+            Bienvenido a Therapy Aqua Spa
             <br />
-            <span className="text-3xl md:text-4xl lg:text-5xl text-amber-700">{sobreNosotros.subtitulo || 'Tu refugio de bienestar integral'}</span>
+            <span className="text-3xl md:text-4xl lg:text-5xl text-amber-700">Tu refugio de bienestar integral</span>
           </h1>
           <p className="mx-auto mt-6 max-w-4xl text-base md:text-lg leading-relaxed text-stone-600">
-            {sobreNosotros.descripcion || 'En Therapy Aqua Spa transformamos la fisioterapia y los tratamientos de bienestar en una experiencia de renovación profunda para cuerpo y mente.'} Ubicados en el <strong>{ubicacion.lugar || 'Círculo de Suboficiales de las Fuerzas Militares'}</strong> ({ubicacion.direccion || 'Calle 138 Nro. 55-38'}, {ubicacion.ciudad || 'Bogotá D.C., Colombia'}), ofrecemos un entorno exclusivo donde técnicas terapéuticas avanzadas se combinan con un ambiente de calma y cuidado personalizado.
+            En Therapy Aqua Spa transformamos la fisioterapia y los tratamientos de bienestar en una experiencia de renovación profunda para cuerpo y mente. Ubicados en el <strong>Círculo de Suboficiales de las Fuerzas Militares</strong> (Calle 138 Nro. 55-38, Bogotá D.C.), ofrecemos un entorno exclusivo donde técnicas terapéuticas avanzadas se combinan con un ambiente de calma y cuidado personalizado.
           </p>
         </div>
 
@@ -337,31 +253,30 @@ export default function SobreNosotrosPage() {
                 ✅ Nuestro compromiso
               </h2>
               <ul className="space-y-3 text-stone-600">
-                {sobreNosotros.valores && sobreNosotros.valores.length > 0 ? (
-                  sobreNosotros.valores.map((valor: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      <span>{valor}</span>
-                    </li>
-                  ))
-                ) : (
-                  <>
-                    <li className="flex items-start gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      <span>Atención personalizada desde tu primer contacto.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      <span>Ambiente premium, higiénico y con equipo de última generación.</span>
-                    </li>
-                  </>
-                )}
+                <li className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span>Atención personalizada desde tu primer contacto.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span>Ambiente premium, higiénico y con equipo de última generación.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span>Resultados reales que mejoran tu salud, movimiento y calidad de vida.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span>Transparencia en precios y procedimientos, porque tu tranquilidad importa.</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -420,12 +335,8 @@ export default function SobreNosotrosPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="bg-gradient-to-br from-green-100 to-emerald-100 p-12 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-32 h-32 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-                  <img 
-                    src="/image/fisioterapeuta.jpg" 
-                    alt="Dra. Carolina Trujillo"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-32 h-32 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-6xl">👩‍⚕️</span>
                 </div>
                 <h3 className="text-2xl font-semibold text-[#3d2817] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
                   Dra. Carolina Trujillo
@@ -458,14 +369,25 @@ export default function SobreNosotrosPage() {
             ¿Listo para transformar tu bienestar?
           </h2>
           <p className="mx-auto max-w-2xl text-base md:text-lg leading-relaxed mb-8 text-stone-200">
-            Te invitamos a conocer nuestras terapias y dar el primer paso hacia una nueva versión de ti.
+            Te invitamos a conocer nuestras terapias, reservar tu cita y dar el primer paso hacia una nueva versión de ti.
           </p>
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/servicios"
               className="inline-block bg-white hover:bg-stone-100 text-[#3d2817] px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
               Ver servicios
+            </Link>
+            <Link
+              href="https://wa.link/mlbr4z"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+              Reservar cita
             </Link>
           </div>
         </div>

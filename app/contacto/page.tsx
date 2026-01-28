@@ -1,99 +1,8 @@
 "use client";
 
 import React from 'react';
-import { useCMS } from '@/app/hooks/useCMS';
-
-type DiaHorario = {
-  abierto: boolean;
-  apertura: string;
-  cierre: string;
-};
-
-type Horarios = {
-  lunes?: DiaHorario;
-  martes?: DiaHorario;
-  miercoles?: DiaHorario;
-  jueves?: DiaHorario;
-  viernes?: DiaHorario;
-  sabado?: DiaHorario;
-  domingo?: DiaHorario;
-};
-
-type Ubicacion = {
-  direccion?: string;
-  lugar?: string;
-  ciudad?: string;
-  googleMapsLink?: string;
-  codigoEmbed?: string;
-  mapaEmbed?: string;
-  mapaLink?: string;
-  parqueadero?: boolean;
-  infoAcceso?: string;
-  acceso?: string;
-};
-
-type Contacto = {
-  telefono?: string;
-  email?: string;
-  whatsapp?: string;
-  whatsappLink?: string;
-  mensajeContacto?: string;
-  horariosAtencion?: string;
-};
 
 export default function ContactoPage() {
-  const { contenido } = useCMS();
-  
-  const ubicacion: Ubicacion = contenido?.ubicacion || {};
-  const contacto: Contacto = contenido?.contacto || {};
-  const horarios: Horarios = contenido?.horarios || {};
-  
-  const formatearHora = (hora: string) => {
-    if (!hora) return '';
-    const [h, m] = hora.split(':');
-    const horaNum = parseInt(h);
-    const periodo = horaNum >= 12 ? 'PM' : 'AM';
-    const hora12 = horaNum % 12 || 12;
-    return `${hora12.toString().padStart(2, '0')}:${m} ${periodo}`;
-  };
-
-  const obtenerHorarioTexto = (dia: any) => {
-    if (!dia || !dia.abierto) {
-      return 'Cerrado';
-    }
-    const apertura = formatearHora(dia.apertura || '08:00');
-    const cierre = formatearHora(dia.cierre || '16:00');
-    return `${apertura} - ${cierre}`;
-  };
-
-  // Agrupar días por horario para mostrar más compacto
-  const diasAbiertos: string[] = [];
-  const diasCerrados: string[] = [];
-  
-  const diasMap = [
-    { key: 'lunes', label: 'Lunes' },
-    { key: 'martes', label: 'Martes' },
-    { key: 'miercoles', label: 'Miércoles' },
-    { key: 'jueves', label: 'Jueves' },
-    { key: 'viernes', label: 'Viernes' },
-    { key: 'sabado', label: 'Sábado' },
-    { key: 'domingo', label: 'Domingo' }
-  ];
-
-  let horarioAbiertoTexto = '';
-  
-  diasMap.forEach(({ key, label }) => {
-    const diaData = horarios[key as keyof typeof horarios];
-    if (diaData?.abierto) {
-      diasAbiertos.push(label);
-      if (!horarioAbiertoTexto) {
-        horarioAbiertoTexto = obtenerHorarioTexto(diaData);
-      }
-    } else {
-      diasCerrados.push(label);
-    }
-  });
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100">
       {/* Elementos decorativos flotantes */}
@@ -115,7 +24,7 @@ export default function ContactoPage() {
             📍 Estamos aquí para atenderte
           </p>
           <p className="text-sm md:text-base text-stone-500 max-w-3xl mx-auto">
-            {contacto.mensajeContacto || 'Visítanos, escríbenos o llámanos. Estamos listos para ayudarte a comenzar tu camino hacia el bienestar.'}
+            Visítanos, escríbenos o llámanos. Estamos listos para ayudarte a comenzar tu camino hacia el bienestar.
           </p>
         </div>
 
@@ -124,7 +33,7 @@ export default function ContactoPage() {
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden transform transition-all duration-500 hover:shadow-2xl">
             <div className="relative h-[400px] w-full">
               <iframe
-                src={ubicacion.mapaEmbed || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.862596289032!2d-74.1048!3d4.7108!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDInMzguOSJOIDc0wrAwNicyOC44Ilc!5e0!3m2!1ses!2sco!4v1234567890123!5m2!1ses!2sco"}
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.862596289032!2d-74.1048!3d4.7108!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDInMzguOSJOIDc0wrAwNicyOC44Ilc!5e0!3m2!1ses!2sco!4v1234567890123!5m2!1ses!2sco"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -139,32 +48,28 @@ export default function ContactoPage() {
                 📍 Therapy Aqua Spa
               </h3>
               <p className="text-sm md:text-base text-stone-600 mb-4">
-                {ubicacion.direccion || 'Calle 138 Nro. 55-38'}<br />
-                {ubicacion.lugar || 'Círculo de Suboficiales de las Fuerzas Militares'}<br />
-                {ubicacion.ciudad || 'Bogotá D.C., Colombia'}
+                Calle 138 Nro. 55-38<br />
+                Círculo de Suboficiales de las Fuerzas Militares<br />
+                Bogotá D.C., Colombia
               </p>
               <div className="flex items-center gap-2 text-xs md:text-sm text-green-600 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="font-medium">
-                  {ubicacion.parqueadero ? 'Parqueadero disponible' : ''} {ubicacion.parqueadero && ubicacion.acceso ? '•' : ''} {ubicacion.acceso || 'Acceso seguro'}
-                </span>
+                <span className="font-medium">Parqueadero disponible • Acceso seguro</span>
               </div>
-              {ubicacion.mapaLink && (
-                <a
-                  href={ubicacion.mapaLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 shadow-lg"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                  </svg>
-                  Abrir en Google Maps
-                </a>
-              )}
+              <a
+                href="https://maps.app.goo.gl/gDk47ksiJij6ACfE6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 shadow-lg"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                Abrir en Google Maps
+              </a>
             </div>
           </div>
 
@@ -190,32 +95,14 @@ export default function ContactoPage() {
               <p className="text-sm text-stone-600 mb-6 leading-relaxed">
                 Recibe atención personalizada, resuelve tus dudas y agenda tu cita de forma rápida y directa.
               </p>
-              {contacto.whatsappLink && (
-                <a
-                  href={contacto.whatsappLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-bold text-base transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full justify-center"
-                >
-                  💬 Escribir ahora
-                </a>
-              )}
-              {contacto.telefono && (
-                <a
-                  href={`tel:${contacto.telefono}`}
-                  className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold text-base transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full justify-center mt-3"
-                >
-                  📞 {contacto.telefono}
-                </a>
-              )}
-              {contacto.email && (
-                <a
-                  href={`mailto:${contacto.email}`}
-                  className="inline-flex items-center gap-3 bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-full font-bold text-base transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full justify-center mt-3"
-                >
-                  ✉️ {contacto.email}
-                </a>
-              )}
+              <a
+                href="https://wa.link/mlbr4z"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-bold text-base transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full justify-center"
+              >
+                💬 Escribir ahora
+              </a>
             </div>
 
             {/* Horarios Card */}
@@ -234,30 +121,14 @@ export default function ContactoPage() {
                 </div>
               </div>
               <div className="space-y-3 mt-6">
-                {diasCerrados.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-200">
-                    <span className="font-semibold text-stone-700">
-                      {diasCerrados.length === 1 
-                        ? diasCerrados[0]
-                        : diasCerrados.length === 2
-                        ? `${diasCerrados[0]} - ${diasCerrados[1]}`
-                        : `${diasCerrados[0]} - ${diasCerrados[diasCerrados.length - 1]}`}
-                    </span>
-                    <span className="text-red-600 font-bold">Cerrado</span>
-                  </div>
-                )}
-                {diasAbiertos.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
-                    <span className="font-semibold text-stone-700">
-                      {diasAbiertos.length === 1 
-                        ? diasAbiertos[0]
-                        : diasAbiertos.length === 2
-                        ? `${diasAbiertos[0]} - ${diasAbiertos[1]}`
-                        : `${diasAbiertos[0]} - ${diasAbiertos[diasAbiertos.length - 1]}`}
-                    </span>
-                    <span className="text-green-600 font-bold">{horarioAbiertoTexto || contacto.horariosAtencion || '08:00 AM - 04:00 PM'}</span>
-                  </div>
-                )}
+                <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-200">
+                  <span className="font-semibold text-stone-700">Lunes - Miércoles</span>
+                  <span className="text-red-600 font-bold">Cerrado</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
+                  <span className="font-semibold text-stone-700">Jueves - Domingo</span>
+                  <span className="text-green-600 font-bold">08:00 AM - 03:30 PM</span>
+                </div>
               </div>
               <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
                 <p className="text-xs md:text-sm text-stone-600 leading-relaxed">
@@ -318,23 +189,21 @@ export default function ContactoPage() {
           <h2 className="text-2xl md:text-3xl text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
             ¿Tienes alguna pregunta?
           </h2>
-            <p className="text-stone-600 mb-8 text-sm md:text-base max-w-2xl mx-auto">
+          <p className="text-stone-600 mb-8 text-sm md:text-base max-w-2xl mx-auto">
             Estamos disponibles para resolver todas tus dudas. Contáctanos por WhatsApp y recibe atención inmediata.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {contacto.whatsappLink && (
-              <a
-                href={contacto.whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-                Chatear ahora
-              </a>
-            )}
+            <a
+              href="https://wa.link/mlbr4z"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+              Chatear ahora
+            </a>
             <a
               href="/faqs"
               className="inline-block bg-[#3d2817] hover:bg-[#2d1f11] text-white px-10 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
