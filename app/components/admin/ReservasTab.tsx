@@ -995,36 +995,52 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                 reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
                   <div className="bg-white/60 rounded-lg p-3 mb-2">
                     <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
                         let nombreServicio = '';
-                        let precioServicio = 0;
+                        let precioParticular = 0;
+                        let precioAfiliado = 0;
                         let iconoServicio = '💆';
                         
                         // Si es un objeto, usar sus propiedades
                         if (typeof servicio === 'object' && servicio !== null) {
                           nombreServicio = servicio.nombre || servicio.id || 'Servicio';
-                          precioServicio = servicio.precio || servicio.precioParticular || 0;
+                          precioParticular = servicio.precioParticular || servicio.precio || 29900;
+                          precioAfiliado = servicio.precioAfiliado || 13600;
                           iconoServicio = servicio.icon || '💆';
                         } else {
                           // Si es un string, buscar en las referencias
                           const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
                           if (servicioRef) {
                             nombreServicio = servicioRef.nombre;
-                            precioServicio = servicioRef.precio;
+                            precioParticular = servicioRef.precio;
+                            precioAfiliado = PRECIO_SERVICIO_AFILIADO;
                             iconoServicio = servicioRef.icon;
                           } else {
                             nombreServicio = servicio;
-                            precioServicio = 0; // Si no se encuentra, precio 0
+                            precioParticular = 0;
+                            precioAfiliado = 0;
                           }
                         }
                         
+                        const precioAplicado = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
+                        
                         return (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="text-stone-700 truncate pr-2">{iconoServicio} {nombreServicio}</span>
-                            <span className="font-semibold text-[#3d2817] whitespace-nowrap">
-                              {precioServicio > 0 ? formatearPrecio(precioServicio) : 'N/A'}
+                          <div key={idx} className="flex justify-between items-center text-sm">
+                            <span className="text-stone-700 truncate pr-2 flex items-center gap-1">
+                              <span>{iconoServicio}</span>
+                              <span>{nombreServicio}</span>
                             </span>
+                            <div className="text-right">
+                              {reservaSeleccionada.esAfiliado && precioParticular > 0 && (
+                                <p className="text-xs text-stone-500 line-through">
+                                  {formatearPrecio(precioParticular)}
+                                </p>
+                              )}
+                              <span className={`font-semibold whitespace-nowrap ${reservaSeleccionada.esAfiliado ? 'text-green-600' : 'text-[#3d2817]'}`}>
+                                {precioAplicado > 0 ? formatearPrecio(precioAplicado) : 'N/A'}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
@@ -1841,16 +1857,36 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     )}
 
                     {reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        <span className="text-xs font-semibold text-stone-500 uppercase">Adicionales:</span>
-                        {reserva.serviciosAdicionales.map((s: any, idx: number) => {
-                          const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
-                          return (
-                            <span key={idx} className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-semibold">
-                              {nombre}
-                            </span>
-                          );
-                        })}
+                      <div className="space-y-1">
+                        <span className="text-xs font-semibold text-stone-500 uppercase block mb-1">Servicios Adicionales:</span>
+                        <div className="space-y-1">
+                          {reserva.serviciosAdicionales.map((s: any, idx: number) => {
+                            const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
+                            const icon = typeof s === 'object' ? s?.icon : null;
+                            const precioParticular = typeof s === 'object' ? (s?.precioParticular || s?.precio || 29900) : 29900;
+                            const precioAfiliado = typeof s === 'object' ? (s?.precioAfiliado || 13600) : 13600;
+                            const precioAplicado = reserva.esAfiliado ? precioAfiliado : precioParticular;
+                            
+                            return (
+                              <div key={idx} className="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-200">
+                                <div className="flex items-center gap-2">
+                                  {icon && <span className="text-lg">{icon}</span>}
+                                  <span className="text-sm font-semibold text-amber-900">{nombre}</span>
+                                </div>
+                                <div className="text-right">
+                                  {reserva.esAfiliado && (
+                                    <p className="text-xs text-stone-500 line-through">
+                                      ${precioParticular.toLocaleString('es-CO')}
+                                    </p>
+                                  )}
+                                  <p className={`text-sm font-bold ${reserva.esAfiliado ? 'text-green-600' : 'text-amber-800'}`}>
+                                    ${precioAplicado.toLocaleString('es-CO')}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
