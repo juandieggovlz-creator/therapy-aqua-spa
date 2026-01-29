@@ -22,6 +22,48 @@ export async function GET(request: Request) {
     
     let reservas = await leerReservas();
 
+    // Normalizar estructura: extraer terapias, serviciosAdicionales y productos del campo JSONB "servicios"
+    reservas = reservas.map((reserva: any) => {
+      // Si servicios es un objeto con estructura { terapias, serviciosAdicionales, productos }
+      if (reserva.servicios && typeof reserva.servicios === 'object') {
+        return {
+          ...reserva,
+          // Extraer campos del JSONB si existen
+          terapias: reserva.servicios.terapias || reserva.terapias || [],
+          serviciosAdicionales: reserva.servicios.serviciosAdicionales || reserva.serviciosAdicionales || [],
+          productos: reserva.servicios.productos || reserva.productos || [],
+          // Mantener compatibilidad con código legacy
+          servicios: reserva.servicios.terapias || reserva.servicios || [],
+          // Mapear campos de DB a formato esperado por frontend
+          id: reserva.reservation_id || reserva.reservationId || reserva.id,
+          reservationId: reserva.reservation_id || reserva.reservationId || reserva.id,
+          cliente: reserva.nombre || reserva.cliente,
+          hora: reserva.horario || reserva.hora,
+          fisio: reserva.fisioterapeuta || reserva.fisio,
+          precio: reserva.total || reserva.precio,
+          duracion: reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
+          duracionTotal: reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
+          esAfiliado: reserva.es_afiliado || reserva.esAfiliado || false,
+          afiliadoNombre: reserva.codigo_afiliado || reserva.afiliadoNombre,
+        };
+      }
+      
+      // Si no tiene la estructura esperada, devolver tal cual con mapeo de campos
+      return {
+        ...reserva,
+        id: reserva.reservation_id || reserva.reservationId || reserva.id,
+        reservationId: reserva.reservation_id || reserva.reservationId || reserva.id,
+        cliente: reserva.nombre || reserva.cliente,
+        hora: reserva.horario || reserva.hora,
+        fisio: reserva.fisioterapeuta || reserva.fisio,
+        precio: reserva.total || reserva.precio,
+        duracion: reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
+        duracionTotal: reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
+        esAfiliado: reserva.es_afiliado || reserva.esAfiliado || false,
+        afiliadoNombre: reserva.codigo_afiliado || reserva.afiliadoNombre,
+      };
+    });
+
     // Filtrar por estado si se proporciona
     if (estado) {
       reservas = reservas.filter((b: any) => b.estado === estado);
@@ -142,6 +184,7 @@ export async function POST(request: Request) {
       total: body.total || 0,
       estado: "pendiente",
       esAfiliado: body.esAfiliado || false,
+      afiliadoNombre: body.afiliadoNombre || null,
       productos: body.productos || [],
       servicios: Array.isArray(terapias) && terapias.length > 0 
         ? terapias.filter((t: any) => t !== null && t !== undefined && (t.id || t.nombre))
@@ -165,6 +208,18 @@ export async function POST(request: Request) {
               duracion: t.duracion || 30,
               icon: t.icon || '💆',
               servicioId: t.servicioId || t.id || 'desconocido'
+            }))
+        : [],
+      serviciosAdicionales: Array.isArray(body.serviciosAdicionales) && body.serviciosAdicionales.length > 0
+        ? body.serviciosAdicionales.filter((s: any) => s !== null && s !== undefined && (s.id || s.nombre))
+            .map((s: any) => ({
+              id: s.id || 'desconocido',
+              nombre: s.nombre || 'Servicio sin nombre',
+              precio: s.precio || s.precioParticular || 0,
+              precioParticular: s.precioParticular || s.precio || 0,
+              precioAfiliado: s.precioAfiliado || s.precioParticular || 0,
+              precioAplicado: s.precioAplicado || (body.esAfiliado ? s.precioAfiliado : s.precioParticular) || 0,
+              icon: s.icon || '✨'
             }))
         : [],
       notas: body.notas || '',

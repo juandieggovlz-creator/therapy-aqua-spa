@@ -80,6 +80,14 @@ export async function crearReserva(reserva: any): Promise<any | null> {
     }
   }
   
+  // Combinar todos los servicios en el campo JSONB "servicios"
+  // Estructura: { terapias: [...], serviciosAdicionales: [...], productos: [...] }
+  const serviciosCombinados = {
+    terapias: reserva.terapias || reserva.servicios || [],
+    serviciosAdicionales: reserva.serviciosAdicionales || [],
+    productos: reserva.productos || []
+  };
+  
   const nuevaReserva = await createReserva({
     reservation_id: reserva.reservationId || reserva.id,
     nombre: reserva.nombre,
@@ -87,16 +95,18 @@ export async function crearReserva(reserva: any): Promise<any | null> {
     email: reserva.email,
     fecha: reserva.fecha,
     horario: reserva.horario,
-    servicios: reserva.servicios || [],
+    servicios: serviciosCombinados,
     productos: reserva.productos || [],
     total: reserva.total || 0,
     estado: reserva.estado || 'pendiente',
     notas: reserva.notas,
     fisioterapeuta: reserva.fisioterapeuta,
-    codigo_afiliado: reserva.codigoAfiliado,
+    codigo_afiliado: reserva.codigoAfiliado || reserva.afiliadoNombre,
     descuento_afiliado: reserva.descuentoAfiliado || 0,
     descuento_individual: reserva.descuentoIndividual || 0,
     descuento_promocion: reserva.descuentoPromocion || 0,
+    es_afiliado: reserva.esAfiliado || false,
+    duracion_total: reserva.duracionTotal || reserva.duracion || 0,
   });
   
   return nuevaReserva;

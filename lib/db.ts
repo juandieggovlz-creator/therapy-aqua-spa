@@ -14,7 +14,7 @@ export interface Reserva {
   email: string;
   fecha: string;
   horario: string;
-  servicios: any[];
+  servicios: any;  // JSONB que contiene { terapias: [], serviciosAdicionales: [], productos: [] }
   productos?: any[];
   total: number;
   estado: 'pendiente' | 'pendiente de pago' | 'confirmada' | 'cancelada' | 'completada';
@@ -26,6 +26,8 @@ export interface Reserva {
   descuento_afiliado?: number;
   descuento_individual?: number;
   descuento_promocion?: number;
+  es_afiliado?: boolean;
+  duracion_total?: number;
 }
 
 /**
@@ -53,13 +55,23 @@ export async function initReservasTable(): Promise<boolean> {
         codigo_afiliado VARCHAR(50),
         descuento_afiliado DECIMAL(10, 2) DEFAULT 0,
         descuento_individual DECIMAL(10, 2) DEFAULT 0,
-        descuento_promocion DECIMAL(10, 2) DEFAULT 0
+        descuento_promocion DECIMAL(10, 2) DEFAULT 0,
+        es_afiliado BOOLEAN DEFAULT false,
+        duracion_total INTEGER DEFAULT 0
       );
       
       CREATE INDEX IF NOT EXISTS idx_fecha_horario ON public.reservas(fecha, horario);
       CREATE INDEX IF NOT EXISTS idx_estado ON public.reservas(estado);
       CREATE INDEX IF NOT EXISTS idx_reservation_id ON public.reservas(reservation_id);
     `;
+    
+    // Agregar columnas si no existen (para tablas existentes)
+    try {
+      await sql`ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS es_afiliado BOOLEAN DEFAULT false;`;
+      await sql`ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS duracion_total INTEGER DEFAULT 0;`;
+    } catch (alterError) {
+      console.log('⚠️ Columnas ya existen o no se pudieron agregar (esto es normal)');
+    }
     
     console.log('✅ Tabla de reservas inicializada');
     return true;
@@ -78,7 +90,8 @@ export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
       INSERT INTO public.reservas (
         reservation_id, nombre, telefono, email, fecha, horario,
         servicios, productos, total, estado, notas, fisioterapeuta,
-        codigo_afiliado, descuento_afiliado, descuento_individual, descuento_promocion
+        codigo_afiliado, descuento_afiliado, descuento_individual, descuento_promocion,
+        es_afiliado, duracion_total
       ) VALUES (
         ${reserva.reservation_id},
         ${reserva.nombre},
@@ -95,7 +108,9 @@ export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
         ${reserva.codigo_afiliado || null},
         ${reserva.descuento_afiliado || 0},
         ${reserva.descuento_individual || 0},
-        ${reserva.descuento_promocion || 0}
+        ${reserva.descuento_promocion || 0},
+        ${reserva.es_afiliado || false},
+        ${reserva.duracion_total || 0}
       )
       RETURNING *;
     `;
