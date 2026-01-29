@@ -49,9 +49,9 @@ const terapias: TerapiaItem[] = [
 ];
 
 const serviciosAdicionales: ServicioAdicional[] = [
-  { id: 'sauna', nombre: 'Sauna', precioAfiliado: 13600, precioParticular: 29900, precio: 29900, icon: '🔥' },
-  { id: 'jacuzzi', nombre: 'Jacuzzi', precioAfiliado: 13600, precioParticular: 29900, precio: 29900, icon: '🛁' },
-  { id: 'turco', nombre: 'Baño Turco', precioAfiliado: 13600, precioParticular: 29900, precio: 29900, icon: '💨' },
+  { id: 'sauna', nombre: 'Sauna', precioAfiliado: 13000, precioParticular: 29900, precio: 29900, icon: '🔥' },
+  { id: 'jacuzzi', nombre: 'Jacuzzi', precioAfiliado: 13000, precioParticular: 29900, precio: 29900, icon: '🛁' },
+  { id: 'turco', nombre: 'Baño Turco', precioAfiliado: 13000, precioParticular: 29900, precio: 29900, icon: '💨' },
 ];
 
 // Los productos se cargarán dinámicamente desde la API

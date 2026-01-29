@@ -55,7 +55,7 @@ const PRODUCTOS_PRECIOS: Record<string, { nombre: string; precio: number; icon: 
 
 // Precios de servicios adicionales para afiliados (para cálculos de descuento)
 const PRECIO_SERVICIO_PARTICULAR = 29900;
-const PRECIO_SERVICIO_AFILIADO = 13600;
+const PRECIO_SERVICIO_AFILIADO = 13000;
 
 export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
   const [reservas, setReservas] = useState<Reserva[]>([]);
@@ -1006,7 +1006,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                         if (typeof servicio === 'object' && servicio !== null) {
                           nombreServicio = servicio.nombre || servicio.id || 'Servicio';
                           precioParticular = servicio.precioParticular || servicio.precio || 29900;
-                          precioAfiliado = servicio.precioAfiliado || 13600;
+                          precioAfiliado = servicio.precioAfiliado || 13000;
                           iconoServicio = servicio.icon || '💆';
                         } else {
                           // Si es un string, buscar en las referencias
@@ -1864,7 +1864,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
                             const icon = typeof s === 'object' ? s?.icon : null;
                             const precioParticular = typeof s === 'object' ? (s?.precioParticular || s?.precio || 29900) : 29900;
-                            const precioAfiliado = typeof s === 'object' ? (s?.precioAfiliado || 13600) : 13600;
+                            const precioAfiliado = typeof s === 'object' ? (s?.precioAfiliado || 13000) : 13000;
                             const precioAplicado = reserva.esAfiliado ? precioAfiliado : precioParticular;
                             
                             return (
