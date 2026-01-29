@@ -41,9 +41,10 @@ export async function GET(request: Request) {
           hora: reserva.horario || reserva.hora,
           fisio: reserva.fisioterapeuta || reserva.fisio,
           precio: reserva.total || reserva.precio,
-          duracion: reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
-          duracionTotal: reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
-          esAfiliado: reserva.es_afiliado || reserva.esAfiliado || false,
+          // Extraer duracionTotal y esAfiliado del JSONB servicios
+          duracion: reserva.servicios.duracionTotal || reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
+          duracionTotal: reserva.servicios.duracionTotal || reserva.duracion_total || reserva.duracionTotal || reserva.duracion || 0,
+          esAfiliado: reserva.servicios.esAfiliado || reserva.es_afiliado || reserva.esAfiliado || false,
           afiliadoNombre: reserva.codigo_afiliado || reserva.afiliadoNombre,
         };
       }

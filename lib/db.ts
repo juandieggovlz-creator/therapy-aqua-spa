@@ -86,12 +86,18 @@ export async function initReservasTable(): Promise<boolean> {
  */
 export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
   try {
+    // Incluir es_afiliado y duracion_total dentro del campo JSONB servicios
+    const serviciosConMetadata = {
+      ...(typeof reserva.servicios === 'object' ? reserva.servicios : {}),
+      esAfiliado: reserva.es_afiliado || false,
+      duracionTotal: reserva.duracion_total || 0
+    };
+    
     const result = await sql`
       INSERT INTO public.reservas (
         reservation_id, nombre, telefono, email, fecha, horario,
         servicios, productos, total, estado, notas, fisioterapeuta,
-        codigo_afiliado, descuento_afiliado, descuento_individual, descuento_promocion,
-        es_afiliado, duracion_total
+        codigo_afiliado, descuento_afiliado, descuento_individual, descuento_promocion
       ) VALUES (
         ${reserva.reservation_id},
         ${reserva.nombre},
@@ -99,7 +105,7 @@ export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
         ${reserva.email},
         ${reserva.fecha},
         ${reserva.horario},
-        ${JSON.stringify(reserva.servicios)},
+        ${JSON.stringify(serviciosConMetadata)},
         ${JSON.stringify(reserva.productos || [])},
         ${reserva.total},
         ${reserva.estado || 'pendiente'},
@@ -108,9 +114,7 @@ export async function createReserva(reserva: Reserva): Promise<Reserva | null> {
         ${reserva.codigo_afiliado || null},
         ${reserva.descuento_afiliado || 0},
         ${reserva.descuento_individual || 0},
-        ${reserva.descuento_promocion || 0},
-        ${reserva.es_afiliado || false},
-        ${reserva.duracion_total || 0}
+        ${reserva.descuento_promocion || 0}
       )
       RETURNING *;
     `;
