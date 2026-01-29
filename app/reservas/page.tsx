@@ -586,12 +586,13 @@ function ReservasContentInner() {
 
     const subtotalConDescuentosIndividuales = totalTerapiasConDescuento + totalServiciosOriginal + totalProductosOriginal;
 
-    // 3️⃣ APLICAR DESCUENTO DE AFILIADO (20% sobre terapias)
+    // 3️⃣ APLICAR DESCUENTO DE AFILIADO (20% sobre el SUBTOTAL COMPLETO)
     let descuentoAfiliado = 0;
     let subtotalConDescuentoAfiliado = subtotalConDescuentosIndividuales;
     
     if (esAfiliado) {
-      descuentoAfiliado = totalTerapiasConDescuento * 0.20;
+      // Aplicar 20% sobre TODO el subtotal (terapias + servicios adicionales + productos)
+      descuentoAfiliado = subtotalConDescuentosIndividuales * 0.20;
       subtotalConDescuentoAfiliado = subtotalConDescuentosIndividuales - descuentoAfiliado;
     }
 
