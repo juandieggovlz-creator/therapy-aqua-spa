@@ -48,14 +48,6 @@ const terapias: TerapiaItem[] = [
   { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', duracion: 40, precio: 100000, icon: '🏃' },
 ];
 
-const paqueteServicios = {
-  id: 'paquete-relajacion',
-  nombre: 'Paquete Relajación (Sauna + Jacuzzi + Turco)',
-  precio: 29900,
-  icon: '💆',
-  servicios: ['sauna', 'jacuzzi', 'turco']
-};
-
 const serviciosAdicionales: ServicioAdicional[] = [
   { id: 'sauna', nombre: 'Sauna', precioAfiliado: 13600, precioParticular: 29900, precio: 29900, icon: '🔥' },
   { id: 'jacuzzi', nombre: 'Jacuzzi', precioAfiliado: 13600, precioParticular: 29900, precio: 29900, icon: '🛁' },
@@ -109,7 +101,6 @@ function ReservasContentInner() {
   }, []);
   const [terapiasSeleccionadas, setTerapiasSeleccionadas] = useState<string[]>([]);
   const [serviciosSeleccionados, setServiciosSeleccionados] = useState<string[]>([]);
-  const [paqueteSeleccionado, setPaqueteSeleccionado] = useState(false);
   const [productosSeleccionados, setProductosSeleccionados] = useState<string[]>([]);
   const [fecha, setFecha] = useState('');
   const [horario, setHorario] = useState('');
@@ -547,16 +538,6 @@ function ReservasContentInner() {
     );
   };
 
-  const togglePaquete = () => {
-    if (paqueteSeleccionado) {
-      setPaqueteSeleccionado(false);
-      setServiciosSeleccionados(prev => prev.filter(s => !paqueteServicios.servicios.includes(s)));
-    } else {
-      setPaqueteSeleccionado(true);
-      setServiciosSeleccionados(prev => [...new Set([...prev, ...paqueteServicios.servicios])]);
-    }
-  };
-
   const toggleProducto = (id: string) => {
     setProductosSeleccionados(prev => 
       prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
@@ -570,20 +551,13 @@ function ReservasContentInner() {
       return acc + (terapia?.precio || 0);
     }, 0);
 
-    let totalServiciosOriginal = 0;
-    if (paqueteSeleccionado) {
-      totalServiciosOriginal += paqueteServicios.precio;
-      const serviciosIndividuales = serviciosSeleccionados.filter(s => !paqueteServicios.servicios.includes(s));
-      totalServiciosOriginal += serviciosIndividuales.reduce((acc, id) => {
-        const servicio = serviciosAdicionales.find(s => s.id === id);
-        return acc + (servicio?.precio || 0);
-      }, 0);
-    } else {
-      totalServiciosOriginal = serviciosSeleccionados.reduce((acc, id) => {
-        const servicio = serviciosAdicionales.find(s => s.id === id);
-        return acc + (servicio?.precio || 0);
-      }, 0);
-    }
+    const totalServiciosOriginal = serviciosSeleccionados.reduce((acc, id) => {
+      const servicio = serviciosAdicionales.find(s => s.id === id);
+      if (!servicio) return acc;
+      // Usar precio de afiliado si es afiliado, sino usar precio particular
+      const precio = esAfiliado ? (servicio.precioAfiliado || servicio.precio) : (servicio.precioParticular || servicio.precio);
+      return acc + precio;
+    }, 0);
 
     const totalProductosOriginal = productosSeleccionados.reduce((acc, id) => {
       const producto = productosActualizados.find(p => p.id === id);
@@ -728,27 +702,16 @@ function ReservasContentInner() {
       listaServicios += terapiasNombres.join('\n');
     }
     
-    // Agregar paquete si está seleccionado
-    if (paqueteSeleccionado) {
-      if (listaServicios) listaServicios += '\n';
-      listaServicios += `• ${paqueteServicios.nombre}`;
-    }
-    
-    // Agregar servicios adicionales individuales (si no hay paquete o hay servicios fuera del paquete)
+    // Agregar servicios adicionales individuales
     if (serviciosSeleccionados.length > 0) {
-      const serviciosFueraPaquete = paqueteSeleccionado
-        ? serviciosSeleccionados.filter(s => !paqueteServicios.servicios.includes(s))
-        : serviciosSeleccionados;
-      
-      if (serviciosFueraPaquete.length > 0) {
-        if (listaServicios) listaServicios += '\n';
-        serviciosFueraPaquete.forEach(id => {
-          const servicio = serviciosAdicionales.find(s => s.id === id);
-          if (servicio) {
-            listaServicios += `• ${servicio.nombre}\n`;
-          }
-        });
-      }
+      if (listaServicios) listaServicios += '\n';
+      serviciosSeleccionados.forEach(id => {
+        const servicio = serviciosAdicionales.find(s => s.id === id);
+        if (servicio) {
+          const precio = esAfiliado ? servicio.precioAfiliado : servicio.precioParticular;
+          listaServicios += `• ${servicio.nombre} - $${precio?.toLocaleString('es-CO')}\n`;
+        }
+      });
     }
     
     // Agregar productos
@@ -966,8 +929,15 @@ ${listaServicios}
       esAfiliado,
       afiliadoNombre: afiliadoNombre || null,
       terapias: terapiasValidadas,
-      serviciosAdicionales: serviciosSeleccionados.map(id => serviciosAdicionales.find(s => s.id === id)).filter(Boolean),
-      paqueteSeleccionado,
+      serviciosAdicionales: serviciosSeleccionados.map(id => {
+        const servicio = serviciosAdicionales.find(s => s.id === id);
+        if (!servicio) return null;
+        const precio = esAfiliado ? servicio.precioAfiliado : servicio.precioParticular;
+        return {
+          ...servicio,
+          precioAplicado: precio
+        };
+      }).filter(Boolean),
       productos: productosSeleccionados.map(id => productosActualizados.find(p => p.id === id)).filter(Boolean),
       fecha,
       horario,
@@ -1053,7 +1023,6 @@ ${listaServicios}
     setPaso(1);
     setTerapiasSeleccionadas([]);
     setServiciosSeleccionados([]);
-    setPaqueteSeleccionado(false);
     setProductosSeleccionados([]);
     setFecha('');
     setHorario('');
@@ -1422,12 +1391,12 @@ ${listaServicios}
                 ))}
               </div>
 
-              {(terapiasSeleccionadas.length > 0 || paqueteSeleccionado || productosSeleccionados.length > 0) ? (
+              {(terapiasSeleccionadas.length > 0 || serviciosSeleccionados.length > 0 || productosSeleccionados.length > 0) ? (
                 <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-[#3d2817] text-lg">Resumen de selección:</h3>
                     <span className="text-sm text-stone-600">
-                      {terapiasSeleccionadas.length} terapia(s) • {paqueteSeleccionado ? '1 paquete' : '0 paquetes'} • {productosSeleccionados.length} producto(s)
+                      {terapiasSeleccionadas.length} terapia(s) • {serviciosSeleccionados.length} servicio(s) adicional(es) • {productosSeleccionados.length} producto(s)
                     </span>
                   </div>
                   
@@ -1496,29 +1465,50 @@ ${listaServicios}
                     </div>
                   )}
 
-                  {/* Paquete */}
-                  {paqueteSeleccionado && (
+                  {/* Servicios Adicionales */}
+                  {serviciosSeleccionados.length > 0 && (
                     <div className="mb-4">
                       <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Servicios Adicionales:</p>
-                      <div className="flex items-center justify-between bg-white rounded-lg p-3">
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className="text-2xl">{paqueteServicios.icon}</span>
-                          <span className="text-sm font-semibold text-[#3d2817]">{paqueteServicios.nombre}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-bold text-[#3d2817]">
-                            ${paqueteServicios.precio.toLocaleString('es-CO')}
-                          </span>
-                          <button
-                            onClick={togglePaquete}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                            title="Quitar paquete"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
+                      <div className="space-y-2">
+                        {serviciosSeleccionados.map((id) => {
+                          const servicio = serviciosAdicionales.find(s => s.id === id);
+                          if (!servicio) return null;
+                          const precio = esAfiliado ? servicio.precioAfiliado : servicio.precioParticular;
+                          return (
+                            <div key={id} className="flex items-center justify-between bg-white rounded-lg p-3">
+                              <div className="flex items-center gap-3 flex-1">
+                                <span className="text-2xl">{servicio.icon}</span>
+                                <div>
+                                  <span className="text-sm font-semibold text-[#3d2817] block">{servicio.nombre}</span>
+                                  {esAfiliado && (
+                                    <span className="text-xs text-green-600 font-semibold">Precio afiliado</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  {esAfiliado && servicio.precioParticular && (
+                                    <span className="text-xs text-stone-500 line-through block">
+                                      ${servicio.precioParticular.toLocaleString('es-CO')}
+                                    </span>
+                                  )}
+                                  <span className="text-sm font-bold text-green-600">
+                                    ${precio?.toLocaleString('es-CO')}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => toggleServicio(id)}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                  title="Quitar servicio"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1623,48 +1613,69 @@ ${listaServicios}
                 </div>
               )}
 
-              {/* Servicios Adicionales - Paquete */}
+              {/* Servicios Adicionales - Individuales */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200">
-                <h3 className="text-xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  💆 Servicios Adicionales
-                </h3>
-                <button
-                  onClick={togglePaquete}
-                  className={`w-full p-6 rounded-xl border-4 transition-all duration-300 text-left ${
-                    paqueteSeleccionado
-                      ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
-                      : 'border-stone-200 hover:border-amber-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="text-4xl">{paqueteServicios.icon}</span>
-                      <div>
-                        <h4 className="font-bold text-[#3d2817] text-lg mb-1">{paqueteServicios.nombre}</h4>
-                        <p className="text-sm text-stone-600">Incluye: Sauna + Jacuzzi + Baño Turco</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-stone-600 mb-1">
-                        Precio
-                      </p>
-                      <p className="text-2xl font-bold text-[#3d2817]">
-                        ${paqueteServicios.precio.toLocaleString('es-CO')}
-                      </p>
-                      <div className={`mt-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        paqueteSeleccionado
-                          ? 'border-amber-500 bg-amber-500'
-                          : 'border-stone-300'
-                      }`}>
-                        {paqueteSeleccionado && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </button>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    ✨ Servicios Adicionales
+                  </h3>
+                  {esAfiliado && (
+                    <span className="text-xs font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full">
+                      🏅 Precio afiliado activo
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-stone-600 mb-4">Selecciona uno o varios servicios adicionales:</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {serviciosAdicionales.map((servicio) => {
+                    const precio = esAfiliado ? servicio.precioAfiliado : servicio.precioParticular;
+                    const precioOriginal = servicio.precioParticular;
+                    const isSelected = serviciosSeleccionados.includes(servicio.id);
+                    
+                    return (
+                      <button
+                        key={servicio.id}
+                        onClick={() => toggleServicio(servicio.id)}
+                        className={`p-5 rounded-xl border-4 transition-all duration-300 ${
+                          isSelected
+                            ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-105'
+                            : 'border-stone-200 hover:border-blue-300 bg-white hover:scale-102'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center text-center">
+                          <span className="text-4xl mb-3">{servicio.icon}</span>
+                          <h4 className="font-bold text-[#3d2817] mb-2">{servicio.nombre}</h4>
+                          <div className="mb-3">
+                            {esAfiliado && precioOriginal && (
+                              <p className="text-xs text-stone-500 line-through">
+                                ${precioOriginal.toLocaleString('es-CO')}
+                              </p>
+                            )}
+                            <p className="text-xl font-bold text-blue-600">
+                              ${precio?.toLocaleString('es-CO')}
+                            </p>
+                            {esAfiliado && (
+                              <p className="text-xs text-green-600 font-semibold mt-1">
+                                Ahorras ${((precioOriginal || 0) - (precio || 0)).toLocaleString('es-CO')}
+                              </p>
+                            )}
+                          </div>
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-500'
+                              : 'border-stone-300'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Productos del Spa */}
@@ -2123,18 +2134,34 @@ ${listaServicios}
                     </div>
                   )}
 
-                  {/* Paquete */}
-                  {paqueteSeleccionado && (
+                  {/* Servicios Adicionales */}
+                  {serviciosSeleccionados.length > 0 && (
                     <div className="bg-white rounded-lg p-3">
                       <p className="text-xs font-semibold text-stone-600 mb-2 uppercase">Servicios Adicionales:</p>
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span>{paqueteServicios.icon}</span>
-                          <span className="text-[#3d2817]">{paqueteServicios.nombre}</span>
-                        </div>
-                        <span className="font-bold text-[#3d2817]">
-                          ${paqueteServicios.precio.toLocaleString('es-CO')}
-                        </span>
+                      <div className="space-y-2">
+                        {serviciosSeleccionados.map((id) => {
+                          const servicio = serviciosAdicionales.find(s => s.id === id);
+                          if (!servicio) return null;
+                          const precio = esAfiliado ? servicio.precioAfiliado : servicio.precioParticular;
+                          return (
+                            <div key={id} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span>{servicio.icon}</span>
+                                <div>
+                                  <span className="text-[#3d2817]">{servicio.nombre}</span>
+                                  {esAfiliado && (
+                                    <span className="text-xs text-green-600 font-semibold ml-2">
+                                      (Afiliado)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="font-bold text-green-600">
+                                ${precio?.toLocaleString('es-CO')}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
