@@ -53,10 +53,9 @@ const PRODUCTOS_PRECIOS: Record<string, { nombre: string; precio: number; icon: 
   'Kit ropa interior desechable': { nombre: 'Kit ropa interior desechable', precio: 8000, icon: '👕' }
 };
 
-// Precio del paquete si está seleccionado (Sauna + Jacuzzi + Turco)
-const PRECIO_PAQUETE_RELAJACION = 29900;
-// Precio del paquete para afiliados
-const PRECIO_PAQUETE_AFILIADO = 13000;
+// Precios de servicios adicionales para afiliados (para cálculos de descuento)
+const PRECIO_SERVICIO_PARTICULAR = 29900;
+const PRECIO_SERVICIO_AFILIADO = 13600;
 
 export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
   const [reservas, setReservas] = useState<Reserva[]>([]);
@@ -451,14 +450,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       subtotalTerapias = reserva.precio;
     }
 
-    // Calcular subtotal de servicios adicionales ORIGINALES (sin descuentos)
+    // Calcular subtotal de servicios adicionales con precio aplicado
     let subtotalServiciosAdicionalesOriginal = 0;
-    if (reserva.paqueteSeleccionado) {
-      subtotalServiciosAdicionalesOriginal = PRECIO_PAQUETE_RELAJACION; // $29,900
-    } else if (reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
+    if (reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
       subtotalServiciosAdicionalesOriginal = reserva.serviciosAdicionales.reduce((sum: number, s: any) => {
         if (typeof s === 'object' && s !== null) {
-          return sum + (s.precio || s.precioParticular || 0);
+          // Usar precioAplicado si existe, sino usar precioParticular o precio
+          return sum + (s.precioAplicado || s.precioParticular || s.precio || 0);
         } else {
           const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[s];
           return sum + (servicioRef?.precio || 0);
@@ -482,12 +480,11 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
     // PRECIO ORIGINAL (sin ningún descuento)
     const precioTotalOriginal = subtotalTerapias + subtotalServiciosAdicionalesOriginal + subtotalProductos;
 
-    // Si es afiliado: cambiar paquete de $29,900 a $13,000 ANTES de calcular el 20%
+    // Los servicios adicionales ya vienen con el precio correcto (precioAplicado)
+    // No necesitamos recalcular el descuento de afiliado porque ya se aplicó en la reserva
     let subtotalServiciosAdicionalesConDescuento = subtotalServiciosAdicionalesOriginal;
-    if (reserva.esAfiliado && reserva.paqueteSeleccionado) {
-      subtotalServiciosAdicionalesConDescuento = PRECIO_PAQUETE_AFILIADO; // $13,000
-    } else if (reserva.esAfiliado && reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
-      // Si no hay paquete pero hay servicios adicionales y es afiliado, cada servicio cuesta $13,000
+    if (reserva.esAfiliado && reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
+      // Los servicios adicionales ya tienen el precio de afiliado aplicado en precioAplicado
       subtotalServiciosAdicionalesConDescuento = reserva.serviciosAdicionales.length * 13000;
     }
 
@@ -859,71 +856,54 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                 </div>
               )}
 
-              {/* Si hay paquete seleccionado, mostrar solo el paquete, no los servicios individuales del paquete */}
-              {reservaSeleccionada.paqueteSeleccionado ? (
-                <div className="bg-white rounded-lg p-4 border-2 border-amber-200">
-                  <p className="text-sm font-bold text-stone-700 mb-2 uppercase tracking-wide">Paquete Seleccionado:</p>
-                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <p className="font-semibold text-[#3d2817] mb-1">
-                      {typeof reservaSeleccionada.paqueteSeleccionado === 'string' 
-                        ? reservaSeleccionada.paqueteSeleccionado 
-                        : 'Paquete Relajación (Sauna + Jacuzzi + Turco)'}
-                    </p>
-                    <p className="text-xs text-stone-600 mt-1">Incluye: Sauna + Jacuzzi + Baño Turco</p>
+              {/* Servicios Adicionales Individuales */}
+              {reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
+                <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+                  <p className="text-sm font-bold text-stone-700 mb-3 uppercase tracking-wide flex items-center justify-between">
+                    <span>Servicios Adicionales ({reservaSeleccionada.serviciosAdicionales.length}):</span>
+                    {reservaSeleccionada.esAfiliado && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                        🏅 Afiliado
+                      </span>
+                    )}
+                  </p>
+                  <div className="space-y-2">
+                    {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
+                      const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
+                      const icon = typeof servicio === 'object' ? servicio?.icon : null;
+                      const precioAplicado = typeof servicio === 'object' ? servicio?.precioAplicado : null;
+                      const precioParticular = typeof servicio === 'object' ? servicio?.precioParticular : null;
+                      const precioAfiliado = typeof servicio === 'object' ? servicio?.precioAfiliado : null;
+                      
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-3 flex-1">
+                            <span className="text-2xl">{icon || '💆'}</span>
+                            <div className="flex-1">
+                              <p className="font-semibold text-[#3d2817]">{nombre}</p>
+                              {reservaSeleccionada.esAfiliado && precioParticular && precioAfiliado && (
+                                <p className="text-xs text-green-600 font-semibold">
+                                  Ahorro: {formatearPrecio(precioParticular - precioAfiliado)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {reservaSeleccionada.esAfiliado && precioParticular && precioAplicado !== precioParticular && (
+                              <p className="text-xs text-stone-500 line-through">
+                                {formatearPrecio(precioParticular)}
+                              </p>
+                            )}
+                            <p className="font-bold text-blue-600">
+                              {formatearPrecio(precioAplicado || precioParticular || precioAfiliado || 0)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ) : (
-                /* Si NO hay paquete, mostrar servicios adicionales individuales */
-                reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
-                  <div className="bg-white rounded-lg p-4 border-2 border-amber-200">
-                    <p className="text-sm font-bold text-stone-700 mb-3 uppercase tracking-wide">Servicios Adicionales ({reservaSeleccionada.serviciosAdicionales.length}):</p>
-                    <div className="flex flex-wrap gap-2">
-                      {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
-                        const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
-                        return (
-                          <span key={idx} className="px-4 py-2 bg-amber-100 text-amber-800 rounded-lg text-sm font-semibold border border-amber-300">
-                            💆 {nombre}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )
               )}
-
-              {/* Servicios adicionales fuera del paquete (si hay alguno) */}
-              {(() => {
-                if (!reservaSeleccionada.serviciosAdicionales || reservaSeleccionada.serviciosAdicionales.length === 0) return null;
-                
-                // Filtrar servicios que NO están en el paquete (solo si hay paquete seleccionado)
-                const serviciosFueraPaquete = reservaSeleccionada.paqueteSeleccionado
-                  ? reservaSeleccionada.serviciosAdicionales.filter((servicio: any) => {
-                      const id = typeof servicio === 'string' ? servicio : (servicio?.id || servicio?.nombre || '');
-                      return !['sauna', 'jacuzzi', 'turco'].includes(id.toLowerCase());
-                    })
-                  : [];
-                
-                // Solo mostrar si hay servicios fuera del paquete
-                if (serviciosFueraPaquete.length > 0) {
-                  return (
-                    <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
-                      <p className="text-sm font-bold text-stone-700 mb-3 uppercase tracking-wide">Otros Servicios Adicionales ({serviciosFueraPaquete.length}):</p>
-                      <div className="flex flex-wrap gap-2">
-                        {serviciosFueraPaquete.map((servicio: any, idx: number) => {
-                          const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
-                          return (
-                            <span key={idx} className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-semibold border border-blue-300">
-                              💆 {nombre}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                }
-                
-                return null;
-              })()}
 
               {/* Productos */}
               {reservaSeleccionada.productos && reservaSeleccionada.productos.length > 0 && (
