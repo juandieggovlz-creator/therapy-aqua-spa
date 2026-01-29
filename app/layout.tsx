@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import WhatsAppFloatingButton from './components/WhatsAppFloatingButton'
+import StickyBar from './components/StickyBar'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -33,7 +37,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased">
+        <Header />
         {children}
+        <Footer />
+        <WhatsAppFloatingButton />
+        <StickyBar />
       </body>
     </html>
   )
