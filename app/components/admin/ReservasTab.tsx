@@ -22,9 +22,8 @@ interface Reserva {
   estado?: string;
   esAfiliado?: boolean;
   terapias?: any[];
-  serviciosAdicionales?: (string | { id?: string; nombre?: string; precio?: number; precioAfiliado?: number; precioParticular?: number; icon?: string })[];
+  serviciosAdicionales?: (string | { id?: string; nombre?: string; precio?: number; precioAfiliado?: number; precioParticular?: number; precioAplicado?: number; icon?: string })[];
   productos?: (string | { id?: string; nombre?: string; precio?: number; icon?: string })[];
-  paqueteSeleccionado?: string;
   notas?: string;
   fechaCreacion?: string;
   createdAt?: string;
@@ -966,144 +965,62 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                 </div>
               )}
               
-              {/* Si hay paquete seleccionado, mostrar solo el paquete en el resumen financiero */}
-              {reservaSeleccionada.paqueteSeleccionado ? (
+              {/* Mostrar servicios adicionales individuales */}
+              {reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
                 <div className="bg-white/60 rounded-lg p-3 mb-2">
-                  <p className="text-xs font-semibold text-stone-600 mb-2">Paquete Relajación:</p>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-stone-700 truncate pr-2">
-                        💆 Paquete Relajación (Sauna + Jacuzzi + Baño Turco)
-                      </span>
-                      <span className="font-semibold text-[#3d2817] whitespace-nowrap">
-                        {formatearPrecio(
-                          reservaSeleccionada.esAfiliado 
-                            ? PRECIO_PAQUETE_AFILIADO 
-                            : PRECIO_PAQUETE_RELAJACION
-                        )}
-                      </span>
-                    </div>
-                    {reservaSeleccionada.esAfiliado && (
-                      <p className="text-xs text-green-700 mt-1">
-                        ✓ Precio afiliado: $13,000
-                      </p>
-                    )}
+                  <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
+                  <div className="space-y-2">
+                    {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
+                      let nombreServicio = '';
+                      let precioParticular = 0;
+                      let precioAfiliado = 0;
+                      let iconoServicio = '💆';
+                      
+                      // Si es un objeto, usar sus propiedades
+                      if (typeof servicio === 'object' && servicio !== null) {
+                        nombreServicio = servicio.nombre || servicio.id || 'Servicio';
+                        precioParticular = servicio.precioParticular || servicio.precio || 29900;
+                        precioAfiliado = servicio.precioAfiliado || 13000;
+                        iconoServicio = servicio.icon || '💆';
+                      } else {
+                        // Si es un string, buscar en las referencias
+                        const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
+                        if (servicioRef) {
+                          nombreServicio = servicioRef.nombre;
+                          precioParticular = servicioRef.precio;
+                          precioAfiliado = PRECIO_SERVICIO_AFILIADO;
+                          iconoServicio = servicioRef.icon;
+                        } else {
+                          nombreServicio = servicio;
+                          precioParticular = 0;
+                          precioAfiliado = 0;
+                        }
+                      }
+                      
+                      const precioAplicado = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
+                      
+                      return (
+                        <div key={idx} className="flex justify-between items-center text-sm">
+                          <span className="text-stone-700 truncate pr-2 flex items-center gap-1">
+                            <span>{iconoServicio}</span>
+                            <span>{nombreServicio}</span>
+                          </span>
+                          <div className="text-right">
+                            {reservaSeleccionada.esAfiliado && precioParticular > 0 && (
+                              <p className="text-xs text-stone-500 line-through">
+                                {formatearPrecio(precioParticular)}
+                              </p>
+                            )}
+                            <span className={`font-semibold whitespace-nowrap ${reservaSeleccionada.esAfiliado ? 'text-green-600' : 'text-[#3d2817]'}`}>
+                              {precioAplicado > 0 ? formatearPrecio(precioAplicado) : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ) : (
-                /* Si NO hay paquete, mostrar servicios adicionales individuales */
-                reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
-                  <div className="bg-white/60 rounded-lg p-3 mb-2">
-                    <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
-                    <div className="space-y-2">
-                      {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
-                        let nombreServicio = '';
-                        let precioParticular = 0;
-                        let precioAfiliado = 0;
-                        let iconoServicio = '💆';
-                        
-                        // Si es un objeto, usar sus propiedades
-                        if (typeof servicio === 'object' && servicio !== null) {
-                          nombreServicio = servicio.nombre || servicio.id || 'Servicio';
-                          precioParticular = servicio.precioParticular || servicio.precio || 29900;
-                          precioAfiliado = servicio.precioAfiliado || 13000;
-                          iconoServicio = servicio.icon || '💆';
-                        } else {
-                          // Si es un string, buscar en las referencias
-                          const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
-                          if (servicioRef) {
-                            nombreServicio = servicioRef.nombre;
-                            precioParticular = servicioRef.precio;
-                            precioAfiliado = PRECIO_SERVICIO_AFILIADO;
-                            iconoServicio = servicioRef.icon;
-                          } else {
-                            nombreServicio = servicio;
-                            precioParticular = 0;
-                            precioAfiliado = 0;
-                          }
-                        }
-                        
-                        const precioAplicado = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
-                        
-                        return (
-                          <div key={idx} className="flex justify-between items-center text-sm">
-                            <span className="text-stone-700 truncate pr-2 flex items-center gap-1">
-                              <span>{iconoServicio}</span>
-                              <span>{nombreServicio}</span>
-                            </span>
-                            <div className="text-right">
-                              {reservaSeleccionada.esAfiliado && precioParticular > 0 && (
-                                <p className="text-xs text-stone-500 line-through">
-                                  {formatearPrecio(precioParticular)}
-                                </p>
-                              )}
-                              <span className={`font-semibold whitespace-nowrap ${reservaSeleccionada.esAfiliado ? 'text-green-600' : 'text-[#3d2817]'}`}>
-                                {precioAplicado > 0 ? formatearPrecio(precioAplicado) : 'N/A'}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )
               )}
-
-              {/* Servicios adicionales fuera del paquete en el resumen financiero (si hay alguno) */}
-              {(() => {
-                if (!reservaSeleccionada.serviciosAdicionales || reservaSeleccionada.serviciosAdicionales.length === 0) return null;
-                
-                // Filtrar servicios que NO están en el paquete (solo si hay paquete seleccionado)
-                const serviciosFueraPaquete = reservaSeleccionada.paqueteSeleccionado
-                  ? reservaSeleccionada.serviciosAdicionales.filter((servicio: any) => {
-                      const id = typeof servicio === 'string' ? servicio : (servicio?.id || servicio?.nombre || '');
-                      return !['sauna', 'jacuzzi', 'turco'].includes(id.toLowerCase());
-                    })
-                  : [];
-                
-                // Solo mostrar si hay servicios fuera del paquete
-                if (serviciosFueraPaquete.length > 0) {
-                  return (
-                    <div className="bg-white/60 rounded-lg p-3 mb-2">
-                      <p className="text-xs font-semibold text-stone-600 mb-2">Otros Servicios Adicionales:</p>
-                      <div className="space-y-1">
-                        {serviciosFueraPaquete.map((servicio: any, idx: number) => {
-                          let nombreServicio = '';
-                          let precioServicio = 0;
-                          let iconoServicio = '💆';
-                          
-                          if (typeof servicio === 'object' && servicio !== null) {
-                            nombreServicio = servicio.nombre || servicio.id || 'Servicio';
-                            precioServicio = servicio.precio || servicio.precioParticular || 0;
-                            iconoServicio = servicio.icon || '💆';
-                          } else {
-                            const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
-                            if (servicioRef) {
-                              nombreServicio = servicioRef.nombre;
-                              precioServicio = servicioRef.precio;
-                              iconoServicio = servicioRef.icon;
-                            } else {
-                              nombreServicio = servicio;
-                              precioServicio = 0;
-                            }
-                          }
-                          
-                          return (
-                            <div key={idx} className="flex justify-between text-sm">
-                              <span className="text-stone-700 truncate pr-2">{iconoServicio} {nombreServicio}</span>
-                              <span className="font-semibold text-[#3d2817] whitespace-nowrap">
-                                {precioServicio > 0 ? formatearPrecio(precioServicio) : 'N/A'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                }
-                
-                return null;
-              })()}
 
               {/* Productos con precios */}
               {reservaSeleccionada.productos && reservaSeleccionada.productos.length > 0 && (
@@ -1159,16 +1076,12 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                 }
 
                 let subtotalServiciosAdicionales = 0;
-                // Si hay paquete seleccionado, usar precio del paquete (afiliado o normal)
-                if (reservaSeleccionada.paqueteSeleccionado) {
-                  subtotalServiciosAdicionales = reservaSeleccionada.esAfiliado 
-                    ? PRECIO_PAQUETE_AFILIADO 
-                    : PRECIO_PAQUETE_RELAJACION;
-                } else if (reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
-                  // Si no hay paquete, sumar servicios individuales
+                // Sumar servicios adicionales individuales
+                if (reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
                   subtotalServiciosAdicionales = reservaSeleccionada.serviciosAdicionales.reduce((sum: number, s: any) => {
                     if (typeof s === 'object' && s !== null) {
-                      return sum + (s.precio || s.precioParticular || 0);
+                      // Usar precioAplicado si existe, sino usar precio o precioParticular
+                      return sum + (s.precioAplicado || s.precio || s.precioParticular || 0);
                     } else {
                       const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[s];
                       return sum + (servicioRef?.precio || 0);
@@ -1205,9 +1118,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                           )}
                           {subtotalServiciosAdicionales > 0 && (
                             <div className="flex justify-between">
-                              <span className="text-stone-600">
-                                {reservaSeleccionada.paqueteSeleccionado ? 'Paquete Relajación (Sauna + Jacuzzi + Turco):' : 'Servicios Adicionales:'}
-                              </span>
+                              <span className="text-stone-600">Servicios Adicionales:</span>
                               <span className="font-semibold">{formatearPrecio(subtotalServiciosAdicionales)}</span>
                             </div>
                           )}
@@ -1242,14 +1153,12 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   subtotalTerapias = reservaSeleccionada.precio;
                 }
 
-                // Calcular servicios adicionales ORIGINALES (sin descuentos de afiliado)
+                // Calcular servicios adicionales ORIGINALES (precio particular, sin descuentos de afiliado)
                 let subtotalServiciosAdicionalesOriginal = 0;
-                if (reservaSeleccionada.paqueteSeleccionado) {
-                  subtotalServiciosAdicionalesOriginal = PRECIO_PAQUETE_RELAJACION; // $29,900
-                } else if (reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
+                if (reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
                   subtotalServiciosAdicionalesOriginal = reservaSeleccionada.serviciosAdicionales.reduce((sum: number, s: any) => {
                     if (typeof s === 'object' && s !== null) {
-                      return sum + (s.precio || s.precioParticular || 0);
+                      return sum + (s.precioParticular || s.precio || 29900);
                     } else {
                       const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[s];
                       return sum + (servicioRef?.precio || 0);
@@ -1269,23 +1178,29 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   }, 0);
                 }
 
-                // PRECIO ORIGINAL (sin ningún descuento): terapias + servicios originales + productos
+                // PRECIO ORIGINAL (sin ningún descuento): terapias + servicios originales (particulares) + productos
                 const precioTotalOriginal = subtotalTerapias + subtotalServiciosAdicionalesOriginal + subtotalProductos;
                 
-                // Si es afiliado: cambiar paquete de $29,900 a $13,000 ANTES de calcular el 20%
+                // Si es afiliado: calcular servicios adicionales con precio de afiliado ($13,000)
                 let subtotalServiciosAdicionalesConDescuento = subtotalServiciosAdicionalesOriginal;
-                if (reservaSeleccionada.esAfiliado && reservaSeleccionada.paqueteSeleccionado) {
-                  subtotalServiciosAdicionalesConDescuento = PRECIO_PAQUETE_AFILIADO; // $13,000
+                if (reservaSeleccionada.esAfiliado && reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
+                  subtotalServiciosAdicionalesConDescuento = reservaSeleccionada.serviciosAdicionales.reduce((sum: number, s: any) => {
+                    if (typeof s === 'object' && s !== null) {
+                      return sum + (s.precioAfiliado || 13000);
+                    } else {
+                      return sum + 13000; // Precio afiliado por defecto
+                    }
+                  }, 0);
                 }
                 
-                // Calcular nuevo total con el paquete a precio afiliado
-                const precioTotalConPaqueteDescuento = subtotalTerapias + subtotalServiciosAdicionalesConDescuento + subtotalProductos;
+                // Calcular nuevo total con servicios a precio afiliado
+                const precioTotalConServiciosAfiliado = subtotalTerapias + subtotalServiciosAdicionalesConDescuento + subtotalProductos;
                 
-                // Descuento del 20% sobre el TOTAL (con el paquete ya ajustado a $13,000 si aplica)
-                const descuentoAfiliadoTotal = reservaSeleccionada.esAfiliado ? precioTotalConPaqueteDescuento * 0.20 : 0;
+                // Descuento del 20% sobre el TOTAL (con servicios ya ajustados a precio afiliado si aplica)
+                const descuentoAfiliadoTotal = reservaSeleccionada.esAfiliado ? precioTotalConServiciosAfiliado * 0.20 : 0;
                 
-                // Precio final: total con paquete ajustado menos el descuento del 20%
-                const precioConDescuento = precioTotalConPaqueteDescuento - descuentoAfiliadoTotal;
+                // Precio final: total con servicios ajustados menos el descuento del 20%
+                const precioConDescuento = precioTotalConServiciosAfiliado - descuentoAfiliadoTotal;
                 
                 // Precio mostrado: si ya es afiliado, usar precio con descuento; si no, usar precio original
                 const precioMostrado = reservaSeleccionada.esAfiliado ? precioConDescuento : precioTotalOriginal;
@@ -1301,10 +1216,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                         </span>
                       </div>
                       <p className="text-xs text-blue-700 mt-1">
-                        Precio calculado por los servicios seleccionados
-                        {reservaSeleccionada.paqueteSeleccionado && (
-                          <span className="block mt-1">• Paquete Relajación: {formatearPrecio(PRECIO_PAQUETE_RELAJACION)}</span>
-                        )}
+                        Precio calculado por los servicios seleccionados (sin aplicar descuentos)
                       </p>
                     </div>
 
@@ -1369,20 +1281,26 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                               onClick={() => {
                                 setAplicandoDescuentos(true);
                                 // Calcular descuentos automáticamente:
-                                // 1. Si hay paquete, cambiarlo de $29,900 a $13,000
+                                // 1. Cambiar servicios adicionales de precio particular a precio afiliado ($13,000 c/u)
                                 let serviciosConDescuento = subtotalServiciosAdicionalesOriginal;
-                                if (reservaSeleccionada.paqueteSeleccionado) {
-                                  serviciosConDescuento = PRECIO_PAQUETE_AFILIADO; // $13,000
+                                if (reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
+                                  serviciosConDescuento = reservaSeleccionada.serviciosAdicionales.reduce((sum: number, s: any) => {
+                                    if (typeof s === 'object' && s !== null) {
+                                      return sum + (s.precioAfiliado || 13000);
+                                    } else {
+                                      return sum + 13000; // Precio afiliado por defecto
+                                    }
+                                  }, 0);
                                 }
-                                // 2. Calcular nuevo total con paquete ajustado
-                                const precioTotalConPaqueteAjustado = subtotalTerapias + serviciosConDescuento + subtotalProductos;
+                                // 2. Calcular nuevo total con servicios ajustados
+                                const precioTotalConServiciosAjustados = subtotalTerapias + serviciosConDescuento + subtotalProductos;
                                 // 3. Aplicar 20% sobre ese total
-                                const descuentoTotal = precioTotalConPaqueteAjustado * 0.20;
-                                const precioFinalConDescuentos = precioTotalConPaqueteAjustado - descuentoTotal;
+                                const descuentoTotal = precioTotalConServiciosAjustados * 0.20;
+                                const precioFinalConDescuentos = precioTotalConServiciosAjustados - descuentoTotal;
                                 aplicarDescuentosAfiliado(reservaSeleccionada.id, precioFinalConDescuentos);
                               }}
                               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                              title="Aplicar descuentos de afiliado (20% en terapias y precio especial en servicios adicionales)"
+                              title="Aplicar descuentos de afiliado (20% sobre el total con servicios adicionales a precio afiliado)"
                             >
                               👑 Aplicar Descuentos de Afiliado
                             </button>
@@ -1393,11 +1311,9 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                         <div className="mt-2 pt-2 border-t border-amber-300">
                           <p className="text-xs text-amber-800">
                             <strong>Diferencia aplicada:</strong> {formatearPrecio(precioTotalOriginal - precioMostrado)} de descuento por beneficios de afiliado
-                            {reservaSeleccionada.paqueteSeleccionado && (
-                              <span className="block mt-1">
-                                • Paquete ajustado de {formatearPrecio(PRECIO_PAQUETE_RELAJACION)} a {formatearPrecio(PRECIO_PAQUETE_AFILIADO)}
-                              </span>
-                            )}
+                          </p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            ✓ Servicios adicionales a precio afiliado ($13.000 c/u) + Descuento del 20% sobre el total
                           </p>
                         </div>
                       )}
