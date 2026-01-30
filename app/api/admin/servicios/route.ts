@@ -71,29 +71,34 @@ export async function POST(request: Request) {
       imagenFinal = `/image/${encodeURIComponent(imagenFinal)}`;
     }
     
-    const nuevoServicio = await prisma.servicio.create({
-      data: {
-        servicio_id: servicioId,
-        nombre: body.nombre,
-        descripcion: body.descripcion || '',
-        categoria: body.categoria || 'General',
-        precio: body.precio,
-        duracion: body.duracion || 30,
-        icon: body.icon || '💆',
-        imagen: imagenFinal,
-        activo: body.activo !== undefined ? body.activo : true,
-        orden: body.orden || 0,
-        detalles: body.detalles || null,
-      }
-    });
+    // Usar query raw para insertar
+    await prisma.$executeRaw`
+      INSERT INTO servicios (servicio_id, nombre, descripcion, categoria, precio, duracion, icon, imagen, activo, orden, detalles, created_at, updated_at)
+      VALUES (
+        ${servicioId},
+        ${body.nombre},
+        ${body.descripcion || ''},
+        ${body.categoria || 'General'},
+        ${body.precio},
+        ${body.duracion || 30},
+        ${body.icon || '💆'},
+        ${imagenFinal},
+        ${body.activo !== undefined ? body.activo : true},
+        ${body.orden || 0},
+        ${body.detalles ? JSON.stringify(body.detalles) : null}::jsonb,
+        NOW(),
+        NOW()
+      )
+    `;
 
-    console.log('✅ Servicio creado:', nuevoServicio.servicio_id);
+    console.log('✅ Servicio creado:', servicioId);
 
     return NextResponse.json({ 
       servicio: {
-        ...nuevoServicio,
-        id: nuevoServicio.servicio_id,
-        precio: Number(nuevoServicio.precio),
+        id: servicioId,
+        servicio_id: servicioId,
+        nombre: body.nombre,
+        precio: Number(body.precio),
         descuento: 0,
         destacado: false
       },
@@ -141,18 +146,35 @@ export async function PATCH(request: Request) {
     if (updates.orden !== undefined) validUpdates.orden = updates.orden;
     if (updates.detalles !== undefined) validUpdates.detalles = updates.detalles;
 
-    const servicioActualizado = await prisma.servicio.update({
-      where: { servicio_id: id },
-      data: validUpdates
-    });
+    // Usar query raw para actualizar
+    if (Object.keys(validUpdates).length > 0) {
+      // Construir el query SQL manualmente
+      const setStatements: string[] = [];
+      if (validUpdates.nombre) setStatements.push(`nombre = '${validUpdates.nombre.replace(/'/g, "''")}'`);
+      if (validUpdates.descripcion !== undefined) setStatements.push(`descripcion = '${(validUpdates.descripcion || '').replace(/'/g, "''")}'`);
+      if (validUpdates.categoria) setStatements.push(`categoria = '${validUpdates.categoria.replace(/'/g, "''")}'`);
+      if (validUpdates.precio) setStatements.push(`precio = ${validUpdates.precio}`);
+      if (validUpdates.duracion) setStatements.push(`duracion = ${validUpdates.duracion}`);
+      if (validUpdates.icon) setStatements.push(`icon = '${validUpdates.icon.replace(/'/g, "''")}'`);
+      if (validUpdates.imagen !== undefined) setStatements.push(`imagen = '${(validUpdates.imagen || '').replace(/'/g, "''")}'`);
+      if (validUpdates.activo !== undefined) setStatements.push(`activo = ${validUpdates.activo}`);
+      if (validUpdates.orden !== undefined) setStatements.push(`orden = ${validUpdates.orden}`);
+      if (validUpdates.detalles !== undefined) setStatements.push(`detalles = '${JSON.stringify(validUpdates.detalles).replace(/'/g, "''")}'::jsonb`);
+      
+      setStatements.push(`updated_at = NOW()`);
+      
+      const query = `UPDATE servicios SET ${setStatements.join(', ')} WHERE servicio_id = '${id}'`;
+      await prisma.$executeRawUnsafe(query);
+    }
 
     console.log('✅ Servicio actualizado:', id);
 
     return NextResponse.json({ 
       servicio: {
-        ...servicioActualizado,
-        id: servicioActualizado.servicio_id,
-        precio: Number(servicioActualizado.precio),
+        id: id,
+        servicio_id: id,
+        ...validUpdates,
+        precio: validUpdates.precio ? Number(validUpdates.precio) : undefined,
         descuento: 0,
         destacado: false
       },
@@ -180,9 +202,11 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.servicio.delete({
-      where: { servicio_id: id }
-    });
+    // Usar query raw para eliminar
+    await prisma.$executeRaw`
+      DELETE FROM servicios 
+      WHERE servicio_id = ${id}
+    `;
 
     console.log('✅ Servicio eliminado:', id);
 
