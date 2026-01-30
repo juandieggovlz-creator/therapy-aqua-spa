@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate": "tsx scripts/migrate-to-vercel.ts"
+    "migrate": "tsx scripts/migrate-to-vercel.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@vercel/kv": "^3.0.0",
     "@vercel/postgres": "^0.10.0",
     "next": "^16.1.1",
@@ -18,7 +20,6 @@
     "redis": "^5.10.0"
   },
   "devDependencies": {
-    "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
