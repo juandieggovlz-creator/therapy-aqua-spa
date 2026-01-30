@@ -143,23 +143,19 @@ const testimoniosQuick = [
 ];
 
 export default function HomePage() {
-  const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
-  const [promocionActiva, setPromocionActiva] = useState<any>(null);
-      // Forzar actualización con los nuevos datos
-      if (nuevoContenido.servicios) {
-        actualizarServiciosDesdeAPI(nuevoContenido.servicios, nuevoContenido.descuentos || {});
-      }
-      if (nuevoContenido.promociones) {
-        actualizarPromocionActiva(nuevoContenido.promociones);
-      }
-    }
-  });
+  const [currentTestimonio, setCurrentTestimonio] = useState(0);
 
-  // Función auxiliar para actualizar servicios desde los datos de la API
-  const actualizarServiciosDesdeAPI = useCallback((serviciosAPI: any[], descuentos: any) => {
-    try {
-      const serviciosActivos = serviciosAPI.filter((s: any) => s.activo === true);
-      const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonio((prev) => (prev + 1) % testimoniosQuick.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
+      <style jsx>{`
+        @keyframes blob {
       
       let serviciosAMostrar: any[] = [];
       if (serviciosDestacadosAPI.length > 0) {
@@ -664,7 +660,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {serviciosDestacados.map((servicio) => (
+            {serviciosDestacadosBase.map((servicio) => (
               <div
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"
