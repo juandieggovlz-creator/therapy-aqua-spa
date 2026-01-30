@@ -561,7 +561,7 @@ export default function HomePage() {
       </section>
 
       {/* Banner de Promoción Activa */}
-      {!loadingPromocion && promocionActiva && (
+      {promocionActiva && (
         <section className="py-8 px-4 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-y-2 border-green-200">
           <div className="max-w-7xl mx-auto">
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-2xl p-8 md:p-12 relative overflow-hidden">
@@ -647,9 +647,7 @@ export default function HomePage() {
                 <div 
                   className="relative w-full h-full transition-all duration-700"
                   style={{
-                    transformStyle: 'preserve-3d',
-                    transform: flippedCard === servicio.id ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                    zIndex: flippedCard === servicio.id ? 50 : 1
+                    transformStyle: 'preserve-3d'
                   }}
                 >
                   <div 
