@@ -928,7 +928,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      )}
 
       <section className="py-20 px-4 bg-gradient-to-br from-amber-100 to-stone-100">
         <div className="max-w-7xl mx-auto">
