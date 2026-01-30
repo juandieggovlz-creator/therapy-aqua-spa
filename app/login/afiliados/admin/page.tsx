@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ServiciosTab from '@/app/components/admin/ServiciosTab';
 
 type TabType = 'dashboard' | 'usuarios' | 'reservas' | 'servicios' | 'finanzas' | 'comunicacion';
 
@@ -587,8 +588,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Tab de Servicios */}
+        {activeTab === 'servicios' && <ServiciosTab />}
+
         {/* Otros tabs (placeholder) */}
-        {activeTab !== 'dashboard' && activeTab !== 'reservas' && (
+        {activeTab !== 'dashboard' && activeTab !== 'reservas' && activeTab !== 'servicios' && (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <div className="w-24 h-24 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-5xl">🚧</span>

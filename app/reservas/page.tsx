@@ -27,41 +27,16 @@ type ProductoSpa = {
   icon: string;
 };
 
-const terapias: TerapiaItem[] = [
-  { id: 'columna', nombre: 'THERAPY LESIONES DE COLUMNA', duracion: 30, precio: 100000, icon: '🦴' },
-  { id: 'brazos', nombre: 'THERAPY LESIONES MUSCULARES BRAZOS', duracion: 30, precio: 60000, icon: '💪' },
-  { id: 'piernas', nombre: 'THERAPY LESIONES MUSCULARES PIERNAS', duracion: 30, precio: 60000, icon: '🦵' },
-  { id: 'hombro', nombre: 'THERAPY TRAUMA HOMBRO, CODO, MUÑECA', duracion: 30, precio: 250000, icon: '🤝' },
-  { id: 'cadera', nombre: 'THERAPY TRAUMA CADERA, RODILLA, TOBILLO', duracion: 30, precio: 250000, icon: '🦿' },
-  { id: 'mano', nombre: 'SKINCARE MANO THERAPY', duracion: 30, precio: 90000, icon: '🤲' },
-  { id: 'ocular', nombre: 'PRESO THERAPY OCULAR', duracion: 30, precio: 80000, icon: '👁️' },
-  { id: 'bienestar', nombre: 'MASAJE BIENESTAR GENERAL', duracion: 45, precio: 140000, icon: '🌿' },
-  { id: 'facial', nombre: 'MASAJE FACIAL', duracion: 30, precio: 90000, icon: '✨' },
-  { id: 'espalda', nombre: 'MASAJE DE ESPALDA', duracion: 30, precio: 120000, icon: '🧘' },
-  { id: 'hombros', nombre: 'MASAJE HOMBROS Y BRAZOS', duracion: 30, precio: 100000, icon: '💆' },
-  { id: 'rodillas', nombre: 'MASAJE CADERAS Y RODILLAS', duracion: 30, precio: 120000, icon: '🦴' },
-  { id: 'pies', nombre: 'MASAJE PANTORRILLAS Y PIES', duracion: 30, precio: 120000, icon: '🦶' },
-  { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', duracion: 40, precio: 100000, icon: '🏃' },
-];
-
-const serviciosAdicionales: ServicioAdicional[] = [
-  { id: 'sauna', nombre: 'Sauna', precioAfiliado: 13600, precioParticular: 29900, icon: '🔥' },
-  { id: 'jacuzzi', nombre: 'Jacuzzi', precioAfiliado: 13600, precioParticular: 29900, icon: '🛁' },
-  { id: 'turco', nombre: 'Baño Turco', precioAfiliado: 13600, precioParticular: 29900, icon: '💨' },
-];
-
-const productosSpa: ProductoSpa[] = [
-  { id: 'candado', nombre: 'Candado para casillero', precio: 5000, icon: '🔐' },
-  { id: 'ropa', nombre: 'Kit ropa interior desechable', precio: 8000, icon: '👕' },
-];
-
-const horariosDisponibles = [
-  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'
-];
-
 function ReservasContent() {
   const searchParams = useSearchParams();
+  
+  // Estados para datos cargados desde la base de datos
+  const [terapias, setTerapias] = useState<TerapiaItem[]>([]);
+  const [serviciosAdicionales, setServiciosAdicionales] = useState<ServicioAdicional[]>([]);
+  const [productosSpa, setProductosSpa] = useState<ProductoSpa[]>([]);
+  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
+  const [cargandoDatos, setCargandoDatos] = useState(true);
+  
   const [paso, setPaso] = useState(1);
   const [esAfiliado, setEsAfiliado] = useState(false);
   const [afiliadoNombre, setAfiliadoNombre] = useState<string | null>(null);
@@ -94,16 +69,67 @@ function ReservasContent() {
     }
   }, []);
 
+  // Cargar datos desde la base de datos
+  useEffect(() => {
+    const cargarDatos = async () => {
+      setCargandoDatos(true);
+      try {
+        // Cargar servicios (terapias)
+        const resServicios = await fetch('/api/servicios');
+        const dataServicios = await resServicios.json();
+        setTerapias((dataServicios.servicios || []).map((s: any) => ({
+          id: s.servicio_id,
+          nombre: s.nombre,
+          duracion: s.duracion,
+          precio: parseFloat(s.precio),
+          icon: s.icon || '💆'
+        })));
+
+        // Cargar servicios adicionales
+        const resAdicionales = await fetch('/api/servicios-adicionales');
+        const dataAdicionales = await resAdicionales.json();
+        setServiciosAdicionales((dataAdicionales.servicios || []).map((s: any) => ({
+          id: s.servicio_id,
+          nombre: s.nombre,
+          precioAfiliado: parseFloat(s.precio_afiliado),
+          precioParticular: parseFloat(s.precio_particular),
+          icon: s.icon || '✨'
+        })));
+
+        // Cargar productos
+        const resProductos = await fetch('/api/productos');
+        const dataProductos = await resProductos.json();
+        setProductosSpa((dataProductos.productos || []).map((p: any) => ({
+          id: p.producto_id,
+          nombre: p.nombre,
+          precio: parseFloat(p.precio),
+          icon: p.icon || '🛍️'
+        })));
+
+        // Cargar horarios
+        const resHorarios = await fetch('/api/horarios');
+        const dataHorarios = await resHorarios.json();
+        setHorariosDisponibles((dataHorarios.horarios || []).map((h: any) => h.hora));
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      } finally {
+        setCargandoDatos(false);
+      }
+    };
+
+    cargarDatos();
+  }, []);
+
   useEffect(() => {
     const servicioParam = searchParams?.get('servicio');
-    if (servicioParam && terapiasSeleccionadas.length === 0) {
+    if (servicioParam && terapiasSeleccionadas.length === 0 && terapias.length > 0) {
       const terapia = terapias.find(t => t.id === servicioParam);
       if (terapia) {
         setTerapiasSeleccionadas([terapia.id]);
         setPaso(2);
       }
     }
-  }, [searchParams, terapiasSeleccionadas.length]);
+  }, [searchParams, terapiasSeleccionadas.length, terapias]);
 
   const esDiaValido = (fecha: string) => {
     if (!fecha) return true;
