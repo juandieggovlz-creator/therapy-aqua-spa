@@ -988,53 +988,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 px-4" style={{display: 'none'}}>
-        <div className="max-w-5xl mx-auto">
-          <div className="relative bg-gradient-to-br from-[#3d2817] to-[#2d1f11] rounded-3xl shadow-2xl overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500 rounded-full opacity-10 blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500 rounded-full opacity-10 blur-3xl"></div>
-            
-            <div className="relative z-10 text-center py-16 px-8">
-              {contenido.anuncio.etiqueta && (
-                <div className="inline-block mb-6">
-                  <span className="bg-gradient-to-r from-amber-400 to-orange-400 text-[#3d2817] px-6 py-2 rounded-full text-sm font-bold">
-                    {contenido.anuncio.etiqueta}
-                  </span>
-                </div>
-              )}
-              
-              {contenido.anuncio.titulo && (
-                <h2 className="text-3xl md:text-5xl font-bold text-white mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  {contenido.anuncio.titulo}
-                </h2>
-              )}
-              
-              {contenido.anuncio.descripcion && (
-                <p className="text-xl text-stone-200 mb-8 max-w-3xl mx-auto">
-                  {contenido.anuncio.descripcion}
-                </p>
-              )}
-
-              {contenido.anuncio.mostrarBoton && (
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                  {contenido.anuncio.botonTexto && contenido.anuncio.botonEnlace && (
-                    <Link 
-                      href={contenido.anuncio.botonEnlace}
-                      className="group relative inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                      </svg>
-                      {contenido.anuncio.botonTexto}
-                      <span className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full"></span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Sección de anuncios deshabilitada */}
 
     </main>
   );
