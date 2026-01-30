@@ -156,29 +156,29 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
       <style jsx>{`
         @keyframes blob {
-      
-      let serviciosAMostrar: any[] = [];
-      if (serviciosDestacadosAPI.length > 0) {
-        serviciosAMostrar = [...serviciosDestacadosAPI];
-        const otrosServicios = serviciosActivos.filter((s: any) => !s.destacado);
-        const serviciosNecesarios = 6 - serviciosAMostrar.length;
-        serviciosAMostrar = [...serviciosAMostrar, ...otrosServicios.slice(0, serviciosNecesarios)];
-      } else {
-        serviciosAMostrar = serviciosActivos.slice(0, 6);
-      }
-      
-      const serviciosMapeados = serviciosAMostrar
-        .map((s: any, index: number) => {
-          const servicioBase = serviciosDestacadosBase.find(sb => sb.key === s.id);
-          const precioBase = s.precio || s.precioOriginal || 0;
-          const descuentoInfo = descuentos[s.id];
-          const descuentoAplicado = descuentoInfo?.porcentaje || 0;
-          const precioFinal = descuentoAplicado > 0 
-            ? precioBase * (1 - descuentoAplicado / 100)
-            : precioBase;
-          
-          return {
-            id: index + 1,
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
             key: s.id,
             title: s.nombre,
             icon: s.icon || servicioBase?.icon || "✨",
