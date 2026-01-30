@@ -6,9 +6,12 @@ const prisma = new PrismaClient();
 // GET - Obtener todos los servicios
 export async function GET() {
   try {
-    const servicios = await prisma.servicio.findMany({
-      orderBy: { created_at: 'desc' }
-    });
+    // Usar query raw para evitar problemas con Prisma client
+    const servicios: any[] = await prisma.$queryRaw`
+      SELECT *
+      FROM servicios
+      ORDER BY created_at DESC
+    `;
 
     // Convertir Decimal a number para el frontend y mapear IDs
     const serviciosFormateados = servicios.map((s: any) => {

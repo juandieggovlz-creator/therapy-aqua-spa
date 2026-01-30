@@ -6,15 +6,25 @@ const prisma = new PrismaClient();
 // GET - Obtener servicios activos para mostrar en la página pública
 export async function GET() {
   try {
-    const servicios = await prisma.servicio.findMany({
-      where: { activo: true },
-      orderBy: { created_at: 'desc' }
-    });
+    // Usar query raw para evitar problemas con Prisma client
+    const servicios: any[] = await prisma.$queryRaw`
+      SELECT *
+      FROM servicios
+      WHERE activo = true
+      ORDER BY created_at DESC
+    `;
 
     // Convertir Decimal a number y formatear para el frontend
     const serviciosFormateados = servicios.map((s: any) => {
+      // ARREGLO: Si imagen es la cadena "null", tratarla como null real
+      let imagenDB = s.imagen;
+      if (imagenDB === 'null' || imagenDB === null || imagenDB === undefined) {
+        imagenDB = '';
+      }
+      
       // Procesar la imagen para asegurar que tenga la ruta correcta
-      let imagenFinal = s.imagen || '';
+      let imagenFinal = imagenDB;
+      
       if (imagenFinal) {
         if (imagenFinal.startsWith('http')) {
           // URL externa, dejar como está
