@@ -1,24 +1,13 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 // GET - Obtener todos los productos
 export async function GET() {
   try {
-    const productos = await prisma.producto.findMany({
-      orderBy: { created_at: 'desc' }
-    });
-
-    // Convertir Decimal a number para el frontend y mapear IDs
-    const productosFormateados = productos.map((p: any) => ({
-      ...p,
-      id: p.producto_id, // Usar producto_id como id para el frontend
-      precio: Number(p.precio)
-    }));
+    // TODO: Implementar cuando la tabla productos exista en Neon
+    const productos: any[] = [];
 
     return NextResponse.json({ 
-      productos: productosFormateados,
+      productos,
       success: true 
     });
   } catch (error) {
@@ -33,34 +22,11 @@ export async function GET() {
 // POST - Crear nuevo producto
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    
-    // Generar producto_id único
-    const productoId = `prod_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
-    const nuevoProducto = await prisma.producto.create({
-      data: {
-        producto_id: productoId,
-        nombre: body.nombre,
-        descripcion: body.descripcion || '',
-        precio: body.precio,
-        icon: body.icon || '🛍️',
-        stock: body.stock || null,
-        activo: body.activo !== undefined ? body.activo : true,
-        orden: body.orden || 0,
-      }
-    });
-
-    console.log('✅ Producto creado:', nuevoProducto.producto_id);
-
+    // TODO: Implementar cuando la tabla productos exista en Neon
     return NextResponse.json({ 
-      producto: {
-        ...nuevoProducto,
-        id: nuevoProducto.producto_id,
-        precio: Number(nuevoProducto.precio)
-      },
-      success: true 
-    });
+      error: 'Funcionalidad no disponible',
+      success: false 
+    }, { status: 501 });
   } catch (error) {
     console.error('❌ Error creando producto:', error);
     return NextResponse.json(
@@ -70,26 +36,31 @@ export async function POST(request: Request) {
   }
 }
 
+// PATCH - Actualizar producto existente
+export async function PATCH(request: Request) {
+  try {
+    // TODO: Implementar cuando la tabla productos exista en Neon
+    return NextResponse.json({ 
+      error: 'Funcionalidad no disponible',
+      success: false 
+    }, { status: 501 });
+  } catch (error) {
+    console.error('❌ Error actualizando producto:', error);
+    return NextResponse.json(
+      { error: 'Error al actualizar producto' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE - Eliminar producto
 export async function DELETE(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'ID es requerido' },
-        { status: 400 }
-      );
-    }
-
-    await prisma.producto.delete({
-      where: { producto_id: id }
-    });
-
-    console.log('✅ Producto eliminado:', id);
-
-    return NextResponse.json({ success: true });
+    // TODO: Implementar cuando la tabla productos exista en Neon
+    return NextResponse.json({ 
+      error: 'Funcionalidad no disponible',
+      success: false 
+    }, { status: 501 });
   } catch (error) {
     console.error('❌ Error eliminando producto:', error);
     return NextResponse.json(
@@ -98,4 +69,3 @@ export async function DELETE(request: Request) {
     );
   }
 }
-
