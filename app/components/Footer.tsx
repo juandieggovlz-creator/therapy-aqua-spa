@@ -1,12 +1,79 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+	const pathname = usePathname();
+	
+	// Datos fijos del footer
+	const logoData = { imagen: '/image/logo-oficial.jpg', texto: 'Therapy Aqua Spa' };
+	const contacto = {
+		telefono: '+57 301 4185239',
+		email: 'contacto@therapyspa.com',
+		whatsappLink: 'https://wa.me/573014185239',
+		horariosAtencion: 'Lun - Sáb: 8:00 AM - 8:00 PM'
+	};
+	const redesSociales = { instagram: '', facebook: '', tiktok: '', youtube: '', twitter: '' };
+	
+	// Ocultar footer solo en el panel de admin (no en login)
+	const isAdminPanel = pathname?.startsWith('/login/afiliados/admin');
+	
+	if (isAdminPanel) {
+		return null;
+	}
+
 	return (
 		<footer className="mt-20 border-t border-[var(--color-border)] bg-[color:var(--cafe-900)] py-10 text-[color:var(--blanco)]">
 			<div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 sm:grid-cols-3">
 				<div>
-					<p className="text-lg font-semibold" style={{ fontFamily: "var(--font-playfair)" }}>Therapy Aqua Spa</p>
+					<div className="flex items-center gap-3 mb-2">
+						{logoData?.imagen && (
+							<Image 
+								src={logoData.imagen} 
+								alt={logoData.texto || 'Therapy Aqua Spa Logo'} 
+								width={40} 
+								height={40}
+								className="rounded-full object-cover"
+							/>
+						)}
+						<p className="text-lg font-semibold" style={{ fontFamily: "var(--font-playfair)" }}>
+							{logoData?.texto || 'Therapy Aqua Spa'}
+						</p>
+					</div>
 					<p className="mt-2 text-sm opacity-80">Respira. Relájate. Renueva.</p>
+					
+					{/* Redes Sociales */}
+					{(redesSociales.instagram || redesSociales.facebook || redesSociales.tiktok || redesSociales.youtube || redesSociales.twitter) && (
+						<div className="mt-4 flex gap-3">
+							{redesSociales.instagram && (
+								<a href={redesSociales.instagram} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all">
+									<span className="text-lg">📷</span>
+								</a>
+							)}
+							{redesSociales.facebook && (
+								<a href={redesSociales.facebook} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all">
+									<span className="text-lg">👥</span>
+								</a>
+							)}
+							{redesSociales.tiktok && (
+								<a href={redesSociales.tiktok} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all">
+									<span className="text-lg">🎵</span>
+								</a>
+							)}
+							{redesSociales.youtube && (
+								<a href={redesSociales.youtube} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all">
+									<span className="text-lg">▶️</span>
+								</a>
+							)}
+							{redesSociales.twitter && (
+								<a href={redesSociales.twitter} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all">
+									<span className="text-lg">🐦</span>
+								</a>
+							)}
+						</div>
+					)}
 				</div>
 				<div>
 					<p className="text-sm font-medium">Enlaces</p>
@@ -14,17 +81,33 @@ export default function Footer() {
 						<li><Link href="/promociones" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">Promociones</Link></li>
 						<li><Link href="/testimonios" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">Testimonios</Link></li>
 						<li><Link href="/faqs" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">FAQs</Link></li>
+						<li><Link href="/sobre-nosotros" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">Sobre Nosotros</Link></li>
+						<li><Link href="/contacto" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">Contacto</Link></li>
 					</ul>
 				</div>
 				<div>
-					<p className="text-sm font-medium">Legal</p>
+					<p className="text-sm font-medium">Contacto</p>
 					<ul className="mt-2 space-y-2 text-sm opacity-90">
-						<li><Link href="/legal/privacidad" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">Política de privacidad</Link></li>
-						<li><Link href="/legal/terminos" className="transition-all duration-300 hover:translate-x-1 hover:opacity-100 hover:underline">Términos y condiciones</Link></li>
+						<li className="flex items-center gap-2">
+							<span>📞</span>
+							<a href={`tel:${contacto.telefono}`} className="hover:opacity-100 hover:underline">{contacto.telefono}</a>
+						</li>
+						<li className="flex items-center gap-2">
+							<span>✉️</span>
+							<a href={`mailto:${contacto.email}`} className="hover:opacity-100 hover:underline">{contacto.email}</a>
+						</li>
+						<li className="flex items-center gap-2">
+							<span>💬</span>
+							<a href={contacto.whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-100 hover:underline">WhatsApp</a>
+						</li>
+						<li className="flex items-center gap-2 mt-4 pt-4 border-t border-white/20">
+							<span>🕐</span>
+							<span>{contacto.horariosAtencion}</span>
+						</li>
 					</ul>
 				</div>
 			</div>
-			<div className="mx-auto mt-8 max-w-6xl px-4 text-xs opacity-75">© {new Date().getFullYear()} Therapy Aqua Spa</div>
+			<div className="mx-auto mt-8 max-w-6xl px-4 text-xs opacity-75">© {new Date().getFullYear()} {logoData?.texto || 'Therapy Aqua Spa'}</div>
 		</footer>
 	);
 }

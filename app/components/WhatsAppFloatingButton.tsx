@@ -1,12 +1,23 @@
 "use client";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function WhatsAppFloatingButton() {
 	const [isHovered, setIsHovered] = useState(false);
+	const pathname = usePathname();
+	
+	// Ocultar solo en el panel de admin (no en login)
+	const isAdminPanel = pathname?.startsWith('/login/afiliados/admin');
+	
+	if (isAdminPanel) {
+		return null;
+	}
+
+	const whatsappUrl = `https://wa.me/573014185239?text=${encodeURIComponent('Hola, me interesa conocer más sobre sus servicios')}`;
 
 	return (
 		<a
-			href="https://wa.me/573014185239"
+			href={whatsappUrl}
 			target="_blank"
 			rel="noopener noreferrer"
 			className="group fixed bottom-20 right-4 z-40 flex items-center gap-2 overflow-hidden rounded-full bg-[#25D366] p-3 shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 md:bottom-8 md:right-8 md:p-4"
