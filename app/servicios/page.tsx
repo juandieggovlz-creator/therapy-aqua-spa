@@ -496,7 +496,7 @@ export default function ServiciosPage() {
         priceLabel: `$${(servicioAPI.precio || 0).toLocaleString('es-CO')}`,
         icon: servicioAPI.icon || '✨',
         imagen: servicioAPI.imagen ? getImagePath(servicioAPI.imagen) : '', // Sin imagen, se mostrará el emoji
-        detalles: servicioAPI.descripcion ? [servicioAPI.descripcion] : ["Servicio profesional"]
+        detalles: Array.isArray(servicioAPI.detalles) ? servicioAPI.detalles : (servicioAPI.descripcion ? [servicioAPI.descripcion] : ["Servicio profesional"])
       };
 
       if (indexExistente !== -1) {
