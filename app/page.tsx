@@ -364,7 +364,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {serviciosDestacadosBase.map((servicio) => (
+            {serviciosDestacados.map((servicio) => (
               <div 
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"

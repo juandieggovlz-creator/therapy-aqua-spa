@@ -486,9 +486,7 @@ export default function ServiciosTab() {
                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-amber-100 to-stone-200 flex-shrink-0">
                   {servicio.imagen && servicio.imagen.trim() !== '' ? (
                     <img
-                      src={servicio.imagen.startsWith('http') || servicio.imagen.startsWith('/') 
-                        ? servicio.imagen 
-                        : `/image/${encodeURIComponent(servicio.imagen)}`}
+                      src={servicio.imagen}
                       alt={servicio.nombre}
                       className="w-full h-full object-cover"
                       onError={(e) => {

@@ -400,7 +400,10 @@ export default function ServiciosPage() {
     const servicioId = servicio.key || servicio.id;
     const servicioAPI = serviciosAPI.find(s => s.id === servicioId);
     if (servicioAPI?.imagen) {
-      const imagenPath = getImagePath(servicioAPI.imagen);
+      // Si la imagen ya viene con ruta completa desde la API, usarla directamente
+      const imagenPath = servicioAPI.imagen.startsWith('http') || servicioAPI.imagen.startsWith('/') 
+        ? servicioAPI.imagen 
+        : getImagePath(servicioAPI.imagen);
       console.log(`🖼️ Imagen para ${servicioId}: ${servicioAPI.imagen} → ${imagenPath}`);
       return imagenPath;
     }

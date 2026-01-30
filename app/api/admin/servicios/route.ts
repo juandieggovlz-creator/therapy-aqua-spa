@@ -14,8 +14,20 @@ export async function GET() {
     const serviciosFormateados = servicios.map((s: any) => {
       // Procesar la ruta de la imagen
       let imagenUrl = s.imagen || '';
-      if (imagenUrl && !imagenUrl.startsWith('http') && !imagenUrl.startsWith('/')) {
-        imagenUrl = `/image/${imagenUrl}`;
+      if (imagenUrl) {
+        if (imagenUrl.startsWith('http')) {
+          // URL externa, dejar como está
+          imagenUrl = imagenUrl;
+        } else if (imagenUrl.startsWith('/image/')) {
+          // Ya tiene la ruta, dejar como está
+          imagenUrl = imagenUrl;
+        } else if (imagenUrl.startsWith('/')) {
+          // Tiene /, pero no /image/, dejar como está
+          imagenUrl = imagenUrl;
+        } else {
+          // Solo nombre de archivo, agregar /image/ y codificar
+          imagenUrl = `/image/${encodeURIComponent(imagenUrl)}`;
+        }
       }
       
       return {
