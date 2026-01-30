@@ -145,18 +145,18 @@ const testimoniosQuick = [
 export default function HomePage() {
   const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
   const [promocionActiva, setPromocionActiva] = useState<any>(null);
-      // Forzar actualización con los nuevos datos
-      if (nuevoContenido.servicios) {
-        actualizarServiciosDesdeAPI(nuevoContenido.servicios, nuevoContenido.descuentos || {});
-      }
-      if (nuevoContenido.promociones) {
-        actualizarPromocionActiva(nuevoContenido.promociones);
-      }
-    }
-  });
+  const [currentTestimonio, setCurrentTestimonio] = useState(0);
 
-  // Función auxiliar para actualizar servicios desde los datos de la API
-  const actualizarServiciosDesdeAPI = useCallback((serviciosAPI: any[], descuentos: any) => {
+  // Animación de testimonios
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonio((prev) => (prev + 1) % testimoniosQuick.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // NO usar funciones de API - datos estáticos solamente
+  const actualizarServiciosDesdeAPI_NO_USAR = useCallback((serviciosAPI: any[], descuentos: any) => {
     try {
       const serviciosActivos = serviciosAPI.filter((s: any) => s.activo === true);
       const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
