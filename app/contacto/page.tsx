@@ -42,25 +42,25 @@ type Contacto = {
 
 export default function ContactoPage() {
   const ubicacion: Ubicacion = {
-    direccion: 'Cra 27 #6-56',
-    lugar: 'Centro de Pasto',
-    ciudad: 'Pasto, Nariño',
+    direccion: 'Calle 138 Nro. 55-38',
+    lugar: 'Círculo de Suboficiales de las Fuerzas Militares',
+    ciudad: 'Bogotá D.C.',
     mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
   };
   const contacto: Contacto = {
     telefono: '+57 301 4185239',
     email: 'contacto@therapyspa.com',
     whatsappLink: 'https://wa.me/573014185239',
-    horariosAtencion: 'Lun - Sáb: 8:00 AM - 8:00 PM'
+    horariosAtencion: 'Jue - Dom: 8:00 AM - 4:00 PM'
   };
   const horarios: Horarios = {
-    lunes: { abierto: true, apertura: '08:00', cierre: '20:00' },
-    martes: { abierto: true, apertura: '08:00', cierre: '20:00' },
-    miercoles: { abierto: true, apertura: '08:00', cierre: '20:00' },
-    jueves: { abierto: true, apertura: '08:00', cierre: '20:00' },
-    viernes: { abierto: true, apertura: '08:00', cierre: '20:00' },
-    sabado: { abierto: true, apertura: '08:00', cierre: '20:00' },
-    domingo: { abierto: false, apertura: '08:00', cierre: '16:00' }
+    lunes: { abierto: false, apertura: '08:00', cierre: '16:00' },
+    martes: { abierto: false, apertura: '08:00', cierre: '16:00' },
+    miercoles: { abierto: false, apertura: '08:00', cierre: '16:00' },
+    jueves: { abierto: true, apertura: '08:00', cierre: '16:00' },
+    viernes: { abierto: true, apertura: '08:00', cierre: '16:00' },
+    sabado: { abierto: true, apertura: '08:00', cierre: '16:00' },
+    domingo: { abierto: true, apertura: '08:00', cierre: '16:00' }
   };
   
   const formatearHora = (hora: string) => {

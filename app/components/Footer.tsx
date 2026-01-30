@@ -13,7 +13,7 @@ export default function Footer() {
 		telefono: '+57 301 4185239',
 		email: 'contacto@therapyspa.com',
 		whatsappLink: 'https://wa.me/573014185239',
-		horariosAtencion: 'Lun - Sáb: 8:00 AM - 8:00 PM'
+		horariosAtencion: 'Jue - Dom: 8:00 AM - 4:00 PM'
 	};
 	const redesSociales = { instagram: '', facebook: '', tiktok: '', youtube: '', twitter: '' };
 	

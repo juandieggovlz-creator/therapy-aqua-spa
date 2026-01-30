@@ -259,9 +259,9 @@ export default function SobreNosotrosPage() {
     valores: ['Calidad', 'Profesionalismo', 'Innovación', 'Compromiso']
   };
   const ubicacion: Ubicacion = {
-    direccion: 'Cra 27 #6-56',
-    lugar: 'Centro de Pasto',
-    ciudad: 'Pasto, Nariño',
+    direccion: 'Calle 138 Nro. 55-38',
+    lugar: 'Círculo de Suboficiales de las Fuerzas Militares',
+    ciudad: 'Bogotá D.C.',
     mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
   };
   
