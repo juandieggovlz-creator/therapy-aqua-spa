@@ -453,34 +453,6 @@ export default function HomePage() {
       window.removeEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
     };
   }, [loadServiciosYDescuentos]);
-  const [flippedCard, setFlippedCard] = useState<number | null>(null);
-  const [currentTestimonio, setCurrentTestimonio] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const [loadingPromocion, setLoadingPromocion] = useState(true);
-
-  // Cargar promoción activa
-  useEffect(() => {
-    const loadPromocion = async () => {
-      try {
-        const res = await fetch('/api/admin/promociones');
-        const data = await res.json();
-        setPromocionActiva(data.promocion);
-      } catch (error) {
-        console.error('Error cargando promoción:', error);
-      } finally {
-        setLoadingPromocion(false);
-      }
-    };
-    loadPromocion();
-  }, []);
-
-  useEffect(() => {
-    setIsVisible(true);
-    const interval = setInterval(() => {
-      setCurrentTestimonio((prev) => (prev + 1) % testimoniosQuick.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
