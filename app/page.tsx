@@ -147,6 +147,7 @@ export default function HomePage() {
   const [promocionActiva, setPromocionActiva] = useState<any>(null);
   const [currentTestimonio, setCurrentTestimonio] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [flippedCard, setFlippedCard] = useState<number | null>(null);
 
   // Cargar servicios desde la API
   useEffect(() => {
@@ -369,11 +370,14 @@ export default function HomePage() {
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"
                 style={{ perspective: '1000px' }}
+                onMouseEnter={() => setFlippedCard(servicio.id)}
+                onMouseLeave={() => setFlippedCard(null)}
               >
                 <div 
                   className="relative w-full h-full transition-all duration-700"
                   style={{
-                    transformStyle: 'preserve-3d'
+                    transformStyle: 'preserve-3d',
+                    transform: flippedCard === servicio.id ? 'rotateY(180deg)' : 'rotateY(0deg)'
                   }}
                 >
                   <div 
