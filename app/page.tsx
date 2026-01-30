@@ -182,7 +182,7 @@ export default function HomePage() {
 
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-            key: s.id,
+          <Image
             title: s.nombre,
             icon: s.icon || servicioBase?.icon || "✨",
             price: Math.round(precioFinal),
