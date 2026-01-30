@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 // GET - Obtener horarios activos para la página pública
 export async function GET() {
   try {
-    const horarios = await prisma.horario.findMany({
-      where: { activo: true },
-      orderBy: { hora: 'asc' }
-    });
-
-    const horariosFormateados = horarios.map((h: any) => h.hora);
+    // Horarios disponibles por defecto (Jue-Dom 8:00 AM - 4:00 PM)
+    const horariosFormateados = [
+      '08:00',
+      '09:00',
+      '10:00',
+      '11:00',
+      '12:00',
+      '13:00',
+      '14:00',
+      '15:00'
+    ];
 
     return NextResponse.json({ 
       horarios: horariosFormateados,
@@ -25,4 +27,3 @@ export async function GET() {
     );
   }
 }
-
