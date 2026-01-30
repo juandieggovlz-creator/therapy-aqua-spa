@@ -160,7 +160,7 @@ export default function HomePage() {
       <style jsx>{`
         @keyframes blob {
           0%, 100% { transform: translate(0, 0) scale(1); }
-      if (serviciosDestacadosAPI.length > 0) {
+          33% { transform: translate(30px, -50px) scale(1.1); }
         serviciosAMostrar = [...serviciosDestacadosAPI];
         const otrosServicios = serviciosActivos.filter((s: any) => !s.destacado);
         const serviciosNecesarios = 6 - serviciosAMostrar.length;
