@@ -181,7 +181,7 @@ export default function HomePage() {
       `}</style>
 
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            id: index + 1,
+        <div className="absolute inset-0 overflow-hidden">
             key: s.id,
             title: s.nombre,
             icon: s.icon || servicioBase?.icon || "✨",
