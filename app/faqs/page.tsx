@@ -84,7 +84,7 @@ const faqs = [
   {
     id: 14,
     pregunta: "¿Cómo puedo comunicarme directamente?",
-    respuesta: "📲 WhatsApp directo: wa.link/mlbr4z\nSiempre hay alguien dispuesto a orientarte y ayudarte con tu reserva.",
+    respuesta: "📲 WhatsApp directo: +57 301 4185239\nSiempre hay alguien dispuesto a orientarte y ayudarte con tu reserva.",
     icon: "📲"
   }
 ];
@@ -179,7 +179,7 @@ export default function FaqsPage() {
                     
                     {faq.id === 14 && (
                       <a
-                        href="https://wa.link/mlbr4z"
+                        href="https://wa.me/573014185239"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-block mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105"
@@ -204,7 +204,7 @@ export default function FaqsPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="https://wa.link/mlbr4z"
+              href="https://wa.me/573014185239"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"

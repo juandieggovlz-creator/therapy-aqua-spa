@@ -110,7 +110,7 @@ async function main() {
   const configuraciones = [
     { clave: 'descuento_afiliado', valor: '0.20', tipo: 'number', categoria: 'descuentos', descripcion: 'Descuento aplicado a clientes afiliados (porcentaje decimal)', editable_por_gerente: true },
     { clave: 'nombre_spa', valor: 'Therapy Aqua Spa', tipo: 'text', categoria: 'general', descripcion: 'Nombre del spa', editable_por_gerente: true },
-    { clave: 'telefono_contacto', valor: '+57 300 123 4567', tipo: 'text', categoria: 'contacto', descripcion: 'Teléfono principal de contacto', editable_por_gerente: true },
+    { clave: 'telefono_contacto', valor: '+57 301 4185239', tipo: 'text', categoria: 'contacto', descripcion: 'Teléfono principal de contacto', editable_por_gerente: true },
     { clave: 'email_contacto', valor: 'contacto@therapyspa.com', tipo: 'text', categoria: 'contacto', descripcion: 'Email de contacto', editable_por_gerente: true },
     { clave: 'tiempo_expiracion_reserva', valor: '30', tipo: 'number', categoria: 'reservas', descripcion: 'Tiempo en minutos para expirar reservas pendientes', editable_por_gerente: true },
     { clave: 'politicas_cancelacion', valor: 'Las cancelaciones deben realizarse con al menos 24 horas de anticipación. Cancelaciones tardías pueden generar un cargo del 50% del valor del servicio.', tipo: 'text', categoria: 'politicas', descripcion: 'Políticas de cancelación', editable_por_gerente: true },

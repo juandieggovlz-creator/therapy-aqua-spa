@@ -323,7 +323,7 @@ function ReservasContent() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href={`https://wa.link/mlbr4z?text=Hola, confirmo mi reserva para el ${fecha} a las ${horario}`}
+                href={`https://wa.me/573014185239?text=Hola, confirmo mi reserva para el ${fecha} a las ${horario}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"

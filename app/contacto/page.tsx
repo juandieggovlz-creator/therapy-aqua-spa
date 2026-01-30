@@ -96,7 +96,7 @@ export default function ContactoPage() {
                 Recibe atención personalizada, resuelve tus dudas y agenda tu cita de forma rápida y directa.
               </p>
               <a
-                href="https://wa.link/mlbr4z"
+                href="https://wa.me/573014185239"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-bold text-base transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full justify-center"
@@ -194,7 +194,7 @@ export default function ContactoPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="https://wa.link/mlbr4z"
+              href="https://wa.me/573014185239"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"

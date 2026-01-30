@@ -379,7 +379,7 @@ export default function SobreNosotrosPage() {
               Ver servicios
             </Link>
             <Link
-              href="https://wa.link/mlbr4z"
+              href="https://wa.me/573014185239"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
