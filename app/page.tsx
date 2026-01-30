@@ -146,6 +146,33 @@ export default function HomePage() {
   const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
   const [promocionActiva, setPromocionActiva] = useState<any>(null);
   const [currentTestimonio, setCurrentTestimonio] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar servicios desde la API
+  useEffect(() => {
+    const cargarServicios = async () => {
+      try {
+        const response = await fetch('/api/servicios-publicos');
+        const data = await response.json();
+        
+        if (data.success && data.servicios && data.servicios.length > 0) {
+          // Tomar solo los primeros 6 servicios para la página principal
+          const serviciosParaMostrar = data.servicios.slice(0, 6);
+          console.log('✅ Servicios cargados desde API:', serviciosParaMostrar.length);
+          setServiciosDestacados(serviciosParaMostrar);
+        } else {
+          console.log('ℹ️ Usando servicios por defecto');
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Error cargando servicios:', error);
+        console.log('ℹ️ Usando servicios por defecto');
+        setLoading(false);
+      }
+    };
+
+    cargarServicios();
+  }, []);
 
   // Animación de testimonios
   useEffect(() => {
@@ -154,304 +181,6 @@ export default function HomePage() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
-        
-        .line-clamp-3 {
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
-
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <Image
-            title: s.nombre,
-            icon: s.icon || servicioBase?.icon || "✨",
-            price: Math.round(precioFinal),
-            precioOriginal: precioBase,
-            descuento: descuentoAplicado,
-            priceLabel: descuentoAplicado > 0 
-              ? `$${Math.round(precioFinal).toLocaleString()} (${descuentoAplicado}% OFF)`
-              : `$${precioBase.toLocaleString()}`,
-            duration: `${s.duracion || servicioBase?.duration?.replace(' min', '') || 30} min`,
-            imagen: s.imagen ? getImagePath(s.imagen) : (servicioBase?.imagen || getImagePath('default-service.jpg')),
-            description: s.descripcion || servicioBase?.description || 'Servicio de terapia especializada',
-            detalles: s.descripcion 
-              ? s.descripcion.split('.').filter((d: string) => d.trim()).map((d: string) => d.trim())
-              : (servicioBase?.detalles || [])
-          };
-        })
-        .filter(Boolean);
-      
-      if (serviciosMapeados.length > 0) {
-        console.log(`📊 Actualizando ${serviciosMapeados.length} servicios desde polling/API`);
-        setServiciosDestacados(serviciosMapeados);
-      }
-    } catch (error) {
-      console.error('❌ Error actualizando servicios:', error);
-    }
-  }, []);
-
-  // Función auxiliar para actualizar promoción activa
-  const actualizarPromocionActiva = useCallback((promociones: any[]) => {
-    try {
-      const ahora = new Date().toISOString();
-      const promocionesActivas = promociones.filter((p: any) => 
-        p.activa && 
-        !p.pausada && 
-        p.fechaInicio <= ahora && 
-        p.fechaFin >= ahora
-      );
-      
-      const promocionActiva = promocionesActivas.length > 0 
-        ? promocionesActivas.sort((a: any, b: any) => {
-            if (a.tipo === 'porcentaje' && b.tipo === 'porcentaje') {
-              return b.valor - a.valor;
-            }
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          })[0]
-        : null;
-      
-      setPromocionActiva(promocionActiva);
-      console.log('📣 Promoción actualizada:', promocionActiva?.titulo || 'ninguna');
-    } catch (error) {
-      console.error('❌ Error actualizando promoción:', error);
-    }
-  }, []);
-
-  // Función para cargar servicios y descuentos desde las APIs
-  const loadServiciosYDescuentos = useCallback(async () => {
-    try {
-      // Cargar servicios y descuentos desde la API
-      const [serviciosRes, descuentosRes] = await Promise.all([
-        fetch('/api/admin/servicios?cache=' + new Date().getTime(), { cache: 'no-store' }),
-        fetch('/api/admin/descuentos?cache=' + new Date().getTime(), { cache: 'no-store' })
-      ]);
-      
-      const serviciosData = await serviciosRes.json();
-      const descuentosData = await descuentosRes.json();
-      
-      const serviciosAPI = serviciosData.servicios || [];
-      const descuentos = descuentosData.descuentos || {};
-      
-      console.log(`🏠 HomePage - Servicios cargados: ${serviciosAPI.length}, Descuentos: ${Object.keys(descuentos).length}`);
-      
-      if (serviciosAPI.length > 0) {
-        // Mapear servicios de la API a formato de la página
-        // Priorizar servicios destacados, luego completar con otros servicios activos hasta 6
-        // IMPORTANTE: Solo mostrar servicios con activo === true
-        const serviciosActivos = serviciosAPI.filter((s: any) => s.activo === true);
-        const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
-        
-        // Si hay destacados, priorizarlos y completar con otros hasta 6
-        let serviciosAMostrar: any[] = [];
-        if (serviciosDestacadosAPI.length > 0) {
-          // Agregar destacados primero
-          serviciosAMostrar = [...serviciosDestacadosAPI];
-          // Completar con otros servicios activos (que no sean destacados) hasta llegar a 6
-          const otrosServicios = serviciosActivos.filter((s: any) => !s.destacado);
-          const serviciosNecesarios = 6 - serviciosAMostrar.length;
-          serviciosAMostrar = [...serviciosAMostrar, ...otrosServicios.slice(0, serviciosNecesarios)];
-        } else {
-          // Si no hay destacados, mostrar los primeros 6 activos
-          serviciosAMostrar = serviciosActivos.slice(0, 6);
-        }
-        
-        // Limitar siempre a máximo 6 servicios
-        serviciosAMostrar = serviciosAMostrar.slice(0, 6);
-        
-        const serviciosMapeados = serviciosAMostrar
-          .map((s: any, index: number) => {
-            // SIEMPRE usar datos de la API como fuente principal
-            const servicioBase = serviciosDestacadosBase.find(sb => sb.key === s.id);
-            
-            // Obtener descuento del servicio
-            const descuentoAplicado = descuentos[s.id] || 0;
-            // Usar el precio del servicio (que ya está sincronizado con precioOriginal)
-            const precioBase = s.precio || 0;
-            let precioFinal = precioBase;
-            
-            if (descuentoAplicado > 0) {
-              precioFinal = precioBase * (1 - descuentoAplicado / 100);
-              console.log(`🏠 HomePage - Descuento aplicado a ${s.nombre}: ${descuentoAplicado}% (${precioBase} -> ${Math.round(precioFinal)})`);
-            }
-            
-            // SIEMPRE priorizar datos de la API, usar servicioBase solo para campos que no vengan de la API
-            const servicioMapeado = {
-              id: servicioBase?.id || (serviciosDestacadosBase.length + index + 1),
-              key: s.id,
-              title: s.nombre || servicioBase?.title || 'Servicio sin nombre', // PRIORIDAD: API primero
-              icon: s.icon || servicioBase?.icon || '✨', // PRIORIDAD: API primero
-              price: Math.round(precioFinal),
-              precioOriginal: precioBase, // Usar precio base, no precioOriginal desactualizado
-              descuento: descuentoAplicado,
-              priceLabel: descuentoAplicado > 0 
-                ? `$${Math.round(precioFinal).toLocaleString()} (${descuentoAplicado}% OFF)`
-                : `$${precioBase.toLocaleString()}`,
-              duration: `${s.duracion || servicioBase?.duration?.replace(' min', '') || 30} min`, // PRIORIDAD: API primero
-              imagen: s.imagen ? getImagePath(s.imagen) : (servicioBase?.imagen || getImagePath('default-service.jpg')),
-              description: s.descripcion || servicioBase?.description || 'Servicio de terapia especializada', // PRIORIDAD: API primero
-              detalles: s.descripcion 
-                ? s.descripcion.split('.').filter((d: string) => d.trim()).map((d: string) => d.trim())
-                : (servicioBase?.detalles || [])
-            };
-            
-            console.log(`🏠 HomePage - Servicio mapeado: ${servicioMapeado.title} - Precio: ${servicioMapeado.price} - Duración: ${servicioMapeado.duration}`);
-            return servicioMapeado;
-          })
-          .filter(Boolean);
-        
-        if (serviciosMapeados.length > 0) {
-          console.log(`🏠 HomePage - Servicios mapeados: ${serviciosMapeados.length}`);
-          setServiciosDestacados(serviciosMapeados);
-        } else {
-          console.warn('🏠 HomePage - No hay servicios activos, usando valores por defecto');
-          setServiciosDestacados(serviciosDestacadosBase);
-        }
-      } else {
-        console.warn('🏠 HomePage - No se recibieron servicios, usando valores por defecto');
-        setServiciosDestacados(serviciosDestacadosBase);
-      }
-    } catch (error) {
-      console.error('❌ Error cargando datos:', error);
-      // En caso de error, usar valores por defecto
-      setServiciosDestacados(serviciosDestacadosBase);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadServiciosYDescuentos();
-    
-    // Verificar si hay cambios pendientes en localStorage
-    const necesitaRecarga = localStorage.getItem('necesita_recarga');
-    const ultimaActualizacion = localStorage.getItem('servicios_actualizados');
-    
-    if (necesitaRecarga === 'true') {
-      console.log('🔔 Página Principal detectó cambios pendientes en localStorage');
-      console.log('📅 Última actualización:', new Date(parseInt(ultimaActualizacion || '0')).toLocaleTimeString());
-      console.log('🔄 Recargando datos automáticamente...');
-      
-      // Recargar datos múltiples veces
-      setTimeout(() => loadServiciosYDescuentos(), 100);
-      setTimeout(() => loadServiciosYDescuentos(), 500);
-      setTimeout(() => loadServiciosYDescuentos(), 1000);
-      
-      // Limpiar el flag después de 10 segundos para dar tiempo a otras pestañas
-      setTimeout(() => {
-        localStorage.removeItem('necesita_recarga');
-        console.log('🧹 Flag de recarga limpiado (HomePage)');
-      }, 10000);
-    }
-  }, [loadServiciosYDescuentos]);
-
-  // Escuchar eventos de actualización de servicios, promociones y CMS
-  useEffect(() => {
-    const forzarRecarga = () => {
-      console.log('🔄🔄🔄 FORZANDO RECARGA COMPLETA DE PÁGINA PRINCIPAL 🔄🔄🔄');
-      const timestamp = new Date().getTime();
-      
-      // Recargar promoción activa con cache busting
-      const loadPromocion = async () => {
-        try {
-          const res = await fetch(`/api/admin/promociones?cache=${timestamp}`, { cache: 'no-store' });
-          const data = await res.json();
-          setPromocionActiva(data.promocion);
-          console.log('✅ Promoción recargada en HomePage');
-        } catch (error) {
-          console.error('❌ Error cargando promoción:', error);
-        }
-      };
-      
-      // Ráfaga de recargas para asegurar actualización
-      console.log('📥 Recarga #1 - Inmediata (0ms)');
-      loadServiciosYDescuentos();
-      loadPromocion();
-      
-      setTimeout(() => {
-        console.log('📥 Recarga #2 - Delay 100ms');
-        loadServiciosYDescuentos();
-        loadPromocion();
-      }, 100);
-      
-      setTimeout(() => {
-        console.log('📥 Recarga #3 - Delay 300ms');
-        loadServiciosYDescuentos();
-        loadPromocion();
-      }, 300);
-      
-      setTimeout(() => {
-        console.log('📥 Recarga #4 - Delay 600ms');
-        loadServiciosYDescuentos();
-      }, 600);
-      
-      setTimeout(() => {
-        console.log('📥 Recarga #5 - Final (1000ms)');
-        loadServiciosYDescuentos();
-        console.log('✅✅✅ RECARGA COMPLETA FINALIZADA ✅✅✅');
-      }, 1000);
-    };
-
-    const handleServicioActualizado = (event: any) => {
-      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: servicioActualizado', event.detail);
-      forzarRecarga();
-    };
-
-    const handleDescuentoActualizado = (event: any) => {
-      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: descuentoActualizado', event.detail);
-      forzarRecarga();
-    };
-
-    const handlePromocionActualizada = (event: any) => {
-      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: promocionActualizada', event.detail);
-      forzarRecarga();
-    };
-
-    const handleCmsActualizado = (event: any) => {
-      console.log('🏠 HomePage - ⚡ EVENTO CAPTURADO: cmsActualizado', event.detail);
-      forzarRecarga();
-    };
-
-    // Evento global para actualizar toda la página principal
-    const handleActualizarPaginaPrincipal = (event: any) => {
-      console.log('🏠 HomePage - ⚡⚡⚡ EVENTO GLOBAL CAPTURADO: actualizarPaginaPrincipal ⚡⚡⚡', event.detail);
-      forzarRecarga();
-    };
-
-    // Agregar listeners
-    window.addEventListener('servicioActualizado', handleServicioActualizado, true);
-    window.addEventListener('descuentoActualizado', handleDescuentoActualizado, true);
-    window.addEventListener('promocionActualizada', handlePromocionActualizada, true);
-    window.addEventListener('cmsActualizado', handleCmsActualizado, true);
-    window.addEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
-
-    console.log('✅ HomePage - Event listeners registrados');
-
-    return () => {
-      window.removeEventListener('servicioActualizado', handleServicioActualizado, true);
-      window.removeEventListener('descuentoActualizado', handleDescuentoActualizado, true);
-      window.removeEventListener('promocionActualizada', handlePromocionActualizada, true);
-      window.removeEventListener('cmsActualizado', handleCmsActualizado, true);
-      window.removeEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
-    };
-  }, [loadServiciosYDescuentos]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
@@ -636,12 +365,10 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {serviciosDestacadosBase.map((servicio) => (
-              <div
+              <div 
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"
                 style={{ perspective: '1000px' }}
-                onMouseEnter={() => setFlippedCard(servicio.id)}
-                onMouseLeave={() => setFlippedCard(null)}
               >
                 <div 
                   className="relative w-full h-full transition-all duration-700"

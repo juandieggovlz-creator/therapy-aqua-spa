@@ -1,6 +1,3 @@
-// Prisma Schema para Therapy Aqua Spa
-// Base de datos: Neon Postgres
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,31 +7,111 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
-// Modelo de Reservas
-// Refleja exactamente la estructura usada en lib/db.ts
 model Reserva {
-  id                    Int      @id @default(autoincrement())
-  reservation_id        String   @unique @db.VarChar(50)
-  nombre                String   @db.VarChar(255)
-  telefono              String   @db.VarChar(20)
-  email                 String   @db.VarChar(255)
-  fecha                 DateTime @db.Date
-  horario               String   @db.VarChar(10)
-  servicios             Json     // Array de servicios seleccionados
-  productos             Json?    @default("[]") // Array de productos adicionales
-  total                 Decimal  @db.Decimal(10, 2)
-  estado                String   @default("pendiente") @db.VarChar(50) // pendiente | pendiente de pago | confirmada | cancelada | completada
-  notas                 String?  @db.Text
-  fisioterapeuta        String?  @db.VarChar(255)
-  created_at            DateTime @default(now()) @db.Timestamptz()
-  updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz()
-  codigo_afiliado       String?  @db.VarChar(50)
-  descuento_afiliado    Decimal  @default(0) @db.Decimal(10, 2)
-  descuento_individual  Decimal  @default(0) @db.Decimal(10, 2)
-  descuento_promocion   Decimal  @default(0) @db.Decimal(10, 2)
+  id                   Int      @id @default(autoincrement())
+  reservation_id       String   @unique @db.VarChar(50)
+  nombre               String   @db.VarChar(255)
+  telefono             String   @db.VarChar(20)
+  email                String   @db.VarChar(255)
+  fecha                DateTime @db.Date
+  horario              String   @db.VarChar(10)
+  servicios            Json
+  productos            Json?    @default("[]")
+  total                Decimal  @db.Decimal(10, 2)
+  estado               String   @default("pendiente") @db.VarChar(50)
+  notas                String?
+  fisioterapeuta       String?  @db.VarChar(255)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  codigo_afiliado      String?  @db.VarChar(50)
+  descuento_afiliado   Decimal  @default(0) @db.Decimal(10, 2)
+  descuento_individual Decimal  @default(0) @db.Decimal(10, 2)
+  descuento_promocion  Decimal  @default(0) @db.Decimal(10, 2)
 
-  @@index([fecha, horario], name: "idx_fecha_horario")
-  @@index([estado], name: "idx_estado")
-  @@index([reservation_id], name: "idx_reservation_id")
+  @@index([fecha, horario], map: "idx_fecha_horario")
+  @@index([estado], map: "idx_estado")
+  @@index([reservation_id], map: "idx_reservation_id")
   @@map("reservas")
+}
+
+model Servicio {
+  id          Int      @id @default(autoincrement())
+  servicio_id String   @unique @db.VarChar(50)
+  nombre      String   @db.VarChar(255)
+  descripcion String?
+  categoria   String   @db.VarChar(100)
+  duracion    Int      @default(30)
+  precio      Decimal  @db.Decimal(10, 2)
+  icon        String?  @db.VarChar(10)
+  imagen      String?  @db.VarChar(500)
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  detalles    Json?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([activo], map: "idx_servicio_activo")
+  @@index([categoria], map: "idx_servicio_categoria")
+  @@map("servicios")
+}
+
+model ServicioAdicional {
+  id                Int      @id @default(autoincrement())
+  servicio_id       String   @unique @db.VarChar(50)
+  nombre            String   @db.VarChar(255)
+  descripcion       String?
+  precio_particular Decimal  @db.Decimal(10, 2)
+  precio_afiliado   Decimal  @db.Decimal(10, 2)
+  icon              String?  @db.VarChar(10)
+  activo            Boolean  @default(true)
+  orden             Int      @default(0)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([activo], map: "idx_servicio_adicional_activo")
+  @@map("servicios_adicionales")
+}
+
+model Producto {
+  id          Int      @id @default(autoincrement())
+  producto_id String   @unique @db.VarChar(50)
+  nombre      String   @db.VarChar(255)
+  descripcion String?
+  precio      Decimal  @db.Decimal(10, 2)
+  icon        String?  @db.VarChar(10)
+  stock       Int?
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([activo], map: "idx_producto_activo")
+  @@map("productos")
+}
+
+model Horario {
+  id         Int      @id @default(autoincrement())
+  hora       String   @unique @db.VarChar(5)
+  activo     Boolean  @default(true)
+  orden      Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([activo], map: "idx_horario_activo")
+  @@map("horarios")
+}
+
+model Configuracion {
+  id                   Int      @id @default(autoincrement())
+  clave                String   @unique @db.VarChar(100)
+  valor                String
+  tipo                 String   @db.VarChar(50)
+  descripcion          String?
+  categoria            String   @db.VarChar(100)
+  editable_por_gerente Boolean  @default(true)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([categoria], map: "idx_configuracion_categoria")
+  @@map("configuracion")
 }

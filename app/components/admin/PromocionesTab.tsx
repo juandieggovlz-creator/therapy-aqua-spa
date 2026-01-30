@@ -40,7 +40,14 @@ export default function PromocionesTab() {
         try {
           const serviciosRes = await fetch('/api/admin/servicios');
           const serviciosData = await serviciosRes.json();
-          const serviciosList = serviciosData.servicios || serviciosData || [];
+          const serviciosList = serviciosData.servicios || [];
+          
+          if (!Array.isArray(serviciosList)) {
+            console.error('❌ serviciosData.servicios no es un array:', serviciosList);
+            setServicios([]);
+            return;
+          }
+          
           const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
           console.log('✅ Servicios activos cargados automáticamente:', serviciosActivos.length);
           setServicios(serviciosActivos);
@@ -63,13 +70,20 @@ export default function PromocionesTab() {
       const promocionesData = await promocionesRes.json();
       const serviciosData = await serviciosRes.json();
       
-      setPromociones(promocionesData.todas || []);
+      setPromociones(promocionesData.promociones || promocionesData.todas || []);
       
       // Filtrar solo servicios activos para la selección
-      const serviciosList = serviciosData.servicios || serviciosData || [];
-      const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
-      console.log('✅ Servicios activos cargados para promociones:', serviciosActivos.length);
-      setServicios(serviciosActivos);
+      const serviciosList = serviciosData.servicios || [];
+      
+      // Validar que serviciosList sea un array
+      if (!Array.isArray(serviciosList)) {
+        console.error('❌ serviciosData.servicios no es un array:', serviciosList);
+        setServicios([]);
+      } else {
+        const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
+        console.log('✅ Servicios activos cargados para promociones:', serviciosActivos.length);
+        setServicios(serviciosActivos);
+      }
       
       setLoading(false);
     } catch (error) {
@@ -84,10 +98,16 @@ export default function PromocionesTab() {
       try {
         const serviciosRes = await fetch('/api/admin/servicios');
         const serviciosData = await serviciosRes.json();
-        const serviciosList = serviciosData.servicios || serviciosData || [];
-        const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
-        setServicios(serviciosActivos);
-        console.log('✅ Servicios activos cargados para nueva promoción:', serviciosActivos.length);
+        const serviciosList = serviciosData.servicios || [];
+        
+        if (Array.isArray(serviciosList)) {
+          const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
+          setServicios(serviciosActivos);
+          console.log('✅ Servicios activos cargados para nueva promoción:', serviciosActivos.length);
+        } else {
+          console.error('❌ serviciosData.servicios no es un array');
+          setServicios([]);
+        }
       } catch (error) {
         console.error('Error cargando servicios:', error);
       }
@@ -119,10 +139,16 @@ export default function PromocionesTab() {
       try {
         const serviciosRes = await fetch('/api/admin/servicios');
         const serviciosData = await serviciosRes.json();
-        const serviciosList = serviciosData.servicios || serviciosData || [];
-        const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
-        setServicios(serviciosActivos);
-        console.log('✅ Servicios activos cargados para editar promoción:', serviciosActivos.length);
+        const serviciosList = serviciosData.servicios || [];
+        
+        if (Array.isArray(serviciosList)) {
+          const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
+          setServicios(serviciosActivos);
+          console.log('✅ Servicios activos cargados para editar promoción:', serviciosActivos.length);
+        } else {
+          console.error('❌ serviciosData.servicios no es un array');
+          setServicios([]);
+        }
       } catch (error) {
         console.error('Error cargando servicios:', error);
       }
@@ -474,10 +500,15 @@ export default function PromocionesTab() {
                         fetch('/api/admin/servicios')
                           .then(res => res.json())
                           .then(data => {
-                            const serviciosList = data.servicios || data || [];
-                            const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
-                            console.log('✅ Servicios activos cargados:', serviciosActivos.length);
-                            setServicios(serviciosActivos);
+                            const serviciosList = data.servicios || [];
+                            if (Array.isArray(serviciosList)) {
+                              const serviciosActivos = serviciosList.filter((s: any) => s.activo === true);
+                              console.log('✅ Servicios activos cargados:', serviciosActivos.length);
+                              setServicios(serviciosActivos);
+                            } else {
+                              console.error('❌ serviciosData.servicios no es un array');
+                              setServicios([]);
+                            }
                           })
                           .catch(error => {
                             console.error('Error cargando servicios:', error);

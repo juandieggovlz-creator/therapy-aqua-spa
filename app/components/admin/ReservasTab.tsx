@@ -867,14 +867,14 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     )}
                   </p>
                   <div className="space-y-2">
-                    {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
-                      const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
+                      {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
+                        const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
                       const icon = typeof servicio === 'object' ? servicio?.icon : null;
                       const precioAplicado = typeof servicio === 'object' ? servicio?.precioAplicado : null;
                       const precioParticular = typeof servicio === 'object' ? servicio?.precioParticular : null;
                       const precioAfiliado = typeof servicio === 'object' ? servicio?.precioAfiliado : null;
                       
-                      return (
+                        return (
                         <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="flex items-center gap-3 flex-1">
                             <span className="text-2xl">{icon || '💆'}</span>
@@ -885,8 +885,8 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                                   Ahorro: {formatearPrecio(precioParticular - precioAfiliado)}
                                 </p>
                               )}
-                            </div>
-                          </div>
+                    </div>
+                  </div>
                           <div className="text-right">
                             {reservaSeleccionada.esAfiliado && precioParticular && precioAplicado !== precioParticular && (
                               <p className="text-xs text-stone-500 line-through">
@@ -898,10 +898,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             </p>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                          );
+                        })}
+                      </div>
+                    </div>
               )}
 
               {/* Productos */}
@@ -967,44 +967,44 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
               
               {/* Mostrar servicios adicionales individuales */}
               {reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
-                <div className="bg-white/60 rounded-lg p-3 mb-2">
-                  <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
+                  <div className="bg-white/60 rounded-lg p-3 mb-2">
+                    <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
                   <div className="space-y-2">
-                    {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
-                      let nombreServicio = '';
+                      {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
+                        let nombreServicio = '';
                       let precioParticular = 0;
                       let precioAfiliado = 0;
-                      let iconoServicio = '💆';
-                      
-                      // Si es un objeto, usar sus propiedades
-                      if (typeof servicio === 'object' && servicio !== null) {
-                        nombreServicio = servicio.nombre || servicio.id || 'Servicio';
+                        let iconoServicio = '💆';
+                        
+                        // Si es un objeto, usar sus propiedades
+                        if (typeof servicio === 'object' && servicio !== null) {
+                          nombreServicio = servicio.nombre || servicio.id || 'Servicio';
                         precioParticular = servicio.precioParticular || servicio.precio || 29900;
                         precioAfiliado = servicio.precioAfiliado || 13000;
-                        iconoServicio = servicio.icon || '💆';
-                      } else {
-                        // Si es un string, buscar en las referencias
-                        const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
-                        if (servicioRef) {
-                          nombreServicio = servicioRef.nombre;
+                          iconoServicio = servicio.icon || '💆';
+                        } else {
+                          // Si es un string, buscar en las referencias
+                          const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
+                          if (servicioRef) {
+                            nombreServicio = servicioRef.nombre;
                           precioParticular = servicioRef.precio;
                           precioAfiliado = PRECIO_SERVICIO_AFILIADO;
-                          iconoServicio = servicioRef.icon;
-                        } else {
-                          nombreServicio = servicio;
+                            iconoServicio = servicioRef.icon;
+                          } else {
+                            nombreServicio = servicio;
                           precioParticular = 0;
                           precioAfiliado = 0;
+                          }
                         }
-                      }
                       
                       const precioAplicado = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
-                      
-                      return (
+                        
+                        return (
                         <div key={idx} className="flex justify-between items-center text-sm">
                           <span className="text-stone-700 truncate pr-2 flex items-center gap-1">
                             <span>{iconoServicio}</span>
                             <span>{nombreServicio}</span>
-                          </span>
+                            </span>
                           <div className="text-right">
                             {reservaSeleccionada.esAfiliado && precioParticular > 0 && (
                               <p className="text-xs text-stone-500 line-through">
@@ -1013,13 +1013,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             )}
                             <span className={`font-semibold whitespace-nowrap ${reservaSeleccionada.esAfiliado ? 'text-green-600' : 'text-[#3d2817]'}`}>
                               {precioAplicado > 0 ? formatearPrecio(precioAplicado) : 'N/A'}
-                            </span>
+                              </span>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
               )}
 
               {/* Productos con precios */}
@@ -1776,14 +1776,14 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       <div className="space-y-1">
                         <span className="text-xs font-semibold text-stone-500 uppercase block mb-1">Servicios Adicionales:</span>
                         <div className="space-y-1">
-                          {reserva.serviciosAdicionales.map((s: any, idx: number) => {
-                            const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
+                        {reserva.serviciosAdicionales.map((s: any, idx: number) => {
+                          const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
                             const icon = typeof s === 'object' ? s?.icon : null;
                             const precioParticular = typeof s === 'object' ? (s?.precioParticular || s?.precio || 29900) : 29900;
                             const precioAfiliado = typeof s === 'object' ? (s?.precioAfiliado || 13000) : 13000;
                             const precioAplicado = reserva.esAfiliado ? precioAfiliado : precioParticular;
                             
-                            return (
+                          return (
                               <div key={idx} className="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-200">
                                 <div className="flex items-center gap-2">
                                   {icon && <span className="text-lg">{icon}</span>}
@@ -1800,8 +1800,8 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                                   </p>
                                 </div>
                               </div>
-                            );
-                          })}
+                          );
+                        })}
                         </div>
                       </div>
                     )}

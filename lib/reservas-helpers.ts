@@ -1,94 +1,292 @@
 /**
- * Helpers para gestión de reservas
- * Usa Vercel Postgres en producción y JSON en desarrollo (fallback)
+ * Helpers para gestión de reservas usando Prisma
  */
 
-import {
-  getAllReservas,
-  createReserva,
-  updateReservaEstado,
-  updateReserva,
-  deleteReserva,
-  verificarConflictoHorario,
-  liberarReservasExpiradas,
-  getReservasActivas,
-  type Reserva
-} from "./db";
-import fs from "fs";
-import path from "path";
+import { PrismaClient } from '@prisma/client';
 
-const USE_JSON_FALLBACK = !process.env.POSTGRES_URL;
-const RESERVAS_PATH = path.join(process.cwd(), "data", "reservas.json");
+const prisma = new PrismaClient();
+
+export type Reserva = {
+  id: number;
+  reservation_id: string;
+  nombre: string;
+  telefono: string;
+  email: string | null;
+  fecha: Date;
+  horario: string;
+  servicios: any;
+  productos: any;
+  total: number;
+  estado: string;
+  notas: string | null;
+  fisioterapeuta: string | null;
+  codigo_afiliado: string | null;
+  descuento_afiliado: number;
+  descuento_individual: number;
+  descuento_promocion: number;
+  created_at: Date;
+  updated_at: Date;
+};
 
 /**
- * Leer reservas (Postgres o JSON)
+ * Obtener todas las reservas
  */
-export async function leerReservas(): Promise<any[]> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const fileContent = fs.readFileSync(RESERVAS_PATH, "utf-8");
-      const data = JSON.parse(fileContent);
-      return data.reservas || [];
-    } catch (error) {
-      console.error("❌ Error leyendo reservas.json:", error);
-      return [];
-    }
+export async function getAllReservas(): Promise<Reserva[]> {
+  try {
+    const reservas = await prisma.reserva.findMany({
+      orderBy: { created_at: 'desc' }
+    });
+    return reservas as any;
+  } catch (error) {
+    console.error('❌ Error obteniendo reservas:', error);
+    return [];
   }
-  
-  const reservas = await getAllReservas();
-  return reservas;
 }
 
 /**
- * Escribir reservas (Postgres o JSON)
+ * Crear nueva reserva
  */
-export async function escribirReservas(reservas: any[]): Promise<boolean> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const data = {
-        reservas: reservas,
-        lastUpdated: new Date().toISOString()
-      };
-      fs.writeFileSync(RESERVAS_PATH, JSON.stringify(data, null, 2), "utf-8");
-      console.log("✅ reservas.json actualizado (JSON fallback)");
-      return true;
-    } catch (error) {
-      console.error("❌ Error escribiendo reservas.json:", error);
+export async function createReserva(data: any): Promise<Reserva | null> {
+  try {
+    const reserva = await prisma.reserva.create({
+      data: {
+        reservation_id: data.reservation_id,
+        nombre: data.nombre,
+        telefono: data.telefono,
+        email: data.email,
+        fecha: new Date(data.fecha),
+        horario: data.horario,
+        servicios: data.servicios,
+        productos: data.productos || [],
+        total: data.total,
+        estado: data.estado || 'pendiente',
+        notas: data.notas,
+        fisioterapeuta: data.fisioterapeuta,
+        codigo_afiliado: data.codigo_afiliado,
+        descuento_afiliado: data.descuento_afiliado || 0,
+        descuento_individual: data.descuento_individual || 0,
+        descuento_promocion: data.descuento_promocion || 0,
+      }
+    });
+    return reserva as any;
+  } catch (error) {
+    console.error('❌ Error creando reserva:', error);
+    return null;
+  }
+}
+
+/**
+ * Actualizar estado de reserva
+ */
+export async function updateReservaEstado(
+  reservationId: string,
+  estado: string
+): Promise<boolean> {
+  try {
+    await prisma.reserva.updateMany({
+      where: { reservation_id: reservationId },
+      data: { estado, updated_at: new Date() }
+    });
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando estado:', error);
+    return false;
+  }
+}
+
+/**
+ * Actualizar reserva completa
+ */
+export async function updateReserva(
+  reservationId: string,
+  updates: any
+): Promise<boolean> {
+  try {
+    // Obtener la reserva actual para actualizar el JSONB correctamente
+    const reservaActual = await prisma.reserva.findFirst({
+      where: { reservation_id: reservationId }
+    });
+
+    if (!reservaActual) {
+      console.error('❌ Reserva no encontrada:', reservationId);
       return false;
     }
+
+    // Separar campos que van directamente en la tabla vs los que van en el JSONB
+    const { esAfiliado, duracionTotal, duracion, precio, ...otrosUpdates } = updates;
+    
+    // Actualizar el campo servicios JSONB si hay cambios relacionados
+    let serviciosActualizados = reservaActual.servicios;
+    if (esAfiliado !== undefined || duracionTotal !== undefined || duracion !== undefined) {
+      serviciosActualizados = {
+        ...(typeof reservaActual.servicios === 'object' ? reservaActual.servicios : {}),
+        ...(esAfiliado !== undefined && { esAfiliado }),
+        ...(duracionTotal !== undefined && { duracionTotal }),
+        ...(duracion !== undefined && { duracionTotal: duracion }),
+      };
+    }
+
+    // Preparar datos para actualización
+    const dataToUpdate: any = {
+      ...otrosUpdates,
+      updated_at: new Date()
+    };
+
+    // Si hay precio/total, actualizarlo
+    if (precio !== undefined) {
+      dataToUpdate.total = precio;
+    }
+
+    // Actualizar servicios JSONB si cambió
+    if (serviciosActualizados !== reservaActual.servicios) {
+      dataToUpdate.servicios = serviciosActualizados;
+    }
+
+    await prisma.reserva.updateMany({
+      where: { reservation_id: reservationId },
+      data: dataToUpdate
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando reserva:', error);
+    return false;
   }
-  
-  // En Postgres no es necesario "escribir todas" las reservas
-  // Las operaciones son individuales (create, update, delete)
-  console.log("⚠️ escribirReservas llamado en modo Postgres (no es necesario)");
-  return true;
 }
 
 /**
- * Crear nueva reserva (Postgres o JSON)
+ * Eliminar reserva
+ */
+export async function deleteReserva(reservationId: string): Promise<boolean> {
+  try {
+    await prisma.reserva.deleteMany({
+      where: { reservation_id: reservationId }
+    });
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando reserva:', error);
+    return false;
+  }
+}
+
+/**
+ * Verificar conflicto de horario
+ */
+export async function verificarConflictoHorario(
+  fecha: string,
+  horario: string,
+  excludeId?: string
+): Promise<{ hayConflicto: boolean; reservaConflictiva?: any }> {
+  try {
+    // Liberar reservas expiradas primero
+    await liberarReservasExpiradas();
+
+    const fechaNormalizada = fecha.split('T')[0];
+    const fechaInicio = new Date(fechaNormalizada + 'T00:00:00');
+    const fechaFin = new Date(fechaNormalizada + 'T23:59:59');
+
+    const reservas = await prisma.reserva.findMany({
+      where: {
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin
+        },
+        horario: horario,
+        estado: {
+          in: ['pendiente', 'pendiente de pago', 'confirmada']
+        },
+        ...(excludeId && {
+          reservation_id: { not: excludeId }
+        })
+      }
+    });
+
+    return {
+      hayConflicto: reservas.length > 0,
+      reservaConflictiva: reservas[0]
+    };
+  } catch (error) {
+    console.error('❌ Error verificando conflicto:', error);
+    return { hayConflicto: false };
+  }
+}
+
+/**
+ * Liberar reservas expiradas (más de 30 minutos en estado pendiente)
+ */
+export async function liberarReservasExpiradas(): Promise<number> {
+  try {
+    const ahora = new Date();
+    const tiempoExpiracion = new Date(ahora.getTime() - 30 * 60 * 1000); // 30 minutos
+
+    const result = await prisma.reserva.updateMany({
+      where: {
+        estado: 'pendiente',
+        created_at: {
+          lt: tiempoExpiracion
+        }
+      },
+      data: {
+        estado: 'cancelada',
+        updated_at: ahora
+      }
+    });
+
+    if (result.count > 0) {
+      console.log(`🔓 ${result.count} reserva(s) expirada(s) liberada(s)`);
+    }
+
+    return result.count;
+  } catch (error) {
+    console.error('❌ Error liberando reservas:', error);
+    return 0;
+  }
+}
+
+/**
+ * Obtener reservas activas
+ */
+export async function getReservasActivas(): Promise<Reserva[]> {
+  try {
+    await liberarReservasExpiradas();
+
+    const reservas = await prisma.reserva.findMany({
+      where: {
+        estado: {
+          in: ['pendiente', 'pendiente de pago', 'confirmada']
+        }
+      },
+      orderBy: { fecha: 'asc' }
+    });
+
+    return reservas as any;
+  } catch (error) {
+    console.error('❌ Error obteniendo reservas activas:', error);
+    return [];
+  }
+}
+
+/**
+ * Leer reservas (alias para compatibilidad)
+ */
+export async function leerReservas(): Promise<any[]> {
+  return getAllReservas();
+}
+
+/**
+ * Crear reserva (alias para compatibilidad)
  */
 export async function crearReserva(reserva: any): Promise<any | null> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const reservas = await leerReservas();
-      reservas.push(reserva);
-      await escribirReservas(reservas);
-      return reserva;
-    } catch (error) {
-      console.error("❌ Error creando reserva:", error);
-      return null;
-    }
-  }
-  
-  // Combinar todos los servicios en el campo JSONB "servicios"
-  // Estructura: { terapias: [...], serviciosAdicionales: [...], productos: [...] }
+  // Combinar servicios si vienen separados
   const serviciosCombinados = {
     terapias: reserva.terapias || reserva.servicios || [],
     serviciosAdicionales: reserva.serviciosAdicionales || [],
-    productos: reserva.productos || []
+    productos: reserva.productos || [],
+    esAfiliado: reserva.esAfiliado || false,
+    duracionTotal: reserva.duracionTotal || reserva.duracion || 0
   };
-  
-  const nuevaReserva = await createReserva({
+
+  return createReserva({
     reservation_id: reserva.reservationId || reserva.id,
     nombre: reserva.nombre,
     telefono: reserva.telefono,
@@ -105,199 +303,57 @@ export async function crearReserva(reserva: any): Promise<any | null> {
     descuento_afiliado: reserva.descuentoAfiliado || 0,
     descuento_individual: reserva.descuentoIndividual || 0,
     descuento_promocion: reserva.descuentoPromocion || 0,
-    es_afiliado: reserva.esAfiliado || false,
-    duracion_total: reserva.duracionTotal || reserva.duracion || 0,
   });
-  
-  return nuevaReserva;
 }
 
 /**
- * Actualizar estado de reserva (Postgres o JSON)
+ * Actualizar estado (alias para compatibilidad)
  */
 export async function actualizarEstadoReserva(
   reservationId: string,
   nuevoEstado: string
 ): Promise<boolean> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const reservas = await leerReservas();
-      const index = reservas.findIndex((r: any) => 
-        r.reservationId === reservationId || r.id === reservationId
-      );
-      
-      if (index !== -1) {
-        reservas[index].estado = nuevoEstado;
-        reservas[index].updatedAt = new Date().toISOString();
-        await escribirReservas(reservas);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("❌ Error actualizando estado:", error);
-      return false;
-    }
-  }
-  
-  return await updateReservaEstado(reservationId, nuevoEstado as any);
+  return updateReservaEstado(reservationId, nuevoEstado);
 }
 
 /**
- * Actualizar reserva completa (Postgres o JSON)
+ * Actualizar reserva (alias para compatibilidad)
  */
 export async function actualizarReserva(
   reservationId: string,
   updates: any
 ): Promise<boolean> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const reservas = await leerReservas();
-      const index = reservas.findIndex((r: any) => 
-        r.reservationId === reservationId || r.id === reservationId
-      );
-      
-      if (index !== -1) {
-        reservas[index] = { ...reservas[index], ...updates, updatedAt: new Date().toISOString() };
-        await escribirReservas(reservas);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("❌ Error actualizando reserva:", error);
-      return false;
-    }
-  }
-  
-  return await updateReserva(reservationId, updates);
+  return updateReserva(reservationId, updates);
 }
 
 /**
- * Eliminar reserva (Postgres o JSON)
+ * Eliminar reserva (alias para compatibilidad)
  */
 export async function eliminarReserva(reservationId: string): Promise<boolean> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const reservas = await leerReservas();
-      const nuevasReservas = reservas.filter((r: any) => 
-        r.reservationId !== reservationId && r.id !== reservationId
-      );
-      await escribirReservas(nuevasReservas);
-      return true;
-    } catch (error) {
-      console.error("❌ Error eliminando reserva:", error);
-      return false;
-    }
-  }
-  
-  return await deleteReserva(reservationId);
+  return deleteReserva(reservationId);
 }
 
 /**
- * Verificar conflicto de horario (Postgres o JSON)
+ * Verificar conflicto (alias para compatibilidad)
  */
 export async function verificarConflicto(
   fecha: string,
   horario: string,
   excludeId?: string
 ): Promise<{ hayConflicto: boolean; reservaConflictiva?: any }> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const reservas = await leerReservas();
-      
-      // Liberar expiradas primero
-      const ahora = new Date().getTime();
-      const TIEMPO_EXPIRACION = 30 * 60 * 1000;
-      
-      const reservasActualizadas = reservas.map((reserva: any) => {
-        if (reserva.estado === "pendiente" && reserva.createdAt) {
-          const tiempoCreacion = new Date(reserva.createdAt).getTime();
-          if (ahora - tiempoCreacion > TIEMPO_EXPIRACION) {
-            return { ...reserva, estado: "cancelada", updatedAt: new Date().toISOString() };
-          }
-        }
-        return reserva;
-      });
-      
-      await escribirReservas(reservasActualizadas);
-      
-      const fechaNormalizada = fecha.split('T')[0];
-      
-      const reservaConflictiva = reservasActualizadas.find((r: any) => {
-        if (excludeId && (r.id === excludeId || r.reservationId === excludeId)) {
-          return false;
-        }
-        
-        if (r.estado !== "pendiente" && r.estado !== "pendiente de pago" && r.estado !== "confirmada") {
-          return false;
-        }
-        
-        const fechaReservaNormalizada = r.fecha.split('T')[0];
-        return fechaReservaNormalizada === fechaNormalizada && r.horario === horario;
-      });
-      
-      return {
-        hayConflicto: !!reservaConflictiva,
-        reservaConflictiva
-      };
-    } catch (error) {
-      console.error("❌ Error verificando conflicto:", error);
-      return { hayConflicto: false };
-    }
-  }
-  
-  return await verificarConflictoHorario(fecha, horario, excludeId);
+  return verificarConflictoHorario(fecha, horario, excludeId);
 }
 
 /**
- * Liberar reservas expiradas (Postgres o JSON)
+ * Liberar expiradas (alias para compatibilidad)
  */
 export async function liberarExpiradas(): Promise<number> {
-  if (USE_JSON_FALLBACK) {
-    try {
-      const reservas = await leerReservas();
-      const ahora = new Date().getTime();
-      const TIEMPO_EXPIRACION = 30 * 60 * 1000;
-      
-      let liberadas = 0;
-      const reservasActualizadas = reservas.map((reserva: any) => {
-        if (reserva.estado === "pendiente" && reserva.createdAt) {
-          const tiempoCreacion = new Date(reserva.createdAt).getTime();
-          if (ahora - tiempoCreacion > TIEMPO_EXPIRACION) {
-            liberadas++;
-            return { ...reserva, estado: "cancelada", updatedAt: new Date().toISOString() };
-          }
-        }
-        return reserva;
-      });
-      
-      if (liberadas > 0) {
-        await escribirReservas(reservasActualizadas);
-        console.log(`🔓 ${liberadas} reserva(s) expirada(s) liberada(s)`);
-      }
-      
-      return liberadas;
-    } catch (error) {
-      console.error("❌ Error liberando reservas:", error);
-      return 0;
-    }
-  }
-  
-  return await liberarReservasExpiradas();
+  return liberarReservasExpiradas();
 }
 
 /**
- * Obtener reservas activas (Postgres o JSON)
+ * Obtener reservas activas (alias para compatibilidad)
  */
 export async function obtenerReservasActivas(): Promise<any[]> {
-  if (USE_JSON_FALLBACK) {
-    await liberarExpiradas();
-    const reservas = await leerReservas();
-    return reservas.filter((r: any) => 
-      r.estado === "pendiente" || r.estado === "pendiente de pago" || r.estado === "confirmada"
-    );
-  }
-  
-  return await getReservasActivas();
+  return getReservasActivas();
 }
-
-

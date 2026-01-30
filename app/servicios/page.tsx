@@ -274,7 +274,6 @@ const servicios = [
 ];
 
 export default function ServiciosPage() {
-  const { contenido } = useCMS();
   const [categoriaActiva, setCategoriaActiva] = useState(0);
   const [cardFlipped, setCardFlipped] = useState<string | null>(null);
   const [descuentosIndividuales, setDescuentosIndividuales] = useState<Record<string, number>>({});
@@ -282,25 +281,18 @@ export default function ServiciosPage() {
   const [serviciosAPI, setServiciosAPI] = useState<any[]>([]);
 
   useEffect(() => {
-    // Cargar servicios y descuentos desde la API
+    // Cargar servicios desde la API pública
     const loadData = async () => {
       try {
-        const timestamp = new Date().getTime();
-        const [serviciosRes, descuentosRes] = await Promise.all([
-          fetch(`/api/admin/servicios?cache=${timestamp}`),
-          fetch(`/api/admin/descuentos?cache=${timestamp}`)
-        ]);
-        
+        const serviciosRes = await fetch('/api/servicios-publicos');
         const serviciosData = await serviciosRes.json();
-        const descuentosData = await descuentosRes.json();
         
-        setServiciosAPI(serviciosData.servicios || []);
-        setDescuentosIndividuales(descuentosData.descuentos || {});
-        setPrecios({}); // No se usa por ahora
-        console.log('✅ Servicios página actualizada:', serviciosData.servicios?.length || 0);
-        console.log('📊 Estados de servicios:', serviciosData.servicios?.map((s: any) => ({ id: s.id, nombre: s.nombre, activo: s.activo })));
+        if (serviciosData.success && serviciosData.servicios) {
+          setServiciosAPI(serviciosData.servicios);
+          console.log('✅ Servicios cargados desde API pública:', serviciosData.servicios.length);
+        }
       } catch (error) {
-        console.error('Error cargando datos:', error);
+        console.error('Error cargando servicios:', error);
       }
     };
     

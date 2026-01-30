@@ -484,25 +484,26 @@ export default function ServiciosTab() {
               <div className="flex items-start gap-4">
                 {/* Imagen */}
                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-amber-100 to-stone-200 flex-shrink-0">
-                  {servicio.imagen ? (
+                  {servicio.imagen && servicio.imagen.trim() !== '' ? (
                     <img
-                      src={`/image/${encodeURIComponent(servicio.imagen)}`}
+                      src={servicio.imagen.startsWith('http') || servicio.imagen.startsWith('/') 
+                        ? servicio.imagen 
+                        : `/image/${encodeURIComponent(servicio.imagen)}`}
                       alt={servicio.nombre}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        console.error('❌ Error cargando imagen en admin:', servicio.imagen);
-                        console.error('❌ Ruta intentada:', `/image/${encodeURIComponent(servicio.imagen)}`);
+                        console.error('❌ Error cargando imagen:', servicio.imagen);
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         const parent = target.parentElement;
                         if (parent) {
-                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-4xl">${servicio.icon}</div>`;
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-4xl">${servicio.icon || '🛎️'}</div>`;
                         }
                       }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-4xl">
-                      {servicio.icon}
+                      {servicio.icon || '🛎️'}
                     </div>
                   )}
                 </div>

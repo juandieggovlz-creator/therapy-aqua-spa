@@ -17,22 +17,26 @@ const navItems = [
 export default function Header() {
 	const pathname = usePathname();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-	const [logoData, setLogoData] = useState<{ imagen: string; texto: string } | null>(null);
+	// Logo por defecto (puede cargarse desde configuración pública si es necesario)
+	const [logoData, setLogoData] = useState<{ imagen: string; texto: string }>({
+		imagen: '/image/logo-oficial.jpg',
+		texto: 'Therapy Aqua Spa'
+	});
 
-	// Cargar logo desde CMS
+	// Cargar configuración del logo desde API pública (opcional)
 	useEffect(() => {
 		const loadLogo = async () => {
 			try {
-				const res = await fetch('/api/admin/cms');
+				const res = await fetch('/api/configuracion-publica');
 				const data = await res.json();
-				if (data.contenido?.logo) {
-					setLogoData(data.contenido.logo);
-				} else {
-					setLogoData({ imagen: '/image/logo-oficial.jpg', texto: 'Therapy Aqua Spa' });
+				if (data.success && data.configuracion) {
+					const logoImagen = data.configuracion.logo_imagen?.valor || '/image/logo-oficial.jpg';
+					const logoTexto = data.configuracion.nombre_negocio?.valor || 'Therapy Aqua Spa';
+					setLogoData({ imagen: logoImagen, texto: logoTexto });
 				}
 			} catch (error) {
-				console.error('Error cargando logo:', error);
-				setLogoData({ imagen: '/image/logo-oficial.jpg', texto: 'Therapy Aqua Spa' });
+				// Usar valores por defecto si hay error
+				console.log('ℹ️ Usando logo por defecto');
 			}
 		};
 		loadLogo();

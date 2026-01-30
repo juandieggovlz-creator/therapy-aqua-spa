@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ServiciosTab from '@/app/components/admin/ServiciosTab';
 import PromocionesTab from '@/app/components/admin/PromocionesTab';
-import CMSTab from '@/app/components/admin/CMSTab';
 import ReservasTab from '@/app/components/admin/ReservasTab';
 import ProductosTab from '@/app/components/admin/ProductosTab';
+import ContenidoWebTab from '@/app/components/admin/ContenidoWebTab';
 
-type TabType = 'reservas' | 'servicios' | 'promociones' | 'cms' | 'productos';
+type TabType = 'reservas' | 'servicios' | 'promociones' | 'productos' | 'contenido';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -46,7 +46,7 @@ export default function AdminDashboard() {
     { id: 'servicios' as TabType, label: 'Servicios', icon: '🛎️' },
     { id: 'productos' as TabType, label: 'Productos', icon: '🛍️' },
     { id: 'promociones' as TabType, label: 'Promociones', icon: '🎁' },
-    { id: 'cms' as TabType, label: 'Contenido Web', icon: '📝' }
+    { id: 'contenido' as TabType, label: 'Contenido Web', icon: '🌐' }
   ];
 
   return (
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
           {activeTab === 'servicios' && <ServiciosTab />}
           {activeTab === 'productos' && <ProductosTab />}
           {activeTab === 'promociones' && <PromocionesTab />}
-          {activeTab === 'cms' && <CMSTab />}
+          {activeTab === 'contenido' && <ContenidoWebTab />}
         </div>
       </main>
     </div>

@@ -130,7 +130,6 @@ const faqs = [
 
 export default function FaqsPage() {
   const [openId, setOpenId] = useState<number | null>(null);
-  const { contenido } = useCMS();
 
   const toggleFaq = (id: number) => {
     setOpenId(openId === id ? null : id);
