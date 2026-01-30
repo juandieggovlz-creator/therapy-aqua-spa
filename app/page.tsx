@@ -494,7 +494,7 @@ export default function HomePage() {
           <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-pink-200 to-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className={`relative z-10 text-center px-4 transition-all duration-1000 transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="relative z-10 text-center px-4 transition-all duration-1000 transform opacity-100 translate-y-0">
           <div className="mb-6 inline-block">
             <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-lg animate-pulse">
               ✨ Bienvenido a tu santuario de bienestar
