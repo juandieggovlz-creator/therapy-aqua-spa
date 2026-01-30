@@ -3,21 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useCMS } from "@/app/hooks/useCMS";
 
 export default function Footer() {
 	const pathname = usePathname();
-	const { contenido } = useCMS();
-	const [logoData, setLogoData] = useState<{ imagen: string; texto: string } | null>(null);
-
-	useEffect(() => {
-		if (contenido?.logo) {
-			setLogoData(contenido.logo);
-		} else {
-			setLogoData({ imagen: '/image/logo-oficial.jpg', texto: 'Therapy Aqua Spa' });
-		}
-	}, [contenido]);
+	
+	// Datos fijos del footer
+	const logoData = { imagen: '/image/logo-oficial.jpg', texto: 'Therapy Aqua Spa' };
+	const contacto = {
+		telefono: '+57 301 4185239',
+		email: 'contacto@therapyspa.com',
+		whatsappLink: 'https://wa.me/573014185239',
+		horariosAtencion: 'Lun - Sáb: 8:00 AM - 8:00 PM'
+	};
+	const redesSociales = { instagram: '', facebook: '', tiktok: '', youtube: '', twitter: '' };
 	
 	// Ocultar footer solo en el panel de admin (no en login)
 	const isAdminPanel = pathname?.startsWith('/login/afiliados/admin');
@@ -25,8 +23,6 @@ export default function Footer() {
 	if (isAdminPanel) {
 		return null;
 	}
-
-	const redesSociales = contenido?.redesSociales || { instagram: '', facebook: '', tiktok: '', youtube: '', twitter: '' };
 
 	return (
 		<footer className="mt-20 border-t border-[var(--color-border)] bg-[color:var(--cafe-900)] py-10 text-[color:var(--blanco)]">
@@ -92,30 +88,22 @@ export default function Footer() {
 				<div>
 					<p className="text-sm font-medium">Contacto</p>
 					<ul className="mt-2 space-y-2 text-sm opacity-90">
-						{contenido?.contacto?.telefono && (
-							<li className="flex items-center gap-2">
-								<span>📞</span>
-								<a href={`tel:${contenido.contacto.telefono}`} className="hover:opacity-100 hover:underline">{contenido.contacto.telefono}</a>
-							</li>
-						)}
-						{contenido?.contacto?.email && (
-							<li className="flex items-center gap-2">
-								<span>✉️</span>
-								<a href={`mailto:${contenido.contacto.email}`} className="hover:opacity-100 hover:underline">{contenido.contacto.email}</a>
-							</li>
-						)}
-						{contenido?.contacto?.whatsappLink && (
-							<li className="flex items-center gap-2">
-								<span>💬</span>
-								<a href={contenido.contacto.whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-100 hover:underline">WhatsApp</a>
-							</li>
-						)}
-						{contenido?.contacto?.horariosAtencion && (
-							<li className="flex items-center gap-2 mt-4 pt-4 border-t border-white/20">
-								<span>🕐</span>
-								<span>{contenido.contacto.horariosAtencion}</span>
-							</li>
-						)}
+						<li className="flex items-center gap-2">
+							<span>📞</span>
+							<a href={`tel:${contacto.telefono}`} className="hover:opacity-100 hover:underline">{contacto.telefono}</a>
+						</li>
+						<li className="flex items-center gap-2">
+							<span>✉️</span>
+							<a href={`mailto:${contacto.email}`} className="hover:opacity-100 hover:underline">{contacto.email}</a>
+						</li>
+						<li className="flex items-center gap-2">
+							<span>💬</span>
+							<a href={contacto.whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:opacity-100 hover:underline">WhatsApp</a>
+						</li>
+						<li className="flex items-center gap-2 mt-4 pt-4 border-t border-white/20">
+							<span>🕐</span>
+							<span>{contacto.horariosAtencion}</span>
+						</li>
 					</ul>
 				</div>
 			</div>
