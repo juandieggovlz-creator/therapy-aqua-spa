@@ -168,16 +168,19 @@ export default function HomePage() {
         .animation-delay-4000 { animation-delay: 4s; }
         
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .map((s: any, index: number) => {
-          const servicioBase = serviciosDestacadosBase.find(sb => sb.key === s.id);
-          const precioBase = s.precio || s.precioOriginal || 0;
-          const descuentoInfo = descuentos[s.id];
-          const descuentoAplicado = descuentoInfo?.porcentaje || 0;
-          const precioFinal = descuentoAplicado > 0 
-            ? precioBase * (1 - descuentoAplicado / 100)
-            : precioBase;
-          
-          return {
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
             id: index + 1,
             key: s.id,
             title: s.nombre,
