@@ -158,9 +158,8 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
       <style jsx>{`
-      const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
-      
-      let serviciosAMostrar: any[] = [];
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
       if (serviciosDestacadosAPI.length > 0) {
         serviciosAMostrar = [...serviciosDestacadosAPI];
         const otrosServicios = serviciosActivos.filter((s: any) => !s.destacado);
