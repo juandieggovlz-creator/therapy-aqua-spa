@@ -155,10 +155,9 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // NO usar funciones de API - datos estáticos solamente
-  const actualizarServiciosDesdeAPI_NO_USAR = useCallback((serviciosAPI: any[], descuentos: any) => {
-    try {
-      const serviciosActivos = serviciosAPI.filter((s: any) => s.activo === true);
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
+      <style jsx>{`
       const serviciosDestacadosAPI = serviciosActivos.filter((s: any) => s.destacado);
       
       let serviciosAMostrar: any[] = [];
