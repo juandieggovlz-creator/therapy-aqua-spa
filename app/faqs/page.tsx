@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useCMS } from '@/app/hooks/useCMS';
 
 type DiaHorario = {
   abierto: boolean;
@@ -139,7 +138,15 @@ export default function FaqsPage() {
 
   // Generar horarios desde CMS
   const generarHorariosTexto = () => {
-    const horariosCMS: Horarios = contenido?.horarios || {};
+    const horariosCMS: Horarios = {
+      lunes: { abierto: true, apertura: '08:00', cierre: '20:00' },
+      martes: { abierto: true, apertura: '08:00', cierre: '20:00' },
+      miercoles: { abierto: true, apertura: '08:00', cierre: '20:00' },
+      jueves: { abierto: true, apertura: '08:00', cierre: '20:00' },
+      viernes: { abierto: true, apertura: '08:00', cierre: '20:00' },
+      sabado: { abierto: true, apertura: '08:00', cierre: '20:00' },
+      domingo: { abierto: false, apertura: '08:00', cierre: '16:00' }
+    };
     const diasMap = [
       { key: 'lunes', label: 'Lunes' },
       { key: 'martes', label: 'Martes' },
@@ -185,17 +192,26 @@ export default function FaqsPage() {
     }
     if (faq.id === 13) {
       // Ubicación
-      const ubicacion: Ubicacion = contenido?.ubicacion || {};
+      const ubicacion: Ubicacion = {
+        direccion: 'Cra 27 #6-56',
+        lugar: 'Centro de Pasto',
+        ciudad: 'Pasto, Nariño',
+        mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
+      };
       if (ubicacion.lugar || ubicacion.direccion) {
         return {
           ...faq,
-          respuesta: `📍 ${ubicacion.lugar || 'Círculo de Suboficiales FF.MM.'}\n${ubicacion.direccion || 'Calle 138 Nro. 55-38'}, ${ubicacion.ciudad || 'Bogotá D.C.'}`
+          respuesta: `📍 ${ubicacion.lugar || 'Centro de Pasto'}\n${ubicacion.direccion || 'Cra 27 #6-56'}, ${ubicacion.ciudad || 'Pasto, Nariño'}`
         };
       }
     }
     if (faq.id === 14) {
       // Contacto
-      const contacto: Contacto = contenido?.contacto || {};
+      const contacto: Contacto = {
+        telefono: '+57 301 4185239',
+        email: 'contacto@therapyspa.com',
+        whatsappLink: 'https://wa.me/573014185239'
+      };
       if (contacto.whatsappLink || contacto.telefono || contacto.email) {
         const whatsappLink = contacto.whatsappLink || 'https://wa.me/573014185239';
         const telefono = contacto.telefono || '';
@@ -283,9 +299,9 @@ export default function FaqsPage() {
                     </p>
                     
                     {/* Enlaces especiales */}
-                    {faq.id === 13 && contenido?.ubicacion?.mapaLink && (
+                    {faq.id === 13 && (
                       <a
-                        href={contenido.ubicacion.mapaLink}
+                        href="https://maps.google.com/?q=Cra+27+6-56+Pasto"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-block mt-4 text-amber-700 hover:text-amber-900 font-medium underline"
@@ -294,9 +310,9 @@ export default function FaqsPage() {
                       </a>
                     )}
                     
-                    {faq.id === 14 && contenido?.contacto?.whatsappLink && (
+                    {faq.id === 14 && (
                       <a
-                        href={contenido.contacto.whatsappLink}
+                        href="https://wa.me/573014185239"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-block mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105"

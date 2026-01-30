@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCMS } from '@/app/hooks/useCMS';
-import { useContentPolling } from '@/app/hooks/useContentPolling';
+// Hooks CMS eliminados
 
 // Helper para codificar URLs de imágenes
 function getImagePath(filename: string): string {
@@ -144,16 +143,8 @@ const testimoniosQuick = [
 ];
 
 export default function HomePage() {
-  const { contenido } = useCMS();
   const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
   const [promocionActiva, setPromocionActiva] = useState<any>(null);
-
-  // 🆕 POLLING AUTOMÁTICO CADA 15 SEGUNDOS
-  // Este hook actualiza automáticamente el contenido cuando hay cambios en el JSON
-  const { contenido: contenidoPolling } = useContentPolling({
-    intervalo: 15000, // 15 segundos
-    onUpdate: (nuevoContenido) => {
-      console.log('🔄 Polling detectó cambios en contenido');
       // Forzar actualización con los nuevos datos
       if (nuevoContenido.servicios) {
         actualizarServiciosDesdeAPI(nuevoContenido.servicios, nuevoContenido.descuentos || {});
@@ -539,7 +530,7 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-[#3d2817] mb-6 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {contenido?.banner?.texto || 'Therapy Aqua Spa'}
+            Therapy Aqua Spa
           </h1>
           
           <p className="text-xl md:text-3xl text-amber-700 mb-8 font-semibold">
@@ -556,7 +547,7 @@ export default function HomePage() {
               href="/servicios"
               className="group relative inline-flex items-center gap-3 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl overflow-hidden"
             >
-              <span className="relative z-10">{contenido?.botones?.verServicios || 'Ver Terapias'}</span>
+              <span className="relative z-10">Ver Terapias</span>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -570,7 +561,7 @@ export default function HomePage() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
-              {contenido?.botones?.reservar || 'Reservar Ahora'}
+              Reservar Ahora
             </Link>
           </div>
 
@@ -661,12 +652,11 @@ export default function HomePage() {
         </section>
       )}
 
-      {contenido?.secciones?.serviciosDestacados?.mostrar !== false && (
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-              {contenido?.secciones?.serviciosDestacados?.titulo || '💎 Terapias Más Solicitadas'}
+              💎 Terapias Más Solicitadas
             </h2>
             <p className="text-lg text-stone-600 max-w-2xl mx-auto">
               Descubre nuestros tratamientos estrella diseñados para tu bienestar integral
@@ -802,13 +792,13 @@ export default function HomePage() {
                           href="/servicios"
                           className="w-full bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
                         >
-                          {contenido?.botones?.verServicios || 'Ver Más Terapias'}
+                          Ver Más Terapias
                         </Link>
                         <Link 
                           href={`/reservas?servicio=${servicio.key}`}
                           className="w-full bg-[#3d2817] hover:bg-[#2d1f11] text-white px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
                         >
-                          {contenido?.botones?.reservar || 'Reservar Ahora'}
+                          Reservar Ahora
                         </Link>
                       </div>
                     </div>
@@ -892,11 +882,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {contenido?.secciones?.testimonios?.mostrar !== false && (
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {contenido?.secciones?.testimonios?.titulo || '💬 Lo Que Dicen Nuestros Clientes'}
+            💬 Lo Que Dicen Nuestros Clientes
           </h2>
           <p className="text-lg text-stone-600 mb-12">
             Historias reales de transformación y bienestar
@@ -999,8 +988,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {contenido?.anuncio?.activo && (
-      <section className="py-20 px-4">
+      <section className="py-20 px-4" style={{display: 'none'}}>
         <div className="max-w-5xl mx-auto">
           <div className="relative bg-gradient-to-br from-[#3d2817] to-[#2d1f11] rounded-3xl shadow-2xl overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500 rounded-full opacity-10 blur-3xl"></div>

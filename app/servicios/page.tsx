@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCMS } from '@/app/hooks/useCMS';
+// Hook CMS eliminado
 
 // Helper para codificar URLs de imágenes
 function getImagePath(filename: string): string {

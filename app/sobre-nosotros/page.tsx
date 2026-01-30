@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useCMS } from '@/app/hooks/useCMS';
 
 type SobreNosotros = {
   titulo?: string;
@@ -253,9 +252,18 @@ function GaleriaInstalaciones() {
 }
 
 export default function SobreNosotrosPage() {
-  const { contenido } = useCMS();
-  const sobreNosotros: SobreNosotros = contenido?.sobreNosotros || {};
-  const ubicacion: Ubicacion = contenido?.ubicacion || {};
+  const sobreNosotros: SobreNosotros = {
+    titulo: 'Sobre Nosotros',
+    subtitulo: 'Bienestar y Relajación',
+    descripcion: 'En Therapy Aqua Spa nos dedicamos a brindar experiencias únicas de relajación y bienestar.',
+    valores: ['Calidad', 'Profesionalismo', 'Innovación', 'Compromiso']
+  };
+  const ubicacion: Ubicacion = {
+    direccion: 'Cra 27 #6-56',
+    lugar: 'Centro de Pasto',
+    ciudad: 'Pasto, Nariño',
+    mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
+  };
   
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100">

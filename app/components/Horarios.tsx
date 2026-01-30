@@ -1,7 +1,5 @@
 "use client";
 
-import { useCMS } from "@/app/hooks/useCMS";
-
 type DiaHorario = {
 	abierto: boolean;
 	apertura: string;
@@ -19,9 +17,15 @@ type Horarios = {
 };
 
 export default function Horarios() {
-	const { contenido } = useCMS();
-	
-	const horariosCMS: Horarios = contenido?.horarios || {};
+	const horariosCMS: Horarios = {
+		lunes: { abierto: true, apertura: '08:00', cierre: '20:00' },
+		martes: { abierto: true, apertura: '08:00', cierre: '20:00' },
+		miercoles: { abierto: true, apertura: '08:00', cierre: '20:00' },
+		jueves: { abierto: true, apertura: '08:00', cierre: '20:00' },
+		viernes: { abierto: true, apertura: '08:00', cierre: '20:00' },
+		sabado: { abierto: true, apertura: '08:00', cierre: '20:00' },
+		domingo: { abierto: false, apertura: '08:00', cierre: '16:00' }
+	};
 	
 	// Mapeo de días
 	const dias = [
