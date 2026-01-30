@@ -138,13 +138,13 @@ export default function FaqsPage() {
   // Generar horarios desde CMS
   const generarHorariosTexto = () => {
     const horariosCMS: Horarios = {
-      lunes: { abierto: true, apertura: '08:00', cierre: '20:00' },
-      martes: { abierto: true, apertura: '08:00', cierre: '20:00' },
-      miercoles: { abierto: true, apertura: '08:00', cierre: '20:00' },
-      jueves: { abierto: true, apertura: '08:00', cierre: '20:00' },
-      viernes: { abierto: true, apertura: '08:00', cierre: '20:00' },
-      sabado: { abierto: true, apertura: '08:00', cierre: '20:00' },
-      domingo: { abierto: false, apertura: '08:00', cierre: '16:00' }
+      lunes: { abierto: false, apertura: '08:00', cierre: '16:00' },
+      martes: { abierto: false, apertura: '08:00', cierre: '16:00' },
+      miercoles: { abierto: false, apertura: '08:00', cierre: '16:00' },
+      jueves: { abierto: true, apertura: '08:00', cierre: '16:00' },
+      viernes: { abierto: true, apertura: '08:00', cierre: '16:00' },
+      sabado: { abierto: true, apertura: '08:00', cierre: '16:00' },
+      domingo: { abierto: true, apertura: '08:00', cierre: '16:00' }
     };
     const diasMap = [
       { key: 'lunes', label: 'Lunes' },
