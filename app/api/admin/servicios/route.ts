@@ -1,172 +1,162 @@
-import { NextResponse } from "next/server";
-import { leerContenido, escribirContenido } from "@/lib/content-helpers";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-// GET - Obtener todos los servicios
+const prisma = new PrismaClient();
+
+// GET: Obtener todos los servicios
 export async function GET() {
   try {
-    const content = await leerContenido();
-    return NextResponse.json({ servicios: content.servicios }, { status: 200 });
+    const servicios = await prisma.servicio.findMany({
+      orderBy: { orden: 'asc' },
+    });
+
+    return NextResponse.json({ servicios }, { status: 200 });
   } catch (error) {
-    console.error("Error leyendo servicios:", error);
+    console.error('Error obteniendo servicios:', error);
     return NextResponse.json(
-      { error: "Error al leer servicios" },
+      { error: 'Error al obtener servicios' },
       { status: 500 }
     );
   }
 }
 
-// POST - Crear nuevo servicio
+// POST: Crear nuevo servicio
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const content = await leerContenido();
 
     // Validar campos requeridos
-    if (!body.id || !body.nombre) {
+    if (!body.servicio_id || !body.nombre || !body.categoria || !body.precio) {
       return NextResponse.json(
-        { error: "ID y nombre son requeridos" },
+        { error: 'Campos requeridos: servicio_id, nombre, categoria, precio' },
         { status: 400 }
       );
     }
 
-    // Verificar que el ID no exista
-    const existe = content.servicios.find((s: any) => s.id === body.id);
-    if (existe) {
-      return NextResponse.json(
-        { error: "Ya existe un servicio con ese ID" },
-        { status: 400 }
-      );
-    }
-
-    // Crear nuevo servicio con valores por defecto
-    const nuevoServicio = {
-      id: body.id,
-      nombre: body.nombre,
-      precio: body.precio || 0,
-      precioOriginal: body.precioOriginal || body.precio || 0,
-      duracion: body.duracion || 30,
-      descripcion: body.descripcion || "",
-      imagen: body.imagen || "",
-      icon: body.icon || "✨",
-      activo: body.activo !== undefined ? body.activo : true,
-      destacado: body.destacado || false,
-      categoria: body.categoria || "General",
-      orden: body.orden || content.servicios.length + 1,
-    };
-
-    content.servicios.push(nuevoServicio);
-    
-    if (!(await escribirContenido(content))) {
-      return NextResponse.json(
-        { error: "Error al guardar servicio" },
-        { status: 500 }
-      );
-    }
+    const servicio = await prisma.servicio.create({
+      data: {
+        servicio_id: body.servicio_id,
+        nombre: body.nombre,
+        descripcion: body.descripcion || null,
+        categoria: body.categoria,
+        duracion: body.duracion || 30,
+        precio: parseFloat(body.precio),
+        icon: body.icon || null,
+        imagen: body.imagen || null,
+        activo: body.activo !== undefined ? body.activo : true,
+        orden: body.orden || 0,
+        detalles: body.detalles || null,
+      },
+    });
 
     return NextResponse.json(
-      { success: true, servicio: nuevoServicio },
+      { servicio, message: 'Servicio creado exitosamente' },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error creando servicio:", error);
+  } catch (error: any) {
+    console.error('Error creando servicio:', error);
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Ya existe un servicio con ese ID' },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Error al crear servicio" },
+      { error: 'Error al crear servicio' },
       { status: 500 }
     );
   }
 }
 
-// PATCH - Actualizar servicio existente
+// PATCH: Actualizar servicio existente
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const content = await leerContenido();
+    const { id, ...updates } = body;
 
-    if (!body.id) {
+    if (!id) {
       return NextResponse.json(
-        { error: "ID es requerido" },
+        { error: 'ID del servicio es requerido' },
         { status: 400 }
       );
     }
 
-    const index = content.servicios.findIndex((s: any) => s.id === body.id);
-    if (index === -1) {
+    // Preparar datos para actualización
+    const data: any = {};
+    if (updates.nombre !== undefined) data.nombre = updates.nombre;
+    if (updates.descripcion !== undefined) data.descripcion = updates.descripcion;
+    if (updates.categoria !== undefined) data.categoria = updates.categoria;
+    if (updates.duracion !== undefined) data.duracion = parseInt(updates.duracion);
+    if (updates.precio !== undefined) data.precio = parseFloat(updates.precio);
+    if (updates.icon !== undefined) data.icon = updates.icon;
+    if (updates.imagen !== undefined) data.imagen = updates.imagen;
+    if (updates.activo !== undefined) data.activo = updates.activo;
+    if (updates.orden !== undefined) data.orden = parseInt(updates.orden);
+    if (updates.detalles !== undefined) data.detalles = updates.detalles;
+
+    const servicio = await prisma.servicio.update({
+      where: { id: parseInt(id) },
+      data,
+    });
+
+    return NextResponse.json(
+      { servicio, message: 'Servicio actualizado exitosamente' },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error actualizando servicio:', error);
+
+    if (error.code === 'P2025') {
       return NextResponse.json(
-        { error: "Servicio no encontrado" },
+        { error: 'Servicio no encontrado' },
         { status: 404 }
       );
     }
 
-    // Actualizar solo los campos proporcionados
-    const servicioActualizado = {
-      ...content.servicios[index],
-      ...body,
-    };
-
-    // Asegurar sincronización de precio y precioOriginal
-    if (body.precio !== undefined && body.precioOriginal === undefined) {
-      servicioActualizado.precioOriginal = body.precio;
-    }
-
-    console.log(`✏️ Actualizando servicio ${body.id}: precio=${servicioActualizado.precio}, precioOriginal=${servicioActualizado.precioOriginal}`);
-
-    content.servicios[index] = servicioActualizado;
-    
-    if (!(await escribirContenido(content))) {
-      return NextResponse.json(
-        { error: "Error al actualizar servicio" },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { success: true, servicio: servicioActualizado },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error actualizando servicio:", error);
-    return NextResponse.json(
-      { error: "Error al actualizar servicio" },
+      { error: 'Error al actualizar servicio' },
       { status: 500 }
     );
   }
 }
 
-// DELETE - Eliminar servicio
+// DELETE: Eliminar servicio
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: "ID es requerido" }, { status: 400 });
+      return NextResponse.json(
+        { error: 'ID del servicio es requerido' },
+        { status: 400 }
+      );
     }
 
-    const content = await leerContenido();
-    const index = content.servicios.findIndex((s: any) => s.id === id);
+    await prisma.servicio.delete({
+      where: { id: parseInt(id) },
+    });
 
-    if (index === -1) {
+    return NextResponse.json(
+      { message: 'Servicio eliminado exitosamente' },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error eliminando servicio:', error);
+
+    if (error.code === 'P2025') {
       return NextResponse.json(
-        { error: "Servicio no encontrado" },
+        { error: 'Servicio no encontrado' },
         { status: 404 }
       );
     }
 
-    content.servicios.splice(index, 1);
-    
-    if (!(await escribirContenido(content))) {
-      return NextResponse.json(
-        { error: "Error al eliminar servicio" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("Error eliminando servicio:", error);
     return NextResponse.json(
-      { error: "Error al eliminar servicio" },
+      { error: 'Error al eliminar servicio' },
       { status: 500 }
     );
   }
 }
+

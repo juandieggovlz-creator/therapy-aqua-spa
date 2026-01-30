@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 
-// Credenciales seguras (en producción usar base de datos con hash bcrypt)
+// Credenciales temporales (en producción usar base de datos y hash)
 const USERS = {
   admin: {
-    username: "admin@therapyaquaspa.com",
-    email: "admin@therapyaquaspa.com",
-    password: "TaSpa2026!Admin#Secure",
+    username: "admin",
+    password: "admin123",
     role: "admin",
-    name: "Administrador Principal"
+    name: "Administrador Principal",
+    email: "admin@therapyspa.com"
   },
   fisio: {
-    username: "fisio@therapyaquaspa.com",
-    email: "fisio@therapyaquaspa.com", 
-    password: "Fisio2026!Therapy#Pro",
+    username: "fisio",
+    password: "fisio123",
     role: "fisio",
-    name: "Dra. Carolina Trujillo"
+    name: "Dra. Carolina Trujillo",
+    email: "carolina@therapyspa.com"
   }
 };
 

@@ -1,27 +1,18 @@
 /**
- * Helpers para gestión de reservas
- * Usa Vercel Postgres en producción y JSON en desarrollo (fallback)
+ * Helpers para gestión de reservas con Prisma
  */
 
-import {
-  getAllReservas,
-  createReserva,
-  updateReservaEstado,
-  updateReserva,
-  deleteReserva,
-  verificarConflictoHorario,
-  liberarReservasExpiradas,
-  getReservasActivas,
-  type Reserva
-} from "./db";
+import { PrismaClient } from '@prisma/client';
 import fs from "fs";
 import path from "path";
+
+const prisma = new PrismaClient();
 
 const USE_JSON_FALLBACK = !process.env.POSTGRES_URL;
 const RESERVAS_PATH = path.join(process.cwd(), "data", "reservas.json");
 
 /**
- * Leer reservas (Postgres o JSON)
+ * Leer reservas (Prisma o JSON)
  */
 export async function leerReservas(): Promise<any[]> {
   if (USE_JSON_FALLBACK) {
@@ -35,12 +26,19 @@ export async function leerReservas(): Promise<any[]> {
     }
   }
   
-  const reservas = await getAllReservas();
-  return reservas;
+  try {
+    const reservas = await prisma.reserva.findMany({
+      orderBy: { created_at: 'desc' }
+    });
+    return reservas;
+  } catch (error) {
+    console.error('❌ Error obteniendo reservas:', error);
+    return [];
+  }
 }
 
 /**
- * Escribir reservas (Postgres o JSON)
+ * Escribir reservas (JSON fallback)
  */
 export async function escribirReservas(reservas: any[]): Promise<boolean> {
   if (USE_JSON_FALLBACK) {
@@ -58,14 +56,12 @@ export async function escribirReservas(reservas: any[]): Promise<boolean> {
     }
   }
   
-  // En Postgres no es necesario "escribir todas" las reservas
-  // Las operaciones son individuales (create, update, delete)
-  console.log("⚠️ escribirReservas llamado en modo Postgres (no es necesario)");
+  console.log("⚠️ escribirReservas llamado en modo Prisma (no es necesario)");
   return true;
 }
 
 /**
- * Crear nueva reserva (Postgres o JSON)
+ * Crear nueva reserva (Prisma o JSON)
  */
 export async function crearReserva(reserva: any): Promise<any | null> {
   if (USE_JSON_FALLBACK) {
@@ -80,40 +76,47 @@ export async function crearReserva(reserva: any): Promise<any | null> {
     }
   }
   
-  // Combinar todos los servicios en el campo JSONB "servicios"
-  // Estructura: { terapias: [...], serviciosAdicionales: [...], productos: [...] }
-  const serviciosCombinados = {
-    terapias: reserva.terapias || reserva.servicios || [],
-    serviciosAdicionales: reserva.serviciosAdicionales || [],
-    productos: reserva.productos || []
-  };
-  
-  const nuevaReserva = await createReserva({
-    reservation_id: reserva.reservationId || reserva.id,
-    nombre: reserva.nombre,
-    telefono: reserva.telefono,
-    email: reserva.email,
-    fecha: reserva.fecha,
-    horario: reserva.horario,
-    servicios: serviciosCombinados,
-    productos: reserva.productos || [],
-    total: reserva.total || 0,
-    estado: reserva.estado || 'pendiente',
-    notas: reserva.notas,
-    fisioterapeuta: reserva.fisioterapeuta,
-    codigo_afiliado: reserva.codigoAfiliado || reserva.afiliadoNombre,
-    descuento_afiliado: reserva.descuentoAfiliado || 0,
-    descuento_individual: reserva.descuentoIndividual || 0,
-    descuento_promocion: reserva.descuentoPromocion || 0,
-    es_afiliado: reserva.esAfiliado || false,
-    duracion_total: reserva.duracionTotal || reserva.duracion || 0,
-  });
-  
-  return nuevaReserva;
+  try {
+    // Combinar servicios en el campo JSONB
+    const serviciosCombinados = {
+      terapias: reserva.terapias || reserva.servicios || [],
+      serviciosAdicionales: reserva.serviciosAdicionales || [],
+      productos: reserva.productos || [],
+      esAfiliado: reserva.esAfiliado || false,
+      duracionTotal: reserva.duracionTotal || reserva.duracion || 0
+    };
+    
+    const nuevaReserva = await prisma.reserva.create({
+      data: {
+        reservation_id: reserva.reservationId || reserva.id,
+        nombre: reserva.nombre,
+        telefono: reserva.telefono,
+        email: reserva.email,
+        fecha: new Date(reserva.fecha),
+        horario: reserva.horario,
+        servicios: serviciosCombinados,
+        productos: reserva.productos || [],
+        total: parseFloat(reserva.total) || 0,
+        estado: reserva.estado || 'pendiente',
+        notas: reserva.notas || null,
+        fisioterapeuta: reserva.fisioterapeuta || null,
+        codigo_afiliado: reserva.codigoAfiliado || reserva.afiliadoNombre || null,
+        descuento_afiliado: parseFloat(reserva.descuentoAfiliado) || 0,
+        descuento_individual: parseFloat(reserva.descuentoIndividual) || 0,
+        descuento_promocion: parseFloat(reserva.descuentoPromocion) || 0,
+      },
+    });
+    
+    console.log('✅ Reserva creada:', nuevaReserva.reservation_id);
+    return nuevaReserva;
+  } catch (error) {
+    console.error('❌ Error creando reserva:', error);
+    return null;
+  }
 }
 
 /**
- * Actualizar estado de reserva (Postgres o JSON)
+ * Actualizar estado de reserva (Prisma o JSON)
  */
 export async function actualizarEstadoReserva(
   reservationId: string,
@@ -139,11 +142,21 @@ export async function actualizarEstadoReserva(
     }
   }
   
-  return await updateReservaEstado(reservationId, nuevoEstado as any);
+  try {
+    await prisma.reserva.update({
+      where: { reservation_id: reservationId },
+      data: { estado: nuevoEstado }
+    });
+    console.log(`✅ Estado actualizado: ${reservationId} → ${nuevoEstado}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando estado:', error);
+    return false;
+  }
 }
 
 /**
- * Actualizar reserva completa (Postgres o JSON)
+ * Actualizar reserva completa (Prisma o JSON)
  */
 export async function actualizarReserva(
   reservationId: string,
@@ -168,11 +181,32 @@ export async function actualizarReserva(
     }
   }
   
-  return await updateReserva(reservationId, updates);
+  try {
+    const data: any = {};
+    if (updates.nombre) data.nombre = updates.nombre;
+    if (updates.telefono) data.telefono = updates.telefono;
+    if (updates.email) data.email = updates.email;
+    if (updates.fecha) data.fecha = new Date(updates.fecha);
+    if (updates.horario) data.horario = updates.horario;
+    if (updates.fisioterapeuta) data.fisioterapeuta = updates.fisioterapeuta;
+    if (updates.notas !== undefined) data.notas = updates.notas;
+    if (updates.estado) data.estado = updates.estado;
+
+    await prisma.reserva.update({
+      where: { reservation_id: reservationId },
+      data
+    });
+    
+    console.log(`✅ Reserva actualizada: ${reservationId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando reserva:', error);
+    return false;
+  }
 }
 
 /**
- * Eliminar reserva (Postgres o JSON)
+ * Eliminar reserva (Prisma o JSON)
  */
 export async function eliminarReserva(reservationId: string): Promise<boolean> {
   if (USE_JSON_FALLBACK) {
@@ -189,11 +223,20 @@ export async function eliminarReserva(reservationId: string): Promise<boolean> {
     }
   }
   
-  return await deleteReserva(reservationId);
+  try {
+    await prisma.reserva.delete({
+      where: { reservation_id: reservationId }
+    });
+    console.log(`🗑️ Reserva eliminada: ${reservationId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando reserva:', error);
+    return false;
+  }
 }
 
 /**
- * Verificar conflicto de horario (Postgres o JSON)
+ * Verificar conflicto de horario (Prisma o JSON)
  */
 export async function verificarConflicto(
   fecha: string,
@@ -204,25 +247,11 @@ export async function verificarConflicto(
     try {
       const reservas = await leerReservas();
       
-      // Liberar expiradas primero
-      const ahora = new Date().getTime();
-      const TIEMPO_EXPIRACION = 30 * 60 * 1000;
-      
-      const reservasActualizadas = reservas.map((reserva: any) => {
-        if (reserva.estado === "pendiente" && reserva.createdAt) {
-          const tiempoCreacion = new Date(reserva.createdAt).getTime();
-          if (ahora - tiempoCreacion > TIEMPO_EXPIRACION) {
-            return { ...reserva, estado: "cancelada", updatedAt: new Date().toISOString() };
-          }
-        }
-        return reserva;
-      });
-      
-      await escribirReservas(reservasActualizadas);
+      await liberarExpiradas();
       
       const fechaNormalizada = fecha.split('T')[0];
       
-      const reservaConflictiva = reservasActualizadas.find((r: any) => {
+      const reservaConflictiva = reservas.find((r: any) => {
         if (excludeId && (r.id === excludeId || r.reservationId === excludeId)) {
           return false;
         }
@@ -245,11 +274,38 @@ export async function verificarConflicto(
     }
   }
   
-  return await verificarConflictoHorario(fecha, horario, excludeId);
+  try {
+    await liberarExpiradas();
+    
+    const fechaNormalizada = fecha.split('T')[0];
+    
+    const where: any = {
+      fecha: new Date(fechaNormalizada),
+      horario: horario,
+      estado: { in: ['pendiente', 'pendiente de pago', 'confirmada'] }
+    };
+    
+    if (excludeId) {
+      where.NOT = { reservation_id: excludeId };
+    }
+    
+    const reservaConflictiva = await prisma.reserva.findFirst({ where });
+    
+    if (reservaConflictiva) {
+      console.log(`⚠️ Conflicto detectado: ${fecha} ${horario}`);
+      return { hayConflicto: true, reservaConflictiva };
+    }
+    
+    console.log(`✅ Horario disponible: ${fecha} ${horario}`);
+    return { hayConflicto: false };
+  } catch (error) {
+    console.error('❌ Error verificando conflicto:', error);
+    return { hayConflicto: false };
+  }
 }
 
 /**
- * Liberar reservas expiradas (Postgres o JSON)
+ * Liberar reservas expiradas (Prisma o JSON)
  */
 export async function liberarExpiradas(): Promise<number> {
   if (USE_JSON_FALLBACK) {
@@ -282,11 +338,31 @@ export async function liberarExpiradas(): Promise<number> {
     }
   }
   
-  return await liberarReservasExpiradas();
+  try {
+    const result = await prisma.reserva.updateMany({
+      where: {
+        estado: 'pendiente',
+        created_at: {
+          lt: new Date(Date.now() - 30 * 60 * 1000) // 30 minutos atrás
+        }
+      },
+      data: { estado: 'cancelada' }
+    });
+    
+    const liberadas = result.count;
+    if (liberadas > 0) {
+      console.log(`🔓 ${liberadas} reserva(s) expirada(s) liberada(s)`);
+    }
+    
+    return liberadas;
+  } catch (error) {
+    console.error('❌ Error liberando reservas expiradas:', error);
+    return 0;
+  }
 }
 
 /**
- * Obtener reservas activas (Postgres o JSON)
+ * Obtener reservas activas (Prisma o JSON)
  */
 export async function obtenerReservasActivas(): Promise<any[]> {
   if (USE_JSON_FALLBACK) {
@@ -297,7 +373,22 @@ export async function obtenerReservasActivas(): Promise<any[]> {
     );
   }
   
-  return await getReservasActivas();
+  try {
+    await liberarExpiradas();
+    
+    const reservas = await prisma.reserva.findMany({
+      where: {
+        estado: { in: ['pendiente', 'pendiente de pago', 'confirmada'] }
+      },
+      orderBy: [
+        { fecha: 'asc' },
+        { horario: 'asc' }
+      ]
+    });
+    
+    return reservas;
+  } catch (error) {
+    console.error('❌ Error obteniendo reservas activas:', error);
+    return [];
+  }
 }
-
-

@@ -1,41 +1,49 @@
-import type { Metadata } from "next";
-import { Playfair_Display, Poppins } from "next/font/google";
-import "./globals.css";
-import ConditionalLayoutClient from "./components/ConditionalLayoutClient";
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import WhatsAppFloatingButton from './components/WhatsAppFloatingButton'
+import StickyBar from './components/StickyBar'
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const poppins = Poppins({
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  display: "swap",
-});
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#3d2817',
+}
 
 export const metadata: Metadata = {
-  title: "Therapy Aqua Spa",
-  description: "Respira. Relájate. Renueva.",
-  icons: {
-    icon: '/image/logo-oficial.jpg',
-  },
-};
+  title: 'Therapy Aqua Spa - Fisioterapia y Bienestar en Bogotá',
+  description: 'Fisioterapia profesional y masajes terapéuticos en el corazón de Bogotá. Transformamos tu dolor en bienestar, tu tensión en paz.',
+  keywords: 'fisioterapia, masajes, terapia, spa, bienestar, Bogotá, lesiones, relajación',
+  authors: [{ name: 'Therapy Aqua Spa' }],
+  openGraph: {
+    title: 'Therapy Aqua Spa - Fisioterapia y Bienestar',
+    description: 'Fisioterapia profesional y masajes terapéuticos en Bogotá',
+    type: 'website',
+    locale: 'es_CO',
+  }
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="es">
-      <body className={`${playfair.variable} ${poppins.variable} antialiased`}>
-        <ConditionalLayoutClient>
-          {children}
-        </ConditionalLayoutClient>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body className="antialiased">
+        <Header />
+        {children}
+        <Footer />
+        <WhatsAppFloatingButton />
+        <StickyBar />
       </body>
     </html>
-  );
+  )
 }
+

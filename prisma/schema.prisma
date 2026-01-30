@@ -10,8 +10,9 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
-// Modelo de Reservas
-// Refleja exactamente la estructura usada en lib/db.ts
+// ============================================
+// MODELO: RESERVAS
+// ============================================
 model Reserva {
   id                    Int      @id @default(autoincrement())
   reservation_id        String   @unique @db.VarChar(50)
@@ -37,4 +38,101 @@ model Reserva {
   @@index([estado], name: "idx_estado")
   @@index([reservation_id], name: "idx_reservation_id")
   @@map("reservas")
+}
+
+// ============================================
+// MODELO: SERVICIOS (Terapias)
+// ============================================
+model Servicio {
+  id          Int      @id @default(autoincrement())
+  servicio_id String   @unique @db.VarChar(50) // 'columna', 'brazos', etc.
+  nombre      String   @db.VarChar(255)
+  descripcion String?  @db.Text
+  categoria   String   @db.VarChar(100) // 'Terapias de Rehabilitación', 'Masajes', etc.
+  duracion    Int      @default(30) // en minutos
+  precio      Decimal  @db.Decimal(10, 2)
+  icon        String?  @db.VarChar(10) // emoji
+  imagen      String?  @db.VarChar(500) // URL de imagen
+  activo      Boolean  @default(true)
+  orden       Int      @default(0) // para ordenar en el frontend
+  detalles    Json?    // array de detalles/beneficios
+  created_at  DateTime @default(now()) @db.Timestamptz()
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([activo], name: "idx_servicio_activo")
+  @@index([categoria], name: "idx_servicio_categoria")
+  @@map("servicios")
+}
+
+// ============================================
+// MODELO: SERVICIOS ADICIONALES
+// ============================================
+model ServicioAdicional {
+  id                Int      @id @default(autoincrement())
+  servicio_id       String   @unique @db.VarChar(50) // 'sauna', 'jacuzzi', 'turco'
+  nombre            String   @db.VarChar(255)
+  descripcion       String?  @db.Text
+  precio_particular Decimal  @db.Decimal(10, 2)
+  precio_afiliado   Decimal  @db.Decimal(10, 2)
+  icon              String?  @db.VarChar(10) // emoji
+  activo            Boolean  @default(true)
+  orden             Int      @default(0)
+  created_at        DateTime @default(now()) @db.Timestamptz()
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([activo], name: "idx_servicio_adicional_activo")
+  @@map("servicios_adicionales")
+}
+
+// ============================================
+// MODELO: PRODUCTOS
+// ============================================
+model Producto {
+  id          Int      @id @default(autoincrement())
+  producto_id String   @unique @db.VarChar(50) // 'candado', 'ropa'
+  nombre      String   @db.VarChar(255)
+  descripcion String?  @db.Text
+  precio      Decimal  @db.Decimal(10, 2)
+  icon        String?  @db.VarChar(10) // emoji
+  stock       Int?     // null = sin control de stock
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz()
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([activo], name: "idx_producto_activo")
+  @@map("productos")
+}
+
+// ============================================
+// MODELO: HORARIOS
+// ============================================
+model Horario {
+  id         Int      @id @default(autoincrement())
+  hora       String   @unique @db.VarChar(5) // '08:00', '08:30', etc.
+  activo     Boolean  @default(true)
+  orden      Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([activo], name: "idx_horario_activo")
+  @@map("horarios")
+}
+
+// ============================================
+// MODELO: CONFIGURACIÓN GLOBAL
+// ============================================
+model Configuracion {
+  id                      Int      @id @default(autoincrement())
+  clave                   String   @unique @db.VarChar(100) // 'descuento_afiliado', 'politicas_cancelacion', etc.
+  valor                   String   @db.Text
+  tipo                    String   @db.VarChar(50) // 'number', 'text', 'boolean', 'json'
+  descripcion             String?  @db.Text
+  categoria               String   @db.VarChar(100) // 'descuentos', 'politicas', 'contacto', etc.
+  editable_por_gerente    Boolean  @default(true)
+  created_at              DateTime @default(now()) @db.Timestamptz()
+  updated_at              DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([categoria], name: "idx_configuracion_categoria")
+  @@map("configuracion")
 }

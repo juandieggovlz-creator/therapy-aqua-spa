@@ -3,70 +3,70 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// GET: Obtener todos los productos
+// GET: Obtener todos los servicios adicionales
 export async function GET() {
   try {
-    const productos = await prisma.producto.findMany({
+    const servicios = await prisma.servicioAdicional.findMany({
       orderBy: { orden: 'asc' },
     });
 
-    return NextResponse.json({ productos }, { status: 200 });
+    return NextResponse.json({ servicios }, { status: 200 });
   } catch (error) {
-    console.error('Error obteniendo productos:', error);
+    console.error('Error obteniendo servicios adicionales:', error);
     return NextResponse.json(
-      { error: 'Error al obtener productos' },
+      { error: 'Error al obtener servicios adicionales' },
       { status: 500 }
     );
   }
 }
 
-// POST: Crear nuevo producto
+// POST: Crear nuevo servicio adicional
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    if (!body.producto_id || !body.nombre || !body.precio) {
+    if (!body.servicio_id || !body.nombre || !body.precio_particular || !body.precio_afiliado) {
       return NextResponse.json(
-        { error: 'Campos requeridos: producto_id, nombre, precio' },
+        { error: 'Campos requeridos: servicio_id, nombre, precio_particular, precio_afiliado' },
         { status: 400 }
       );
     }
 
-    const producto = await prisma.producto.create({
+    const servicio = await prisma.servicioAdicional.create({
       data: {
-        producto_id: body.producto_id,
+        servicio_id: body.servicio_id,
         nombre: body.nombre,
         descripcion: body.descripcion || null,
-        precio: parseFloat(body.precio),
+        precio_particular: parseFloat(body.precio_particular),
+        precio_afiliado: parseFloat(body.precio_afiliado),
         icon: body.icon || null,
-        stock: body.stock ? parseInt(body.stock) : null,
         activo: body.activo !== undefined ? body.activo : true,
         orden: body.orden || 0,
       },
     });
 
     return NextResponse.json(
-      { producto, message: 'Producto creado exitosamente' },
+      { servicio, message: 'Servicio adicional creado exitosamente' },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Error creando producto:', error);
+    console.error('Error creando servicio adicional:', error);
     
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Ya existe un producto con ese ID' },
+        { error: 'Ya existe un servicio adicional con ese ID' },
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Error al crear producto' },
+      { error: 'Error al crear servicio adicional' },
       { status: 500 }
     );
   }
 }
 
-// PATCH: Actualizar producto
+// PATCH: Actualizar servicio adicional
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
@@ -74,7 +74,7 @@ export async function PATCH(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { error: 'ID del producto es requerido' },
+        { error: 'ID del servicio adicional es requerido' },
         { status: 400 }
       );
     }
@@ -82,39 +82,39 @@ export async function PATCH(request: Request) {
     const data: any = {};
     if (updates.nombre !== undefined) data.nombre = updates.nombre;
     if (updates.descripcion !== undefined) data.descripcion = updates.descripcion;
-    if (updates.precio !== undefined) data.precio = parseFloat(updates.precio);
+    if (updates.precio_particular !== undefined) data.precio_particular = parseFloat(updates.precio_particular);
+    if (updates.precio_afiliado !== undefined) data.precio_afiliado = parseFloat(updates.precio_afiliado);
     if (updates.icon !== undefined) data.icon = updates.icon;
-    if (updates.stock !== undefined) data.stock = updates.stock ? parseInt(updates.stock) : null;
     if (updates.activo !== undefined) data.activo = updates.activo;
     if (updates.orden !== undefined) data.orden = parseInt(updates.orden);
 
-    const producto = await prisma.producto.update({
+    const servicio = await prisma.servicioAdicional.update({
       where: { id: parseInt(id) },
       data,
     });
 
     return NextResponse.json(
-      { producto, message: 'Producto actualizado exitosamente' },
+      { servicio, message: 'Servicio adicional actualizado exitosamente' },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error actualizando producto:', error);
+    console.error('Error actualizando servicio adicional:', error);
 
     if (error.code === 'P2025') {
       return NextResponse.json(
-        { error: 'Producto no encontrado' },
+        { error: 'Servicio adicional no encontrado' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Error al actualizar producto' },
+      { error: 'Error al actualizar servicio adicional' },
       { status: 500 }
     );
   }
 }
 
-// DELETE: Eliminar producto
+// DELETE: Eliminar servicio adicional
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -122,31 +122,31 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { error: 'ID del producto es requerido' },
+        { error: 'ID del servicio adicional es requerido' },
         { status: 400 }
       );
     }
 
-    await prisma.producto.delete({
+    await prisma.servicioAdicional.delete({
       where: { id: parseInt(id) },
     });
 
     return NextResponse.json(
-      { message: 'Producto eliminado exitosamente' },
+      { message: 'Servicio adicional eliminado exitosamente' },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error eliminando producto:', error);
+    console.error('Error eliminando servicio adicional:', error);
 
     if (error.code === 'P2025') {
       return NextResponse.json(
-        { error: 'Producto no encontrado' },
+        { error: 'Servicio adicional no encontrado' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Error al eliminar producto' },
+      { error: 'Error al eliminar servicio adicional' },
       { status: 500 }
     );
   }
