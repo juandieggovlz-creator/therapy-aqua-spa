@@ -192,15 +192,15 @@ export default function FaqsPage() {
     if (faq.id === 13) {
       // Ubicación
       const ubicacion: Ubicacion = {
-        direccion: 'Cra 27 #6-56',
-        lugar: 'Centro de Pasto',
-        ciudad: 'Pasto, Nariño',
-        mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
+        direccion: 'Calle 138 Nro. 55-38',
+        lugar: 'Círculo de Suboficiales de las Fuerzas Militares',
+        ciudad: 'Bogotá D.C.',
+        mapaLink: 'https://maps.google.com/?q=Calle+138+55-38+Bogota'
       };
       if (ubicacion.lugar || ubicacion.direccion) {
         return {
           ...faq,
-          respuesta: `📍 ${ubicacion.lugar || 'Centro de Pasto'}\n${ubicacion.direccion || 'Cra 27 #6-56'}, ${ubicacion.ciudad || 'Pasto, Nariño'}`
+          respuesta: `📍 ${ubicacion.lugar || 'Círculo de Suboficiales FF.MM.'}\n${ubicacion.direccion || 'Calle 138 Nro. 55-38'}, ${ubicacion.ciudad || 'Bogotá D.C.'}`
         };
       }
     }
