@@ -274,3 +274,4 @@ Después de seguir estos pasos:
 4. ✅ Al agregar un nuevo servicio con imagen, esta se mostrará correctamente
 5. ✅ El sistema manejará automáticamente diferentes formatos de ruta de imagen
 
+

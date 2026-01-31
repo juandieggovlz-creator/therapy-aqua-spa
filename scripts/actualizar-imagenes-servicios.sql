@@ -24,3 +24,4 @@ SELECT servicio_id, nombre, imagen FROM servicios;
 -- UPDATE servicios SET imagen = '/image/therapy%20lesiones%20de%20columna%202.jpg' WHERE servicio_id = 'srv_columna';
 -- UPDATE servicios SET imagen = '/image/masaje-deportivo.jpg' WHERE servicio_id = 'srv_deportivo';
 
+
