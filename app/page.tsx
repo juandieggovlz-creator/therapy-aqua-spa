@@ -150,30 +150,59 @@ export default function HomePage() {
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
 
   // Cargar servicios desde la API
-  useEffect(() => {
-    const cargarServicios = async () => {
-      try {
-        const response = await fetch('/api/servicios-publicos');
-        const data = await response.json();
-        
-        if (data.success && data.servicios && data.servicios.length > 0) {
-          // Tomar solo los primeros 6 servicios para la página principal
-          const serviciosParaMostrar = data.servicios.slice(0, 6);
-          console.log('✅ Servicios cargados desde API:', serviciosParaMostrar.length);
-          setServiciosDestacados(serviciosParaMostrar);
-        } else {
-          console.log('ℹ️ Usando servicios por defecto');
+  const cargarServicios = useCallback(async () => {
+    try {
+      const response = await fetch('/api/servicios-publicos', {
+        cache: 'no-store', // Forzar siempre datos frescos
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
+      });
+      const data = await response.json();
+      
+      if (data.success && data.servicios && data.servicios.length > 0) {
+        console.log('✅ Servicios cargados desde API:', data.servicios.length);
+        setServiciosDestacados(data.servicios);
         setLoading(false);
-      } catch (error) {
-        console.error('❌ Error cargando servicios:', error);
-        console.log('ℹ️ Usando servicios por defecto');
+      } else {
+        console.log('⚠️ No hay servicios disponibles en la BD, usando fallback');
+        setServiciosDestacados(serviciosDestacadosBase);
         setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('❌ Error cargando servicios:', error);
+      console.log('⚠️ Usando servicios por defecto debido al error');
+      setServiciosDestacados(serviciosDestacadosBase);
+      setLoading(false);
+    }
+  }, []); // Sin dependencias para evitar loops
 
+  useEffect(() => {
     cargarServicios();
-  }, []);
+    
+    // Revalidar cada 30 segundos para sincronización automática
+    const intervalo = setInterval(() => {
+      cargarServicios();
+    }, 30000);
+    
+    // Escuchar eventos personalizados para actualización inmediata desde admin
+    const handleActualizacionServicios = (e: any) => {
+      console.log('🔄 Actualización solicitada desde admin panel:', e?.detail);
+      cargarServicios();
+    };
+    
+    window.addEventListener('servicioActualizado', handleActualizacionServicios);
+    window.addEventListener('actualizarPaginaPrincipal', handleActualizacionServicios);
+    window.addEventListener('servicios-updated', handleActualizacionServicios);
+    
+    return () => {
+      clearInterval(intervalo);
+      window.removeEventListener('servicioActualizado', handleActualizacionServicios);
+      window.removeEventListener('actualizarPaginaPrincipal', handleActualizacionServicios);
+      window.removeEventListener('servicios-updated', handleActualizacionServicios);
+    };
+  }, [cargarServicios]);
 
   // Animación de testimonios
   useEffect(() => {
@@ -365,7 +394,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {serviciosDestacadosBase.map((servicio) => (
+            {serviciosDestacados.slice(0, 6).map((servicio) => (
               <div 
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"
