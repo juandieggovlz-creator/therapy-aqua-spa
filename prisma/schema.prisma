@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_URL")
+  url      = env("DATABASE_URL")
 }
 
 model Reserva {
@@ -42,6 +42,7 @@ model Servicio {
   categoria   String   @db.VarChar(100)
   duracion    Int      @default(30)
   precio      Decimal  @db.Decimal(10, 2)
+  descuento   Int      @default(0)
   icon        String?  @db.VarChar(10)
   imagen      String?  @db.VarChar(500)
   activo      Boolean  @default(true)
@@ -114,4 +115,34 @@ model Configuracion {
 
   @@index([categoria], map: "idx_configuracion_categoria")
   @@map("configuracion")
+}
+
+model Promocion {
+  id                Int      @id @default(autoincrement())
+  promocion_id      String   @unique @db.VarChar(50)
+  nombre            String   @db.VarChar(255)
+  descripcion       String?
+  tipo              String   @db.VarChar(50) // 'porcentaje', 'monto_fijo', 'precio_minimo', '2x1', 'combo'
+  valor_descuento   Decimal  @db.Decimal(10, 2) // Porcentaje (ej: 15.00) o monto fijo (ej: 20000.00)
+  precio_minimo     Decimal? @db.Decimal(10, 2) // Para promociones por precio superior
+  aplicable_a       String   @db.VarChar(50) // 'todos', 'terapias', 'productos', 'servicios_adicionales', 'especificos'
+  items_incluidos   Json?    // Array de IDs de servicios/productos específicos
+  fecha_inicio      DateTime @db.Date
+  fecha_fin         DateTime @db.Date
+  dias_validos      Json?    // Array de días [0=domingo, 1=lunes, ..., 6=sábado]
+  horario_inicio    String?  @db.VarChar(5) // Ej: "08:00"
+  horario_fin       String?  @db.VarChar(5) // Ej: "12:00"
+  maximo_usos       Int?     // Límite de veces que se puede usar
+  usos_actuales     Int      @default(0)
+  activo            Boolean  @default(true)
+  prioridad         Int      @default(0) // Mayor número = mayor prioridad
+  codigo_promocion  String?  @db.VarChar(50) // Código para aplicar manualmente
+  visible_web       Boolean  @default(true) // Mostrar en página principal
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([activo], map: "idx_promocion_activo")
+  @@index([fecha_inicio, fecha_fin], map: "idx_promocion_fechas")
+  @@index([tipo], map: "idx_promocion_tipo")
+  @@map("promociones")
 }

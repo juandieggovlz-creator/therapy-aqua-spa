@@ -102,6 +102,8 @@ export async function updateReserva(
   updates: any
 ): Promise<boolean> {
   try {
+    console.log(`🔄 updateReserva - ID: ${reservationId}, Updates:`, updates);
+    
     // Obtener la reserva actual para actualizar el JSONB correctamente
     const reservaActual = await prisma.reserva.findFirst({
       where: { reservation_id: reservationId }
@@ -112,8 +114,10 @@ export async function updateReserva(
       return false;
     }
 
+    console.log(`✅ Reserva encontrada - Estado actual: ${reservaActual.estado}, Total actual: ${reservaActual.total}`);
+
     // Separar campos que van directamente en la tabla vs los que van en el JSONB
-    const { esAfiliado, duracionTotal, duracion, precio, ...otrosUpdates } = updates;
+    const { esAfiliado, duracionTotal, duracion, precio, total, ...otrosUpdates } = updates;
     
     // Actualizar el campo servicios JSONB si hay cambios relacionados
     let serviciosActualizados = reservaActual.servicios;
@@ -132,21 +136,29 @@ export async function updateReserva(
       updated_at: new Date()
     };
 
-    // Si hay precio/total, actualizarlo
-    if (precio !== undefined) {
+    // Si hay precio/total, actualizarlo (priorizar 'total' sobre 'precio')
+    if (total !== undefined) {
+      dataToUpdate.total = total;
+      console.log(`💰 Actualizando total a: ${total}`);
+    } else if (precio !== undefined) {
       dataToUpdate.total = precio;
+      console.log(`💰 Actualizando total (desde precio) a: ${precio}`);
     }
 
     // Actualizar servicios JSONB si cambió
     if (serviciosActualizados !== reservaActual.servicios) {
       dataToUpdate.servicios = serviciosActualizados;
+      console.log(`📦 Actualizando servicios JSONB`);
     }
 
-    await prisma.reserva.updateMany({
+    console.log(`📝 Datos finales para actualizar:`, dataToUpdate);
+
+    const result = await prisma.reserva.updateMany({
       where: { reservation_id: reservationId },
       data: dataToUpdate
     });
     
+    console.log(`✅ Reserva actualizada exitosamente. Registros afectados: ${result.count}`);
     return true;
   } catch (error) {
     console.error('❌ Error actualizando reserva:', error);
