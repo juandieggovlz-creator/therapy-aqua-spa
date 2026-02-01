@@ -61,14 +61,46 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Generar servicio_id único
-    const servicioId = `srv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    console.log('📝 Creando servicio con datos:', body);
+    
+    // Usar el ID proporcionado o generar uno automático
+    let servicioId = body.id || body.servicio_id;
+    if (!servicioId) {
+      servicioId = `srv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      console.log('🆔 ID generado automáticamente:', servicioId);
+    }
+    
+    // Verificar si ya existe
+    const existe: any[] = await prisma.$queryRaw`
+      SELECT servicio_id FROM servicios WHERE servicio_id = ${servicioId}
+    `;
+    
+    if (existe.length > 0) {
+      return NextResponse.json(
+        { error: `Ya existe un servicio con el ID "${servicioId}"` },
+        { status: 400 }
+      );
+    }
     
     // Procesar la imagen para asegurar formato correcto
     let imagenFinal = body.imagen || '';
     if (imagenFinal && !imagenFinal.startsWith('http') && !imagenFinal.startsWith('/image/')) {
       // Si es solo un nombre de archivo, agregar la ruta /image/
       imagenFinal = `/image/${encodeURIComponent(imagenFinal)}`;
+    }
+    
+    // Procesar detalles (debe ser un array)
+    let detallesArray = [];
+    if (body.detalles) {
+      if (Array.isArray(body.detalles)) {
+        detallesArray = body.detalles;
+      } else if (typeof body.detalles === 'string') {
+        detallesArray = [body.detalles];
+      }
+    }
+    // Si no hay detalles, crear uno básico con la descripción
+    if (detallesArray.length === 0 && body.descripcion) {
+      detallesArray = [body.descripcion];
     }
     
     // Usar query raw para insertar
@@ -78,20 +110,20 @@ export async function POST(request: Request) {
         ${servicioId},
         ${body.nombre},
         ${body.descripcion || ''},
-        ${body.categoria || 'General'},
+        ${body.categoria || 'Tratamientos de Bienestar'},
         ${body.precio},
         ${body.duracion || 30},
         ${body.icon || '💆'},
         ${imagenFinal},
         ${body.activo !== undefined ? body.activo : true},
         ${body.orden || 0},
-        ${body.detalles ? JSON.stringify(body.detalles) : null}::jsonb,
+        ${JSON.stringify(detallesArray)}::jsonb,
         NOW(),
         NOW()
       )
     `;
 
-    console.log('✅ Servicio creado:', servicioId);
+    console.log('✅ Servicio creado exitosamente:', servicioId);
 
     return NextResponse.json({ 
       servicio: {
@@ -119,6 +151,8 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { id, descuento, destacado, ...updates } = body;
 
+    console.log('📝 Actualizando servicio:', id, 'con datos:', updates);
+
     if (!id) {
       return NextResponse.json(
         { error: 'ID es requerido' },
@@ -126,57 +160,65 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Filtrar solo los campos que existen en la DB
-    const validUpdates: any = {};
-    if (updates.nombre !== undefined) validUpdates.nombre = updates.nombre;
-    if (updates.descripcion !== undefined) validUpdates.descripcion = updates.descripcion;
-    if (updates.categoria !== undefined) validUpdates.categoria = updates.categoria;
-    if (updates.precio !== undefined) validUpdates.precio = updates.precio;
-    if (updates.duracion !== undefined) validUpdates.duracion = updates.duracion;
-    if (updates.icon !== undefined) validUpdates.icon = updates.icon;
-    if (updates.imagen !== undefined) {
-      // Procesar la imagen para asegurar formato correcto
-      let imagenFinal = updates.imagen;
-      if (imagenFinal && !imagenFinal.startsWith('http') && !imagenFinal.startsWith('/image/')) {
-        imagenFinal = `/image/${encodeURIComponent(imagenFinal)}`;
+    // Procesar la imagen para asegurar formato correcto
+    let imagenFinal = updates.imagen;
+    if (imagenFinal && !imagenFinal.startsWith('http') && !imagenFinal.startsWith('/image/')) {
+      imagenFinal = `/image/${encodeURIComponent(imagenFinal)}`;
+    }
+
+    // Procesar detalles (debe ser un array)
+    let detallesArray = null;
+    if (updates.detalles !== undefined) {
+      if (Array.isArray(updates.detalles)) {
+        detallesArray = updates.detalles;
+      } else if (typeof updates.detalles === 'string') {
+        detallesArray = [updates.detalles];
+      } else {
+        detallesArray = [];
       }
-      validUpdates.imagen = imagenFinal;
-    }
-    if (updates.activo !== undefined) validUpdates.activo = updates.activo;
-    if (updates.orden !== undefined) validUpdates.orden = updates.orden;
-    if (updates.detalles !== undefined) validUpdates.detalles = updates.detalles;
-
-    // Usar query raw para actualizar
-    if (Object.keys(validUpdates).length > 0) {
-      // Construir el query SQL manualmente
-      const setStatements: string[] = [];
-      if (validUpdates.nombre) setStatements.push(`nombre = '${validUpdates.nombre.replace(/'/g, "''")}'`);
-      if (validUpdates.descripcion !== undefined) setStatements.push(`descripcion = '${(validUpdates.descripcion || '').replace(/'/g, "''")}'`);
-      if (validUpdates.categoria) setStatements.push(`categoria = '${validUpdates.categoria.replace(/'/g, "''")}'`);
-      if (validUpdates.precio) setStatements.push(`precio = ${validUpdates.precio}`);
-      if (validUpdates.duracion) setStatements.push(`duracion = ${validUpdates.duracion}`);
-      if (validUpdates.icon) setStatements.push(`icon = '${validUpdates.icon.replace(/'/g, "''")}'`);
-      if (validUpdates.imagen !== undefined) setStatements.push(`imagen = '${(validUpdates.imagen || '').replace(/'/g, "''")}'`);
-      if (validUpdates.activo !== undefined) setStatements.push(`activo = ${validUpdates.activo}`);
-      if (validUpdates.orden !== undefined) setStatements.push(`orden = ${validUpdates.orden}`);
-      if (validUpdates.detalles !== undefined) setStatements.push(`detalles = '${JSON.stringify(validUpdates.detalles).replace(/'/g, "''")}'::jsonb`);
-      
-      setStatements.push(`updated_at = NOW()`);
-      
-      const query = `UPDATE servicios SET ${setStatements.join(', ')} WHERE servicio_id = '${id}'`;
-      await prisma.$executeRawUnsafe(query);
     }
 
-    console.log('✅ Servicio actualizado:', id);
+    // Usar query raw para actualizar con prepared statements para seguridad
+    await prisma.$executeRaw`
+      UPDATE servicios
+      SET 
+        nombre = ${updates.nombre !== undefined ? updates.nombre : 'Servicio'},
+        descripcion = ${updates.descripcion !== undefined ? updates.descripcion : ''},
+        categoria = ${updates.categoria !== undefined ? updates.categoria : 'Tratamientos de Bienestar'},
+        precio = ${updates.precio !== undefined ? Number(updates.precio) : 0},
+        duracion = ${updates.duracion !== undefined ? Number(updates.duracion) : 30},
+        icon = ${updates.icon !== undefined ? updates.icon : '💆'},
+        imagen = ${imagenFinal || ''},
+        activo = ${updates.activo !== undefined ? updates.activo : true},
+        orden = ${updates.orden !== undefined ? Number(updates.orden) : 0},
+        detalles = ${detallesArray !== null ? JSON.stringify(detallesArray) : null}::jsonb,
+        updated_at = NOW()
+      WHERE servicio_id = ${id}
+    `;
+
+    console.log('✅ Servicio actualizado exitosamente:', id);
+
+    // Obtener el servicio actualizado
+    const serviciosActualizados: any[] = await prisma.$queryRaw`
+      SELECT * FROM servicios WHERE servicio_id = ${id}
+    `;
+
+    const servicioActualizado = serviciosActualizados[0];
 
     return NextResponse.json({ 
       servicio: {
-        id: id,
-        servicio_id: id,
-        ...validUpdates,
-        precio: validUpdates.precio ? Number(validUpdates.precio) : undefined,
-        descuento: 0,
-        destacado: false
+        id: servicioActualizado.servicio_id,
+        servicio_id: servicioActualizado.servicio_id,
+        nombre: servicioActualizado.nombre,
+        descripcion: servicioActualizado.descripcion,
+        categoria: servicioActualizado.categoria,
+        precio: Number(servicioActualizado.precio),
+        duracion: servicioActualizado.duracion,
+        icon: servicioActualizado.icon,
+        imagen: servicioActualizado.imagen,
+        activo: servicioActualizado.activo,
+        orden: servicioActualizado.orden,
+        detalles: servicioActualizado.detalles
       },
       success: true 
     });
