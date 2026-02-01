@@ -48,13 +48,14 @@ const terapias: TerapiaItem[] = [
   { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', duracion: 40, precio: 100000, icon: '🏃' },
 ];
 
-const serviciosAdicionales: ServicioAdicional[] = [
+// Servicios adicionales por defecto (se actualizarán desde la API)
+const serviciosAdicionalesPorDefecto: ServicioAdicional[] = [
   { id: 'sauna', nombre: 'Sauna', precioAfiliado: 13000, precioParticular: 29900, precio: 29900, icon: '🔥' },
   { id: 'jacuzzi', nombre: 'Jacuzzi', precioAfiliado: 13000, precioParticular: 29900, precio: 29900, icon: '🛁' },
   { id: 'turco', nombre: 'Baño Turco', precioAfiliado: 13000, precioParticular: 29900, precio: 29900, icon: '💨' },
 ];
 
-// Los productos se cargarán dinámicamente desde la API
+// Productos por defecto (se actualizarán desde la API)
 const productosActualizadosPorDefecto: ProductoSpa[] = [
   { id: 'candado', nombre: 'Candado para casillero', precio: 5000, icon: '🔐' },
   { id: 'ropa', nombre: 'Kit ropa interior desechable', precio: 8000, icon: '👕' },
@@ -121,9 +122,57 @@ function ReservasContentInner() {
   const [reservasExistentes, setReservasExistentes] = useState<any[]>([]);
   const [mostrarSoloDisponibles, setMostrarSoloDisponibles] = useState(false);
   const [productosActualizados, setProductosActualizados] = useState<ProductoSpa[]>(productosActualizadosPorDefecto);
+  const [serviciosAdicionales, setServiciosAdicionales] = useState<ServicioAdicional[]>(serviciosAdicionalesPorDefecto);
+  const [horariosOcupados, setHorariosOcupados] = useState<string[]>([]);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
 
   const diasCerrados = [1, 2, 3]; // Lunes, Martes, Miércoles
   const [servicioPrecargado, setServicioPrecargado] = useState(false);
+
+  // Función para cargar horarios ocupados para una fecha específica
+  const cargarHorariosOcupados = useCallback(async (fechaSeleccionada: string) => {
+    if (!fechaSeleccionada) {
+      setHorariosOcupados([]);
+      return;
+    }
+
+    try {
+      setLoadingHorarios(true);
+      console.log(`🔍 Consultando horarios ocupados para: ${fechaSeleccionada}`);
+      
+      const response = await fetch(`/api/horarios-ocupados?fecha=${fechaSeleccionada}`, {
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        console.warn('⚠️ Error al cargar horarios ocupados');
+        setHorariosOcupados([]);
+        return;
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.horariosOcupados) {
+        const horariosOcupadosArray = data.horariosOcupados.map((h: any) => h.horario);
+        setHorariosOcupados(horariosOcupadosArray);
+        console.log(`✅ ${horariosOcupadosArray.length} horarios ocupados:`, horariosOcupadosArray);
+        
+        // Si el horario seleccionado está ocupado, deseleccionarlo
+        if (horario && horariosOcupadosArray.includes(horario)) {
+          setHorario('');
+          setMensajeErrorHorario('El horario seleccionado ya no está disponible. Por favor selecciona otro.');
+          setTimeout(() => setMensajeErrorHorario(''), 5000);
+        }
+      } else {
+        setHorariosOcupados([]);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando horarios ocupados:', error);
+      setHorariosOcupados([]);
+    } finally {
+      setLoadingHorarios(false);
+    }
+  }, [horario]);
 
   // Función para cargar servicios y descuentos desde la API
   const cargarServicios = useCallback(async () => {
@@ -209,22 +258,20 @@ function ReservasContentInner() {
         setTerapiasActualizadas(terapias);
       }
       
-      // Cargar productos adicionales
+      // Cargar productos desde API pública
       try {
-        const responseProductos = await fetch(`/api/admin/productos?cache=${timestamp}`, {
+        const responseProductos = await fetch(`/api/productos-publicos?cache=${timestamp}`, {
           cache: 'no-store'
         });
         
         if (responseProductos.ok) {
           const dataProductos = await responseProductos.json();
-          const productosAPI = (dataProductos.productos || [])
-            .filter((p: any) => p.activo === true)
-            .map((p: any) => ({
-              id: p.id,
-              nombre: p.nombre,
-              precio: p.precio,
-              icon: p.icon || '📦'
-            }));
+          const productosAPI = (dataProductos.productos || []).map((p: any) => ({
+            id: p.id,
+            nombre: p.nombre,
+            precio: p.precio,
+            icon: p.icon || '📦'
+          }));
           
           if (productosAPI.length > 0) {
             console.log(`✅ Productos cargados desde API: ${productosAPI.length} productos activos`);
@@ -240,6 +287,36 @@ function ReservasContentInner() {
       } catch (errorProductos) {
         console.error('❌ Error cargando productos:', errorProductos);
         setProductosActualizados(productosActualizadosPorDefecto);
+      }
+
+      // Cargar servicios adicionales desde API pública
+      try {
+        const responseServicios = await fetch(`/api/servicios-adicionales-publicos?cache=${timestamp}`, {
+          cache: 'no-store'
+        });
+        
+        if (responseServicios.ok) {
+          const dataServicios = await responseServicios.json();
+          const serviciosAPI = (dataServicios.servicios || []).map((s: any) => ({
+            id: s.id,
+            nombre: s.nombre,
+            precioParticular: s.precioParticular,
+            precioAfiliado: s.precioAfiliado,
+            precio: s.precioParticular, // Por defecto precio particular
+            icon: s.icon || '💆'
+          }));
+          
+          if (serviciosAPI.length > 0) {
+            console.log(`✅ Servicios adicionales cargados desde API: ${serviciosAPI.length} servicios activos`);
+            setServiciosAdicionales(serviciosAPI);
+          } else {
+            console.warn('⚠️ No hay servicios adicionales activos en la API, usando valores por defecto');
+          }
+        } else {
+          console.warn('⚠️ No se pudieron cargar servicios adicionales, usando valores por defecto');
+        }
+      } catch (errorServicios) {
+        console.error('❌ Error cargando servicios adicionales:', errorServicios);
       }
     } catch (error) {
       console.error('❌ Error cargando servicios desde API:', error);
@@ -309,15 +386,29 @@ function ReservasContentInner() {
       setTimeout(() => cargarServicios(), 600);
     };
 
+    const handleProductosActualizados = () => {
+      console.log('📦 Reservas - Productos actualizados, recargando...');
+      cargarServicios();
+    };
+
+    const handleServiciosAdicionalesActualizados = () => {
+      console.log('💆 Reservas - Servicios adicionales actualizados, recargando...');
+      cargarServicios();
+    };
+
     window.addEventListener('servicioActualizado', handleServicioActualizado, true);
     window.addEventListener('descuentoActualizado', handleDescuentoActualizado, true);
     window.addEventListener('productoActualizado', handleProductoActualizado, true);
+    window.addEventListener('productosActualizados', handleProductosActualizados, true);
+    window.addEventListener('serviciosAdicionalesActualizados', handleServiciosAdicionalesActualizados, true);
     window.addEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
 
     return () => {
       window.removeEventListener('servicioActualizado', handleServicioActualizado, true);
       window.removeEventListener('descuentoActualizado', handleDescuentoActualizado, true);
       window.removeEventListener('productoActualizado', handleProductoActualizado, true);
+      window.removeEventListener('productosActualizados', handleProductosActualizados, true);
+      window.removeEventListener('serviciosAdicionalesActualizados', handleServiciosAdicionalesActualizados, true);
       window.removeEventListener('actualizarPaginaPrincipal', handleActualizarPaginaPrincipal, true);
     };
   }, [cargarServicios]);
@@ -395,10 +486,16 @@ function ReservasContentInner() {
 
   // Función para verificar si un horario está ocupado
   const verificarHorarioOcupado = (fechaSeleccionada: string, horario: string) => {
+    // Usar el nuevo estado de horarios ocupados (más eficiente)
+    if (horariosOcupados.includes(horario)) {
+      return true;
+    }
+    
+    // Fallback: verificar en reservas existentes por si acaso
     const fechaNormalizada = fechaSeleccionada.split('T')[0];
     
     return reservasExistentes.some((reserva: any) => {
-      // Solo considerar reservas activas
+      // Solo considerar reservas activas (pendiente o confirmada)
       if (reserva.estado !== 'pendiente' && reserva.estado !== 'pendiente de pago' && reserva.estado !== 'confirmada') {
         return false;
       }
@@ -476,11 +573,12 @@ function ReservasContentInner() {
     loadPromocion();
   }, []);
 
-  // Cargar reservas existentes cuando cambia la fecha
+  // Cargar reservas existentes y horarios ocupados cuando cambia la fecha
   useEffect(() => {
     const loadReservas = async () => {
       if (!fecha) {
         setReservasExistentes([]);
+        setHorariosOcupados([]);
         return;
       }
       
@@ -512,7 +610,10 @@ function ReservasContentInner() {
     };
     
     loadReservas();
-  }, [fecha]);
+    
+    // Cargar horarios ocupados desde el nuevo endpoint
+    cargarHorariosOcupados(fecha);
+  }, [fecha, cargarHorariosOcupados]);
 
   useEffect(() => {
     const servicioParam = searchParams?.get('servicio');

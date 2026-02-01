@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ServiciosTab from '@/app/components/admin/ServiciosTab';
+import ServiciosTab from '@/app/components/admin/ServiciosTabMejorado';
 import PromocionesTab from '@/app/components/admin/PromocionesTab';
 import ReservasTab from '@/app/components/admin/ReservasTab';
 import ProductosTab from '@/app/components/admin/ProductosTab';
+import ServiciosAdicionalesTab from '@/app/components/admin/ServiciosAdicionalesTab';
 import ContenidoWebTab from '@/app/components/admin/ContenidoWebTab';
 
-type TabType = 'reservas' | 'servicios' | 'promociones' | 'productos' | 'contenido';
+type TabType = 'reservas' | 'servicios' | 'productos' | 'servicios-adicionales' | 'promociones' | 'contenido';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -44,7 +45,8 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'reservas' as TabType, label: 'Reservas', icon: '📅' },
     { id: 'servicios' as TabType, label: 'Servicios', icon: '🛎️' },
-    { id: 'productos' as TabType, label: 'Productos', icon: '🛍️' },
+    { id: 'productos' as TabType, label: 'Productos', icon: '📦' },
+    { id: 'servicios-adicionales' as TabType, label: 'Servicios Adicionales', icon: '💆' },
     { id: 'promociones' as TabType, label: 'Promociones', icon: '🎁' },
     { id: 'contenido' as TabType, label: 'Contenido Web', icon: '🌐' }
   ];
@@ -103,6 +105,7 @@ export default function AdminDashboard() {
           {activeTab === 'reservas' && <ReservasTab userRole={userRole} />}
           {activeTab === 'servicios' && <ServiciosTab />}
           {activeTab === 'productos' && <ProductosTab />}
+          {activeTab === 'servicios-adicionales' && <ServiciosAdicionalesTab />}
           {activeTab === 'promociones' && <PromocionesTab />}
           {activeTab === 'contenido' && <ContenidoWebTab />}
         </div>

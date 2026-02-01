@@ -2,377 +2,362 @@
 
 import React, { useState, useEffect } from 'react';
 import { showNotification, showConfirm } from '@/app/components/NotificationSystem';
+import EmojiSelector from '@/app/components/admin/EmojiSelector';
 
 type Producto = {
   id: string;
   nombre: string;
   precio: number;
+  descripcion: string;
   icon: string;
   activo: boolean;
   orden: number;
 };
 
-// Tabla de emojis comunes para productos
-const emojisDisponibles = [
-  '🔐', '👕', '🧴', '🛡️', '🧳', '🎒', '👟', '🧢', '🧤', '🧦',
-  '🧥', '🩱', '🩳', '🥽', '🕶️', '💼', '👜', '🧺', '🧻', '🧽',
-  '🧹', '🧯', '🧊', '🍹', '🥤', '☕', '🧃', '🧉', '🍶', '💧',
-  '📦', '🛍️', '🎁', '🏷️', '💳', '💰', '🪙', '💵', '💴', '💶',
-  '💷', '💸', '🔑', '🗝️', '🔒', '🔓', '🔱', '⚡', '🔥', '⭐',
-  '✨', '💎', '🏆', '🎖️', '🥇', '🥈', '🥉', '🌟', '💫', '🎯'
-];
-
 export default function ProductosTab() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<'create' | 'edit'>('create');
+  const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
   const [formData, setFormData] = useState<Partial<Producto>>({});
-  const [mostrarEmojis, setMostrarEmojis] = useState(false);
-
-  // Cargar productos
-  const loadProductos = async () => {
-    try {
-      setLoading(true);
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/admin/productos?cache=${timestamp}`, {
-        cache: 'no-store'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar productos');
-      }
-      
-      const data = await response.json();
-      setProductos(data.productos || []);
-    } catch (error) {
-      console.error('Error cargando productos:', error);
-      showNotification.error('Error al cargar productos');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     loadProductos();
   }, []);
 
-  // Guardar producto
+  const loadProductos = async () => {
+    try {
+      const response = await fetch('/api/admin/productos');
+      const data = await response.json();
+      setProductos(data.productos || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      showNotification.error('Error al cargar productos');
+      setLoading(false);
+    }
+  };
+
+  const openCreateModal = () => {
+    setFormData({
+      nombre: '',
+      precio: 0,
+      descripcion: '',
+      icon: '📦',
+      activo: true,
+      orden: 0
+    });
+    setModalType('create');
+    setShowModal(true);
+  };
+
+  const openEditModal = (producto: Producto) => {
+    setSelectedProducto(producto);
+    setFormData(producto);
+    setModalType('edit');
+    setShowModal(true);
+  };
+
   const handleSave = async () => {
     try {
-      if (!formData.nombre || formData.precio === undefined || formData.precio === null) {
+      if (!formData.nombre || !formData.precio) {
         showNotification.error('Nombre y precio son obligatorios');
         return;
       }
 
-      if (formData.precio < 0) {
-        showNotification.error('El precio no puede ser negativo');
-        return;
-      }
+      const url = '/api/admin/productos';
+      const method = modalType === 'create' ? 'POST' : 'PATCH';
+      
+      const body = modalType === 'edit' 
+        ? { ...formData, id: selectedProducto?.id }
+        : formData;
 
-      const response = await fetch('/api/admin/productos', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(body)
       });
 
-      if (!response.ok) {
-        throw new Error('Error al guardar producto');
-      }
+      if (!response.ok) throw new Error('Error al guardar');
 
-      const data = await response.json();
-      setProductos(data.productos);
-      
-      showNotification.success(editing ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
-      
-      // Disparar eventos para actualizar la página principal
-      window.dispatchEvent(new CustomEvent('productoActualizado'));
-      window.dispatchEvent(new CustomEvent('actualizarPaginaPrincipal'));
-      
-      setShowForm(false);
-      setEditing(null);
-      setFormData({});
+      showNotification.success(
+        modalType === 'create' 
+          ? 'Producto creado exitosamente'
+          : 'Producto actualizado exitosamente'
+      );
+
+      setShowModal(false);
+      await loadProductos();
+
+      // Emitir evento para sincronización
+      window.dispatchEvent(new CustomEvent('productosActualizados'));
     } catch (error) {
-      console.error('Error guardando producto:', error);
       showNotification.error('Error al guardar producto');
     }
   };
 
-  // Editar producto
-  const handleEdit = (producto: Producto) => {
-    setFormData(producto);
-    setEditing(producto.id);
-    setShowForm(true);
-  };
-
-  // Eliminar producto
-  const handleDelete = async (id: string) => {
-    const confirmed = await showConfirm(
-      '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.'
-    );
+  const handleDelete = async (producto: Producto) => {
+    const confirmed = await showConfirm({
+      title: '¿Eliminar producto?',
+      message: `¿Estás seguro de eliminar "${producto.nombre}"? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    });
 
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/admin/productos?id=${id}`, {
+      const response = await fetch(`/api/admin/productos?id=${producto.id}`, {
         method: 'DELETE'
       });
 
-      if (!response.ok) {
-        throw new Error('Error al eliminar producto');
-      }
+      if (!response.ok) throw new Error('Error al eliminar');
 
-      const data = await response.json();
-      setProductos(data.productos);
-      
       showNotification.success('Producto eliminado exitosamente');
-      
-      // Disparar eventos
-      window.dispatchEvent(new CustomEvent('productoActualizado'));
-      window.dispatchEvent(new CustomEvent('actualizarPaginaPrincipal'));
+      await loadProductos();
+
+      // Emitir evento para sincronización
+      window.dispatchEvent(new CustomEvent('productosActualizados'));
     } catch (error) {
-      console.error('Error eliminando producto:', error);
       showNotification.error('Error al eliminar producto');
     }
   };
 
-  // Toggle activo
-  const handleToggle = async (id: string, activo: boolean) => {
+  const handleToggleActivo = async (producto: Producto) => {
     try {
-      const producto = productos.find(p => p.id === id);
-      if (!producto) return;
-
       const response = await fetch('/api/admin/productos', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...producto, activo })
+        body: JSON.stringify({
+          id: producto.id,
+          ...producto,
+          activo: !producto.activo
+        })
       });
 
-      if (!response.ok) {
-        throw new Error('Error al actualizar estado');
-      }
+      if (!response.ok) throw new Error('Error al actualizar');
 
-      const data = await response.json();
-      setProductos(data.productos);
-      
-      showNotification.success(`Producto ${activo ? 'activado' : 'desactivado'}`);
-      
-      // Disparar eventos
-      window.dispatchEvent(new CustomEvent('productoActualizado'));
-      window.dispatchEvent(new CustomEvent('actualizarPaginaPrincipal'));
+      showNotification.success(`Producto ${!producto.activo ? 'activado' : 'desactivado'}`);
+      await loadProductos();
+
+      // Emitir evento para sincronización
+      window.dispatchEvent(new CustomEvent('productosActualizados'));
     } catch (error) {
-      console.error('Error actualizando estado:', error);
-      showNotification.error('Error al actualizar estado');
+      showNotification.error('Error al actualizar producto');
     }
-  };
-
-  // Nuevo producto
-  const handleNuevo = () => {
-    setFormData({
-      nombre: '',
-      precio: 0,
-      icon: '📦',
-      activo: true,
-      orden: productos.length + 1
-    });
-    setEditing(null);
-    setShowForm(true);
-  };
-
-  // Seleccionar emoji
-  const handleSelectEmoji = (emoji: string) => {
-    setFormData({ ...formData, icon: emoji });
-    setMostrarEmojis(false);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3d2817]"></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#3d2817]">Productos Adicionales</h1>
-          <p className="text-stone-600 mt-2">Gestiona los productos adicionales disponibles para las reservas</p>
+          <h2 className="text-2xl font-bold text-gray-900">Gestión de Productos</h2>
+          <p className="text-gray-600 mt-1">Administra productos adicionales (candado, kit ropa, etc.)</p>
         </div>
         <button
-          onClick={handleNuevo}
-          className="flex items-center gap-2 px-6 py-3 bg-[#3d2817] text-white rounded-lg hover:bg-[#2d1f11] transition-all shadow-lg"
+          onClick={openCreateModal}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
         >
-          <span className="text-xl">➕</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
           Nuevo Producto
         </button>
       </div>
 
-      {/* Formulario */}
-      {showForm && (
-        <div className="bg-white rounded-xl shadow-lg border-2 border-[#3d2817] p-6">
-          <h3 className="text-xl font-bold text-[#3d2817] mb-4">
-            {editing ? 'Editar Producto' : 'Nuevo Producto'}
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Emoji */}
-            <div className="relative">
-              <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                Icono *
-              </label>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+          <p className="text-gray-600 text-sm font-medium">Total Productos</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{productos.length}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+          <p className="text-gray-600 text-sm font-medium">Activos</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{productos.filter(p => p.activo).length}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-gray-500">
+          <p className="text-gray-600 text-sm font-medium">Inactivos</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{productos.filter(p => !p.activo).length}</p>
+        </div>
+      </div>
+
+      {/* Lista de productos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {productos.map(producto => (
+          <div
+            key={producto.id}
+            className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="text-5xl">{producto.icon}</div>
               <button
-                onClick={() => setMostrarEmojis(!mostrarEmojis)}
-                className="w-full px-4 py-3 border-2 border-stone-300 rounded-lg text-4xl text-center hover:border-amber-400 transition-all bg-white"
-              >
-                {formData.icon || '📦'}
-              </button>
-              
-              {mostrarEmojis && (
-                <div className="absolute z-10 mt-2 w-full bg-white border-2 border-stone-300 rounded-lg shadow-xl p-4 max-h-60 overflow-y-auto">
-                  <div className="grid grid-cols-8 gap-2">
-                    {emojisDisponibles.map((emoji, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSelectEmoji(emoji)}
-                        className="text-2xl p-2 hover:bg-amber-100 rounded-lg transition-all"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Nombre */}
-            <div>
-              <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                Nombre del Producto *
-              </label>
-              <input
-                type="text"
-                value={formData.nombre || ''}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                placeholder="Ej: Candado para casillero"
-                className="w-full px-4 py-3 border-2 border-stone-300 rounded-lg focus:ring-2 focus:ring-[#3d2817] focus:border-transparent"
-              />
-            </div>
-
-            {/* Precio */}
-            <div>
-              <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                Precio (COP) *
-              </label>
-              <input
-                type="number"
-                value={formData.precio || 0}
-                onChange={(e) => setFormData({ ...formData, precio: parseInt(e.target.value) || 0 })}
-                placeholder="5000"
-                min="0"
-                step="1000"
-                className="w-full px-4 py-3 border-2 border-stone-300 rounded-lg focus:ring-2 focus:ring-[#3d2817] focus:border-transparent"
-              />
-            </div>
-
-            {/* Estado */}
-            <div>
-              <label className="block text-sm font-semibold text-[#3d2817] mb-2">
-                Estado
-              </label>
-              <button
-                onClick={() => setFormData({ ...formData, activo: !formData.activo })}
-                className={`w-full px-4 py-3 rounded-lg font-semibold transition-all ${
-                  formData.activo
-                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                    : 'bg-red-100 text-red-700 border-2 border-red-300'
+                onClick={() => handleToggleActivo(producto)}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                  producto.activo
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {formData.activo ? '✓ Activo' : '✗ Inactivo'}
+                {producto.activo ? '✓ ACTIVO' : '✕ INACTIVO'}
+              </button>
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{producto.nombre}</h3>
+            {producto.descripcion && (
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{producto.descripcion}</p>
+            )}
+
+            <div className="bg-amber-50 rounded-lg p-3 mb-4">
+              <p className="text-sm text-gray-600">Precio</p>
+              <p className="text-2xl font-bold text-amber-600">${producto.precio.toLocaleString()}</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => openEditModal(producto)}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => handleDelete(producto)}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+              >
+                🗑️
               </button>
             </div>
           </div>
+        ))}
+      </div>
 
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={handleSave}
-              className="flex-1 px-6 py-3 bg-[#3d2817] text-white rounded-lg hover:bg-[#2d1f11] font-semibold transition-all shadow-md"
-            >
-              💾 Guardar
-            </button>
-            <button
-              onClick={() => {
-                setShowForm(false);
-                setEditing(null);
-                setFormData({});
-                setMostrarEmojis(false);
-              }}
-              className="px-6 py-3 bg-stone-300 text-stone-700 rounded-lg hover:bg-stone-400 font-semibold transition-all"
-            >
-              Cancelar
-            </button>
-          </div>
+      {productos.length === 0 && (
+        <div className="text-center py-20">
+          <div className="text-6xl mb-4">📦</div>
+          <p className="text-gray-600 text-lg">No hay productos registrados</p>
+          <button
+            onClick={openCreateModal}
+            className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+          >
+            Crear Primer Producto
+          </button>
         </div>
       )}
 
-      {/* Lista de productos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {productos.length === 0 ? (
-          <div className="col-span-full p-12 border-2 border-dashed border-stone-300 rounded-xl text-center">
-            <p className="text-2xl mb-2">🛍️</p>
-            <p className="text-stone-600 font-semibold">No hay productos adicionales</p>
-            <p className="text-stone-500 text-sm mt-1">Agrega tu primer producto para comenzar</p>
-          </div>
-        ) : (
-          productos.map((producto) => (
-            <div
-              key={producto.id}
-              className={`bg-white rounded-xl border-2 p-6 shadow-md transition-all hover:shadow-lg ${
-                producto.activo ? 'border-green-300' : 'border-stone-300 opacity-60'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="text-5xl">{producto.icon}</div>
-                <button
-                  onClick={() => handleToggle(producto.id, !producto.activo)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                    producto.activo
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
-                >
-                  {producto.activo ? '✓ Activo' : '✗ Inactivo'}
-                </button>
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h3 className="text-2xl font-bold text-gray-900">
+                {modalType === 'create' ? 'Nuevo Producto' : 'Editar Producto'}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre del Producto *
+                </label>
+                <input
+                  type="text"
+                  value={formData.nombre || ''}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  placeholder="Ej: Candado para locker"
+                />
               </div>
 
-              <h3 className="text-lg font-bold text-[#3d2817] mb-2">
-                {producto.nombre}
-              </h3>
+              {/* Descripción */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  value={formData.descripcion || ''}
+                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  rows={3}
+                  placeholder="Descripción del producto"
+                />
+              </div>
 
-              <p className="text-2xl font-bold text-green-600 mb-4">
-                ${producto.precio.toLocaleString('es-CO')}
-              </p>
+              {/* Precio e Icon */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.precio || ''}
+                    onChange={(e) => setFormData({ ...formData, precio: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Icono
+                  </label>
+                  <EmojiSelector
+                    value={formData.icon || '📦'}
+                    onChange={(emoji) => setFormData({ ...formData, icon: emoji })}
+                    category="productos"
+                  />
+                </div>
+              </div>
 
-              <div className="flex gap-2">
+              {/* Activo */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={formData.activo !== false}
+                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                  className="w-5 h-5 text-amber-600 rounded focus:ring-2 focus:ring-amber-500"
+                />
+                <label className="text-sm font-medium text-gray-700">
+                  Producto activo (visible en la página de reservas)
+                </label>
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => handleEdit(producto)}
-                  className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-semibold transition-all"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg font-semibold transition-colors"
                 >
-                  ✏️ Editar
+                  Cancelar
                 </button>
                 <button
-                  onClick={() => handleDelete(producto.id)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold transition-all"
+                  onClick={handleSave}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                 >
-                  🗑️
+                  {modalType === 'create' ? 'Crear Producto' : 'Guardar Cambios'}
                 </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

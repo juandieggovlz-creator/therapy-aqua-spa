@@ -41,6 +41,13 @@ export async function GET() {
         }
       }
       
+      // Calcular precio con descuento
+      const precioOriginal = Number(s.precio);
+      const descuento = s.descuento || 0;
+      const precioConDescuento = descuento > 0 
+        ? Math.round(precioOriginal * (1 - descuento / 100))
+        : precioOriginal;
+      
       return {
         id: s.servicio_id,
         key: s.servicio_id,
@@ -52,10 +59,13 @@ export async function GET() {
         categoria: s.categoria,
         duration: `${s.duracion} min`,
         duracion: s.duracion,
-        price: Number(s.precio),
-        precio: Number(s.precio),
-        precioOriginal: Number(s.precio),
-        priceLabel: `$${Number(s.precio).toLocaleString()}`,
+        price: precioConDescuento,
+        precio: precioConDescuento,
+        precioOriginal: precioOriginal,
+        descuento: descuento,
+        priceLabel: descuento > 0 
+          ? `$${precioConDescuento.toLocaleString()}`
+          : `$${precioOriginal.toLocaleString()}`,
         icon: s.icon || '💆',
         imagen: imagenFinal || '/image/default-service.jpg',
         detalles: s.detalles || [],

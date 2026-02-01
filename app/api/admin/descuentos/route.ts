@@ -4,12 +4,24 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // GET - Obtener descuentos de todos los servicios
-// NOTA: El campo 'descuento' no existe en la tabla actual de servicios
-// Por ahora devolvemos un objeto vacío
 export async function GET() {
   try {
-    // TODO: Agregar columna 'descuento' a la tabla de servicios
+    console.log('📥 GET /api/admin/descuentos - Obteniendo descuentos...');
+    
+    // Obtener todos los servicios con sus descuentos
+    const servicios = await prisma.$queryRaw<any[]>`
+      SELECT servicio_id, nombre, descuento
+      FROM servicios
+      WHERE activo = true
+    `;
+
+    // Crear objeto con descuentos por servicio_id
     const descuentos: Record<string, number> = {};
+    servicios.forEach(s => {
+      descuentos[s.servicio_id] = s.descuento || 0;
+    });
+
+    console.log(`✅ ${servicios.length} descuentos cargados`);
 
     return NextResponse.json({ 
       descuentos,
@@ -25,11 +37,12 @@ export async function GET() {
 }
 
 // PATCH - Actualizar descuento de un servicio
-// NOTA: El campo 'descuento' no existe en la tabla actual de servicios
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
     const { servicioId, descuento } = body;
+
+    console.log(`📝 PATCH /api/admin/descuentos - ServicioId: ${servicioId}, Descuento: ${descuento}%`);
 
     if (!servicioId) {
       return NextResponse.json(
@@ -38,10 +51,28 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // TODO: Agregar columna 'descuento' a la tabla de servicios
-    console.log(`⚠️ Descuento no implementado aún. ServicioId: ${servicioId}, Descuento: ${descuento}%`);
+    // Validar descuento
+    const descuentoNum = parseInt(descuento) || 0;
+    if (descuentoNum < 0 || descuentoNum > 100) {
+      return NextResponse.json(
+        { error: 'El descuento debe estar entre 0 y 100' },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ success: true });
+    // Actualizar descuento en la base de datos
+    await prisma.$executeRaw`
+      UPDATE servicios 
+      SET descuento = ${descuentoNum}, updated_at = NOW()
+      WHERE servicio_id = ${servicioId}
+    `;
+
+    console.log(`✅ Descuento actualizado: ${servicioId} -> ${descuentoNum}%`);
+
+    return NextResponse.json({ 
+      success: true,
+      message: `Descuento de ${descuentoNum}% aplicado correctamente`
+    });
   } catch (error) {
     console.error('❌ Error actualizando descuento:', error);
     return NextResponse.json(
@@ -50,4 +81,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-

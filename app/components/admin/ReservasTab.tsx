@@ -121,6 +121,16 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       
       console.log(`📥 ReservasTab - Total reservas recibidas del servidor: ${todasLasReservas.length}`);
       
+      // Log de debug para ver el formato de las fechas
+      if (todasLasReservas.length > 0) {
+        const primeraReserva = todasLasReservas[0];
+        console.log('🔍 Formato de fecha de primera reserva:', {
+          fecha: primeraReserva.fecha,
+          tipo: typeof primeraReserva.fecha,
+          valorRaw: primeraReserva.fecha
+        });
+      }
+      
       if (todasLasReservas.length === 0) {
         console.log('⚠️ ReservasTab - NO HAY RESERVAS en el servidor - Array vacío');
         // Si no hay reservas, limpiar todo
@@ -449,18 +459,30 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       subtotalTerapias = reserva.precio;
     }
 
-    // Calcular subtotal de servicios adicionales con precio aplicado
+    // Calcular subtotal de servicios adicionales
     let subtotalServiciosAdicionalesOriginal = 0;
+    let subtotalServiciosAdicionalesConAfiliado = 0;
+    
     if (reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
-      subtotalServiciosAdicionalesOriginal = reserva.serviciosAdicionales.reduce((sum: number, s: any) => {
+      reserva.serviciosAdicionales.forEach((s: any) => {
         if (typeof s === 'object' && s !== null) {
-          // Usar precioAplicado si existe, sino usar precioParticular o precio
-          return sum + (s.precioAplicado || s.precioParticular || s.precio || 0);
+          // Para el precio original, siempre usar precioParticular
+          const precioParticular = s.precioParticular || s.precio || 29900;
+          const precioAfiliado = s.precioAfiliado || 13000;
+          
+          subtotalServiciosAdicionalesOriginal += precioParticular;
+          
+          // Si es afiliado, usar precio de afiliado; sino, usar particular
+          subtotalServiciosAdicionalesConAfiliado += reserva.esAfiliado ? precioAfiliado : precioParticular;
         } else {
           const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[s];
-          return sum + (servicioRef?.precio || 0);
+          const precioParticular = servicioRef?.precio || 29900;
+          const precioAfiliado = 13000;
+          
+          subtotalServiciosAdicionalesOriginal += precioParticular;
+          subtotalServiciosAdicionalesConAfiliado += reserva.esAfiliado ? precioAfiliado : precioParticular;
         }
-      }, 0);
+      });
     }
 
     // Calcular subtotal de productos
@@ -479,22 +501,14 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
     // PRECIO ORIGINAL (sin ningún descuento)
     const precioTotalOriginal = subtotalTerapias + subtotalServiciosAdicionalesOriginal + subtotalProductos;
 
-    // Los servicios adicionales ya vienen con el precio correcto (precioAplicado)
-    // No necesitamos recalcular el descuento de afiliado porque ya se aplicó en la reserva
-    let subtotalServiciosAdicionalesConDescuento = subtotalServiciosAdicionalesOriginal;
-    if (reserva.esAfiliado && reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
-      // Los servicios adicionales ya tienen el precio de afiliado aplicado en precioAplicado
-      subtotalServiciosAdicionalesConDescuento = reserva.serviciosAdicionales.length * 13000;
-    }
+    // Calcular nuevo total con los servicios ajustados a precio afiliado
+    const precioTotalConServiciosAfiliado = subtotalTerapias + subtotalServiciosAdicionalesConAfiliado + subtotalProductos;
 
-    // Calcular nuevo total con el paquete/servicios ajustados a precio afiliado
-    const precioTotalConPaqueteDescuento = subtotalTerapias + subtotalServiciosAdicionalesConDescuento + subtotalProductos;
+    // Descuento del 20% sobre el TOTAL (con servicios adicionales ya ajustados a precio afiliado si aplica)
+    const descuentoAfiliadoTotal = reserva.esAfiliado ? precioTotalConServiciosAfiliado * 0.20 : 0;
 
-    // Descuento del 20% sobre el TOTAL (con el paquete ya ajustado a $13,000 si aplica)
-    const descuentoAfiliadoTotal = reserva.esAfiliado ? precioTotalConPaqueteDescuento * 0.20 : 0;
-
-    // Precio final: total con paquete ajustado menos el descuento del 20%
-    const precioConDescuento = precioTotalConPaqueteDescuento - descuentoAfiliadoTotal;
+    // Precio final: total con servicios ajustados menos el descuento del 20%
+    const precioConDescuento = precioTotalConServiciosAfiliado - descuentoAfiliadoTotal;
 
     // Si ya tiene un total guardado y es afiliado, usarlo; si no, calcular
     if (reserva.total && reserva.esAfiliado) {
@@ -530,18 +544,15 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       
       const bodyData: any = { 
         id, 
-        accion: nuevoEstado === 'confirmada' ? 'confirmar' : 
-                nuevoEstado === 'cancelada' ? 'cancelar' : 
-                nuevoEstado === 'completada' ? 'completar' : 
-                nuevoEstado === 'pendiente de pago' ? 'pendiente_pago' : 'pendiente',
         estado: nuevoEstado
       };
 
       // Si hay un total a pagar calculado, incluirlo en la actualización
       if (totalAPagar !== undefined) {
         bodyData.total = totalAPagar;
-        bodyData.precio = totalAPagar;
       }
+      
+      console.log('📤 Actualizando estado de reserva:', bodyData);
       
       const response = await fetch('/api/bookings', {
         method: 'PATCH',
@@ -550,8 +561,12 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Error al actualizar estado');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error al actualizar estado:', response.status, errorData);
+        throw new Error(errorData.error || 'Error al actualizar estado');
       }
+      
+      console.log('✅ Estado actualizado exitosamente');
 
       // Actualizar localmente (incluyendo el total si se calculó)
       const actualizacionReserva: Partial<Reserva> = { estado: nuevoEstado };
@@ -629,19 +644,45 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
     }
   };
 
-  const formatearFecha = (fecha?: string) => {
+  const formatearFecha = (fecha?: string | Date) => {
     if (!fecha) return 'N/A';
     try {
-      // Agregar T00:00:00 para evitar problemas de zona horaria
-      const date = new Date(fecha + 'T00:00:00');
+      let date: Date;
+      
+      // Si ya es un objeto Date
+      if (fecha instanceof Date) {
+        date = fecha;
+      } 
+      // Si es un string
+      else if (typeof fecha === 'string') {
+        // Si ya tiene hora (formato ISO completo), usar directamente
+        if (fecha.includes('T') || fecha.includes(' ')) {
+          date = new Date(fecha);
+        } else {
+          // Si es solo fecha (YYYY-MM-DD), agregar T00:00:00
+          date = new Date(fecha + 'T00:00:00');
+        }
+      }
+      // Si es otro tipo, intentar convertir
+      else {
+        date = new Date(fecha);
+      }
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        console.warn('⚠️ Fecha inválida:', fecha);
+        return 'Fecha inválida';
+      }
+      
       return date.toLocaleDateString('es-CO', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       });
-    } catch {
-      return fecha;
+    } catch (error) {
+      console.error('❌ Error formateando fecha:', error, fecha);
+      return typeof fecha === 'string' ? fecha : 'Error en fecha';
     }
   };
 
@@ -869,10 +910,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   <div className="space-y-2">
                       {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
                         const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
-                      const icon = typeof servicio === 'object' ? servicio?.icon : null;
-                      const precioAplicado = typeof servicio === 'object' ? servicio?.precioAplicado : null;
-                      const precioParticular = typeof servicio === 'object' ? servicio?.precioParticular : null;
-                      const precioAfiliado = typeof servicio === 'object' ? servicio?.precioAfiliado : null;
+                        const icon = typeof servicio === 'object' ? servicio?.icon : null;
+                        const precioParticular = typeof servicio === 'object' ? (servicio?.precioParticular || servicio?.precio || 29900) : 29900;
+                        const precioAfiliado = typeof servicio === 'object' ? (servicio?.precioAfiliado || 13000) : 13000;
+                        
+                        // Determinar el precio a mostrar según si es afiliado o no
+                        const precioFinal = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
+                        const ahorro = precioParticular - precioAfiliado;
                       
                         return (
                         <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -880,21 +924,21 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             <span className="text-2xl">{icon || '💆'}</span>
                             <div className="flex-1">
                               <p className="font-semibold text-[#3d2817]">{nombre}</p>
-                              {reservaSeleccionada.esAfiliado && precioParticular && precioAfiliado && (
+                              {reservaSeleccionada.esAfiliado && ahorro > 0 && (
                                 <p className="text-xs text-green-600 font-semibold">
-                                  Ahorro: {formatearPrecio(precioParticular - precioAfiliado)}
+                                  Ahorro: {formatearPrecio(ahorro)}
                                 </p>
                               )}
-                    </div>
-                  </div>
+                            </div>
+                          </div>
                           <div className="text-right">
-                            {reservaSeleccionada.esAfiliado && precioParticular && precioAplicado !== precioParticular && (
+                            {reservaSeleccionada.esAfiliado && (
                               <p className="text-xs text-stone-500 line-through">
                                 {formatearPrecio(precioParticular)}
                               </p>
                             )}
-                            <p className="font-bold text-blue-600">
-                              {formatearPrecio(precioAplicado || precioParticular || precioAfiliado || 0)}
+                            <p className={`font-bold ${reservaSeleccionada.esAfiliado ? 'text-green-600' : 'text-blue-600'}`}>
+                              {formatearPrecio(precioFinal)}
                             </p>
                           </div>
                         </div>
@@ -906,15 +950,28 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
 
               {/* Productos */}
               {reservaSeleccionada.productos && reservaSeleccionada.productos.length > 0 && (
-                <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+                <div className="bg-white rounded-lg p-4 border-2 border-green-200">
                   <p className="text-sm font-bold text-stone-700 mb-3 uppercase tracking-wide">Productos ({reservaSeleccionada.productos.length}):</p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2">
                     {reservaSeleccionada.productos.map((producto: any, idx: number) => {
                       const nombre = typeof producto === 'string' ? producto : (producto?.nombre || producto?.id || 'Producto');
+                      const icon = typeof producto === 'object' ? producto?.icon : '📦';
+                      const precio = typeof producto === 'object' ? (producto?.precio || 0) : 0;
+                      
                       return (
-                        <span key={idx} className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-semibold border border-blue-300">
-                          📦 {nombre}
-                        </span>
+                        <div key={idx} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex items-center gap-3 flex-1">
+                            <span className="text-2xl">{icon || '📦'}</span>
+                            <div className="flex-1">
+                              <p className="font-semibold text-[#3d2817]">{nombre}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-green-600">
+                              {formatearPrecio(precio)}
+                            </p>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
@@ -1076,15 +1133,20 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                 }
 
                 let subtotalServiciosAdicionales = 0;
-                // Sumar servicios adicionales individuales
+                // Sumar servicios adicionales con precio correcto según afiliado o no
                 if (reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
                   subtotalServiciosAdicionales = reservaSeleccionada.serviciosAdicionales.reduce((sum: number, s: any) => {
                     if (typeof s === 'object' && s !== null) {
-                      // Usar precioAplicado si existe, sino usar precio o precioParticular
-                      return sum + (s.precioAplicado || s.precio || s.precioParticular || 0);
+                      // Si es afiliado, usar precioAfiliado; sino, usar precioParticular
+                      if (reservaSeleccionada.esAfiliado) {
+                        return sum + (s.precioAfiliado || 13000);
+                      } else {
+                        return sum + (s.precioParticular || s.precio || 29900);
+                      }
                     } else {
                       const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[s];
-                      return sum + (servicioRef?.precio || 0);
+                      // Si es afiliado, usar precio afiliado; sino, precio normal
+                      return sum + (reservaSeleccionada.esAfiliado ? 13000 : (servicioRef?.precio || 29900));
                     }
                   }, 0);
                 }

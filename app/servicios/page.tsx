@@ -20,7 +20,7 @@ const servicios = [
         title: "THERAPY LESIONES DE COLUMNA", 
         duration: "30 min", 
         price: 100000,
-        priceLabel: "desde $100.000", 
+        priceLabel: "$100.000", 
         icon: "🦴",
         imagen: getImagePath("therapy lesiones de columna 2.jpg"),
         detalles: [
@@ -36,7 +36,7 @@ const servicios = [
         title: "THERAPY LESIONES MUSCULARES BRAZOS", 
         duration: "30 min", 
         price: 180000,
-        priceLabel: "Paquete 3 sesiones $180.000", 
+        priceLabel: "$180.000", 
         icon: "💪",
         imagen: getImagePath("lesiones de brazo.jpg"),
         detalles: [
@@ -358,10 +358,10 @@ export default function ServiciosPage() {
   const getPrecioConDescuento = (servicio: any) => {
     const servicioId = servicio.key || servicio.id;
     
-    // Buscar el servicio en serviciosAPI para obtener el precio actualizado
+    // Buscar el servicio en serviciosAPI para obtener el precio y descuento actualizados
     const servicioAPI = serviciosAPI.find(s => s.id === servicioId);
-    const precioBase = servicioAPI?.precio || servicio.price;
-    const descuento = descuentosIndividuales[servicioId];
+    const precioBase = servicioAPI?.precioOriginal || servicioAPI?.precio || servicio.price;
+    const descuento = servicioAPI?.descuento || descuentosIndividuales[servicioId] || 0;
     
     if (descuento && descuento > 0) {
       const precioConDescuento = precioBase * (1 - descuento / 100);
@@ -436,55 +436,76 @@ export default function ServiciosPage() {
       return servicios;
     }
 
-    // ✅ SOLO LAS 3 CATEGORÍAS ORIGINALES
-    const categoriasPermitidas = [
-      "Terapias de Rehabilitación",
-      "Tratamientos de Bienestar",
-      "Cuidado Facial y Especializado"
-    ];
+    // ✅ Mapeo inteligente de categorías de BD a categorías del frontend
+    const mapearCategoria = (nombreServicio: string, categoriaDB: string) => {
+      const nombreUpper = nombreServicio.toUpperCase();
+      const categoriaUpper = categoriaDB?.toUpperCase() || '';
+      
+      // Terapias de Rehabilitación: servicios de lesiones, trauma, terapia
+      if (
+        nombreUpper.includes('THERAPY') ||
+        nombreUpper.includes('LESION') ||
+        nombreUpper.includes('TRAUMA') ||
+        categoriaUpper.includes('LESION') ||
+        categoriaUpper.includes('TRAUMA') ||
+        categoriaUpper.includes('TERAPÉUTICO')
+      ) {
+        return "Terapias de Rehabilitación";
+      }
+      
+      // Cuidado Facial y Especializado: servicios faciales, oculares, manos
+      if (
+        nombreUpper.includes('FACIAL') ||
+        nombreUpper.includes('OCULAR') ||
+        nombreUpper.includes('SKINCARE') ||
+        nombreUpper.includes('MANO') ||
+        categoriaUpper.includes('FACIAL') ||
+        categoriaUpper.includes('OCULAR')
+      ) {
+        return "Cuidado Facial y Especializado";
+      }
+      
+      // Tratamientos de Bienestar: todo lo demás (masajes generales)
+      return "Tratamientos de Bienestar";
+    };
 
-    // Crear mapa de servicios por categoría (SOLO categorías originales)
-    const serviciosPorCategoria: Record<string, any[]> = {};
+    // Crear mapa de servicios por categoría
+    const serviciosPorCategoria: Record<string, any[]> = {
+      "Terapias de Rehabilitación": [],
+      "Tratamientos de Bienestar": [],
+      "Cuidado Facial y Especializado": []
+    };
 
-    // Agregar servicios hardcodeados agrupados por categoría
+    // Inicializar con servicios hardcodeados
     servicios.forEach(cat => {
       serviciosPorCategoria[cat.categoria] = [...cat.servicios];
     });
 
     // Agregar o actualizar servicios desde la API
     serviciosAPI.forEach(servicioAPI => {
-      // ✅ Mapear categorías nuevas a las 3 originales
-      let categoria = servicioAPI.categoria || "Tratamientos de Bienestar";
-      
-      // Si la categoría no está en las permitidas, asignar a una categoría por defecto
-      if (!categoriasPermitidas.includes(categoria)) {
-        // Asignar a "Tratamientos de Bienestar" por defecto
-        categoria = "Tratamientos de Bienestar";
-        console.log(`📁 Servicio "${servicioAPI.nombre}" con categoría "${servicioAPI.categoria}" asignado a "Tratamientos de Bienestar"`);
+      // Saltar servicios inactivos
+      if (servicioAPI.activo !== true) {
+        return;
       }
 
-      // Buscar el índice del servicio en todas las categorías
+      // Mapear la categoría
+      const categoria = mapearCategoria(servicioAPI.nombre, servicioAPI.categoria);
+
+      // Buscar si el servicio ya existe en alguna categoría
+      let servicioExistente: any = null;
+      let categoriaExistente: string | null = null;
       let indexExistente = -1;
-      let categoriaExistente = categoria;
       
-      for (const cat of categoriasPermitidas) {
+      for (const cat in serviciosPorCategoria) {
         const idx = serviciosPorCategoria[cat].findIndex(
           s => (s.key === servicioAPI.id || s.id === servicioAPI.id)
         );
         if (idx !== -1) {
-          indexExistente = idx;
+          servicioExistente = serviciosPorCategoria[cat][idx];
           categoriaExistente = cat;
+          indexExistente = idx;
           break;
         }
-      }
-
-      // IMPORTANTE: Si el servicio está INACTIVO, eliminarlo de todas las categorías
-      if (servicioAPI.activo !== true) {
-        if (indexExistente !== -1) {
-          console.log(`🚫 Eliminando servicio inactivo "${servicioAPI.nombre}" de la vista`);
-          serviciosPorCategoria[categoriaExistente].splice(indexExistente, 1);
-        }
-        return; // Saltar servicios inactivos
       }
 
       const servicioFormateado = {
@@ -495,26 +516,31 @@ export default function ServiciosPage() {
         price: servicioAPI.precio || 0,
         priceLabel: `$${(servicioAPI.precio || 0).toLocaleString('es-CO')}`,
         icon: servicioAPI.icon || '✨',
-        imagen: servicioAPI.imagen ? getImagePath(servicioAPI.imagen) : '', // Sin imagen, se mostrará el emoji
-        detalles: Array.isArray(servicioAPI.detalles) ? servicioAPI.detalles : (servicioAPI.descripcion ? [servicioAPI.descripcion] : ["Servicio profesional"])
+        // ✅ IMPORTANTE: Si la API no tiene imagen, mantener la imagen original del servicio hardcodeado
+        imagen: servicioAPI.imagen 
+          ? getImagePath(servicioAPI.imagen) 
+          : (servicioExistente?.imagen || ''),
+        // ✅ IMPORTANTE: Si la API no tiene detalles, mantener los detalles originales del servicio hardcodeado
+        detalles: (Array.isArray(servicioAPI.detalles) && servicioAPI.detalles.length > 0) 
+          ? servicioAPI.detalles 
+          : (servicioExistente?.detalles || ["Profesionales certificados", "Equipos de última tecnología"])
       };
 
-      if (indexExistente !== -1) {
-        // Actualizar servicio existente (puede haber cambiado de categoría)
-        serviciosPorCategoria[categoriaExistente].splice(indexExistente, 1);
-        serviciosPorCategoria[categoria].push(servicioFormateado);
+      if (servicioExistente) {
+        // Actualizar el servicio existente
+        serviciosPorCategoria[categoriaExistente!][indexExistente] = servicioFormateado;
       } else {
         // Agregar nuevo servicio
         serviciosPorCategoria[categoria].push(servicioFormateado);
       }
     });
 
-    // ✅ Convertir SOLO las 3 categorías originales (mantener orden original)
+    // Convertir a formato de categorías con servicios
     return servicios.map(catOriginal => ({
       categoria: catOriginal.categoria,
       descripcion: catOriginal.descripcion,
-      servicios: serviciosPorCategoria[catOriginal.categoria] || catOriginal.servicios
-    }));
+      servicios: serviciosPorCategoria[catOriginal.categoria] || []
+    })).filter(cat => cat.servicios.length > 0); // Solo mostrar categorías con servicios
   };
 
   const serviciosMezclados = getServiciosMezclados();

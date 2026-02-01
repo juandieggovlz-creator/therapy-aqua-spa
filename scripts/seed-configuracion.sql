@@ -59,3 +59,4 @@ VALUES
 -- Para Postgres, se puede usar:
 -- INSERT INTO configuracion (...) VALUES (...) ON CONFLICT (clave) DO NOTHING;
 
+

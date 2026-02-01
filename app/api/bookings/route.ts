@@ -24,10 +24,23 @@ export async function GET(request: Request) {
 
     // Normalizar estructura: extraer terapias, serviciosAdicionales y productos del campo JSONB "servicios"
     reservas = reservas.map((reserva: any) => {
+      // Convertir fecha a string si es un objeto Date
+      const fechaStr = reserva.fecha instanceof Date 
+        ? reserva.fecha.toISOString().split('T')[0]  // Formato YYYY-MM-DD
+        : (reserva.fecha || '');
+      
+      const createdAtStr = reserva.created_at instanceof Date
+        ? reserva.created_at.toISOString()
+        : (reserva.created_at || reserva.createdAt || '');
+      
       // Si servicios es un objeto con estructura { terapias, serviciosAdicionales, productos }
       if (reserva.servicios && typeof reserva.servicios === 'object') {
         return {
           ...reserva,
+          // Convertir fechas a string
+          fecha: fechaStr,
+          createdAt: createdAtStr,
+          fechaCreacion: createdAtStr,
           // Extraer campos del JSONB si existen
           terapias: reserva.servicios.terapias || reserva.terapias || [],
           serviciosAdicionales: reserva.servicios.serviciosAdicionales || reserva.serviciosAdicionales || [],
@@ -52,6 +65,11 @@ export async function GET(request: Request) {
       // Si no tiene la estructura esperada, devolver tal cual con mapeo de campos
       return {
         ...reserva,
+        // Convertir fechas a string
+        fecha: fechaStr,
+        createdAt: createdAtStr,
+        fechaCreacion: createdAtStr,
+        // Mapeo de campos
         id: reserva.reservation_id || reserva.reservationId || reserva.id,
         reservationId: reserva.reservation_id || reserva.reservationId || reserva.id,
         cliente: reserva.nombre || reserva.cliente,
@@ -260,6 +278,8 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { id, ...updates } = body;
 
+    console.log('📝 PATCH /api/bookings - Body recibido:', { id, updates });
+
     if (!id) {
       return NextResponse.json(
         { error: "ID es requerido" },
@@ -269,37 +289,43 @@ export async function PATCH(request: Request) {
 
     // Si solo se está actualizando el estado, usar helper específico
     if (updates.estado && Object.keys(updates).length === 1) {
+      console.log(`🔄 Actualizando solo estado de reserva ${id} a: ${updates.estado}`);
       const success = await actualizarEstadoReserva(id, updates.estado);
       
       if (!success) {
+        console.error(`❌ Error al actualizar estado de reserva ${id}`);
         return NextResponse.json(
           { error: "Error al actualizar estado" },
           { status: 500 }
         );
       }
       
+      console.log(`✅ Estado de reserva ${id} actualizado exitosamente`);
       return NextResponse.json(
         { success: true, message: "Estado actualizado" },
         { status: 200 }
       );
     }
 
-    // Actualización completa
+    // Actualización completa (estado + otros campos como total)
+    console.log(`🔄 Actualizando reserva ${id} con múltiples campos:`, updates);
     const success = await actualizarReserva(id, updates);
 
     if (!success) {
+      console.error(`❌ Error al actualizar reserva ${id}`);
       return NextResponse.json(
         { error: "Error al actualizar reserva" },
         { status: 500 }
       );
     }
 
+    console.log(`✅ Reserva ${id} actualizada exitosamente`);
     return NextResponse.json(
       { success: true, message: "Reserva actualizada" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error en PATCH /api/bookings:", error);
+    console.error("❌ Error en PATCH /api/bookings:", error);
     return NextResponse.json(
       { error: "Error al actualizar cita" },
       { status: 500 }

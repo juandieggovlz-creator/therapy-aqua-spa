@@ -42,54 +42,116 @@ export const showNotification = {
   info: (message: string, duration?: number) => addNotification('info', message, duration),
 };
 
-export const showConfirm = (message: string): Promise<boolean> => {
+interface ConfirmOptions {
+  title?: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'warning' | 'info';
+}
+
+export const showConfirm = (options: ConfirmOptions | string): Promise<boolean> => {
   return new Promise((resolve) => {
+    // Si es un string, convertirlo a objeto
+    const opts: ConfirmOptions = typeof options === 'string' 
+      ? { message: options }
+      : options;
+
+    const title = opts.title || 'Confirmar Acción';
+    const message = opts.message;
+    const confirmText = opts.confirmText || 'Sí, Confirmar';
+    const cancelText = opts.cancelText || 'Cancelar';
+    const type = opts.type || 'warning';
+
+    // Estilos según el tipo
+    const iconConfig = {
+      danger: {
+        bgColor: 'bg-red-100',
+        iconColor: 'text-red-600',
+        icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`
+      },
+      warning: {
+        bgColor: 'bg-amber-100',
+        iconColor: 'text-amber-600',
+        icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />`
+      },
+      info: {
+        bgColor: 'bg-blue-100',
+        iconColor: 'text-blue-600',
+        icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />`
+      }
+    };
+
+    const config = iconConfig[type];
+    
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fadeIn';
     modal.innerHTML = `
-      <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-blue-600">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+      <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all animate-scaleIn">
+        <div class="flex items-start gap-4 mb-6">
+          <div class="w-14 h-14 ${config.bgColor} rounded-full flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7 ${config.iconColor}">
+              ${config.icon}
             </svg>
           </div>
           <div class="flex-1">
-            <h3 class="text-lg font-bold text-[#3d2817]">Confirmar Acción</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">${title}</h3>
+            <p class="text-gray-700 leading-relaxed">${message}</p>
           </div>
         </div>
-        <p class="text-stone-700 mb-6">${message}</p>
         <div class="flex gap-3">
-          <button id="confirm-yes" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold">
-            Sí, Confirmar
+          <button id="confirm-no" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3.5 rounded-xl transition-all font-bold text-base">
+            ${cancelText}
           </button>
-          <button id="confirm-no" class="flex-1 bg-stone-200 text-stone-700 px-6 py-3 rounded-lg hover:bg-stone-300 transition-all font-semibold">
-            Cancelar
+          <button id="confirm-yes" class="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-6 py-3.5 rounded-xl hover:shadow-xl transition-all font-bold text-base">
+            ${confirmText}
           </button>
         </div>
       </div>
+      <style>
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.3s ease-out;
+        }
+      </style>
     `;
     
     document.body.appendChild(modal);
     
     const cleanup = () => {
-      document.body.removeChild(modal);
+      modal.style.opacity = '0';
+      modal.querySelector('div')!.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        if (document.body.contains(modal)) {
+          document.body.removeChild(modal);
+        }
+      }, 200);
     };
     
     modal.querySelector('#confirm-yes')?.addEventListener('click', () => {
       cleanup();
-      resolve(true);
+      setTimeout(() => resolve(true), 200);
     });
     
     modal.querySelector('#confirm-no')?.addEventListener('click', () => {
       cleanup();
-      resolve(false);
+      setTimeout(() => resolve(false), 200);
     });
     
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         cleanup();
-        resolve(false);
+        setTimeout(() => resolve(false), 200);
       }
     });
   });

@@ -38,7 +38,8 @@ export async function GET() {
         id: s.servicio_id, // Usar servicio_id como id para el frontend
         imagen: imagenUrl,
         precio: Number(s.precio),
-        descuento: 0, // Campo no existe aún en la DB
+        precioOriginal: Number(s.precio),
+        descuento: s.descuento || 0,
         destacado: false // Campo no existe aún en la DB
       };
     });

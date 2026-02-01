@@ -32,7 +32,7 @@ const serviciosDestacadosBase: ServicioDestacado[] = [
     title: "THERAPY LESIONES DE COLUMNA",
     icon: "🦴",
     price: 100000,
-    priceLabel: "desde $100.000",
+    priceLabel: "$100.000",
     duration: "30 min",
     imagen: getImagePath("therapy lesiones de columna 2.jpg"),
     description: "Tratamiento especializado para dolor lumbar, cervical y dorsalgia. Recupera tu movilidad y alivia el dolor crónico.",
@@ -157,10 +157,38 @@ export default function HomePage() {
         const data = await response.json();
         
         if (data.success && data.servicios && data.servicios.length > 0) {
-          // Tomar solo los primeros 6 servicios para la página principal
-          const serviciosParaMostrar = data.servicios.slice(0, 6);
-          console.log('✅ Servicios cargados desde API:', serviciosParaMostrar.length);
-          setServiciosDestacados(serviciosParaMostrar);
+          // Mapear servicios de la API a los servicios destacados base
+          const serviciosActualizados = serviciosDestacadosBase.map(servicioBase => {
+            // Buscar el servicio correspondiente en la API por nombre
+            const servicioAPI = data.servicios.find((s: any) => 
+              s.nombre === servicioBase.title || 
+              s.title === servicioBase.title ||
+              s.servicio_id === servicioBase.key
+            );
+
+            if (servicioAPI) {
+              const precioOriginal = servicioAPI.precioOriginal || servicioAPI.precio || servicioBase.price;
+              const descuento = servicioAPI.descuento || 0;
+              const precioConDescuento = descuento > 0 
+                ? Math.round(precioOriginal * (1 - descuento / 100))
+                : precioOriginal;
+
+              return {
+                ...servicioBase,
+                price: precioConDescuento,
+                precioOriginal: precioOriginal,
+                descuento: descuento,
+                priceLabel: `$${precioConDescuento.toLocaleString()}`,
+                duration: servicioAPI.duration || servicioAPI.duracion ? `${servicioAPI.duracion} min` : servicioBase.duration,
+                description: servicioAPI.description || servicioAPI.descripcion || servicioBase.description
+              };
+            }
+
+            return servicioBase;
+          });
+
+          console.log('✅ Servicios con descuentos cargados:', serviciosActualizados.filter(s => s.descuento && s.descuento > 0).length);
+          setServiciosDestacados(serviciosActualizados);
         } else {
           console.log('ℹ️ Usando servicios por defecto');
         }
@@ -173,6 +201,25 @@ export default function HomePage() {
     };
 
     cargarServicios();
+
+    // Escuchar eventos de actualización de descuentos
+    const handleDescuentoActualizado = (event: any) => {
+      console.log('🏠 Página Inicio - Descuento actualizado:', event?.detail);
+      cargarServicios();
+    };
+
+    const handleServicioActualizado = (event: any) => {
+      console.log('🏠 Página Inicio - Servicio actualizado:', event?.detail);
+      cargarServicios();
+    };
+
+    window.addEventListener('descuentoActualizado', handleDescuentoActualizado);
+    window.addEventListener('servicioActualizado', handleServicioActualizado);
+
+    return () => {
+      window.removeEventListener('descuentoActualizado', handleDescuentoActualizado);
+      window.removeEventListener('servicioActualizado', handleServicioActualizado);
+    };
   }, []);
 
   // Animación de testimonios
@@ -272,7 +319,7 @@ export default function HomePage() {
               <div className="text-sm text-stone-600 mt-1">Clientes Felices</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>14</div>
+              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>15</div>
               <div className="text-sm text-stone-600 mt-1">Terapias Especializadas</div>
             </div>
             <div className="text-center">
@@ -365,7 +412,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {serviciosDestacadosBase.map((servicio) => (
+            {serviciosDestacados.map((servicio) => (
               <div 
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"
@@ -397,6 +444,11 @@ export default function HomePage() {
                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
                         <p className="text-xs font-bold text-[#3d2817]">{servicio.duration}</p>
                       </div>
+                      {servicio.descuento && servicio.descuento > 0 && (
+                        <div className="absolute bottom-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-full shadow-xl animate-pulse">
+                          <p className="text-sm font-bold">-{servicio.descuento}% OFF</p>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="p-6 flex flex-col justify-between flex-1">
