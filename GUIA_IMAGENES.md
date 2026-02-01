@@ -275,3 +275,4 @@ Después de seguir estos pasos:
 5. ✅ El sistema manejará automáticamente diferentes formatos de ruta de imagen
 
 
+

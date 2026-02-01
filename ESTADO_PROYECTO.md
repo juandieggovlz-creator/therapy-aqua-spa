@@ -287,3 +287,4 @@ Una vez tengas el endpoint, sigue los pasos en `INSTRUCCIONES_DESPLIEGUE.md`
 **Estado**: ✅ **READY TO DEPLOY**  
 **Última actualización**: 2026-01-31
 
+

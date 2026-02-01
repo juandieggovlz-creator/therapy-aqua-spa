@@ -224,3 +224,4 @@ const cargarServicios = async () => {
 **Última actualización:** 2026-01-31  
 **Branch:** aws-backend-stable
 
+

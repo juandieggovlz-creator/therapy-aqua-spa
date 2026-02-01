@@ -30,14 +30,23 @@ type ProductoSpa = {
   icon: string;
 };
 
-// Servicios REALES del negocio (se cargan desde DB al montar el componente)
+// TODOS los servicios REALES del negocio (se cargan desde DB al montar el componente)
 const terapias: TerapiaItem[] = [
   { id: 'columna', nombre: 'THERAPY LESIONES DE COLUMNA', duracion: 30, precio: 100000, icon: '🦴' },
-  { id: 'bienestar-general', nombre: 'MASAJE BIENESTAR GENERAL', duracion: 45, precio: 140000, icon: '🌿' },
-  { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', duracion: 40, precio: 100000, icon: '🏃' },
-  { id: 'preso-ocular', nombre: 'PRESO THERAPY OCULAR', duracion: 30, precio: 80000, icon: '👁️' },
+  { id: 'brazos', nombre: 'THERAPY LESIONES MUSCULARES BRAZOS', duracion: 30, precio: 180000, icon: '💪' },
+  { id: 'piernas', nombre: 'THERAPY LESIONES MUSCULARES PIERNAS', duracion: 30, precio: 180000, icon: '🦵' },
+  { id: 'hombro', nombre: 'THERAPY TRAUMA HOMBRO, CODO, MUÑECA', duracion: 30, precio: 250000, icon: '🤕' },
+  { id: 'cadera', nombre: 'THERAPY TRAUMA CADERA, RODILLA, TOBILLO', duracion: 30, precio: 250000, icon: '🦿' },
   { id: 'skincare-mano', nombre: 'SKINCARE MANO THERAPY', duracion: 30, precio: 90000, icon: '🤲' },
+  { id: 'preso-ocular', nombre: 'PRESO THERAPY OCULAR', duracion: 30, precio: 80000, icon: '👁️' },
+  { id: 'bienestar-general', nombre: 'MASAJE BIENESTAR GENERAL', duracion: 45, precio: 140000, icon: '🌿' },
+  { id: 'cuello', nombre: 'MASAJE DE CUELLO', duracion: 30, precio: 90000, icon: '💆' },
   { id: 'facial', nombre: 'MASAJE FACIAL', duracion: 30, precio: 90000, icon: '✨' },
+  { id: 'espalda', nombre: 'MASAJE DE ESPALDA', duracion: 30, precio: 120000, icon: '🧘' },
+  { id: 'hombros', nombre: 'MASAJE HOMBROS Y BRAZOS', duracion: 30, precio: 100000, icon: '💆' },
+  { id: 'rodillas', nombre: 'MASAJE CADERAS Y RODILLAS', duracion: 30, precio: 120000, icon: '🦴' },
+  { id: 'pies', nombre: 'MASAJE PANTORRILLAS Y PIES', duracion: 30, precio: 120000, icon: '🦶' },
+  { id: 'deportivo', nombre: 'MASAJE THERAPY DEPORTIVO', duracion: 40, precio: 100000, icon: '🏃' },
 ];
 
 const serviciosAdicionales: ServicioAdicional[] = [

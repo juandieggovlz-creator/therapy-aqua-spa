@@ -188,3 +188,4 @@ Si necesitas recuperar las credenciales anteriores, están en:
 **Estado**: `.env.local` actualizado, falta configurar endpoint  
 **Próximo paso**: Obtener endpoint de AWS RDS Console
 
+

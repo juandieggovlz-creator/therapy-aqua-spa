@@ -278,3 +278,4 @@ Para problemas específicos de AWS:
 **Branch**: `prueba-nueva`  
 **Commit**: Limpieza completa para AWS RDS + Amplify
 
+

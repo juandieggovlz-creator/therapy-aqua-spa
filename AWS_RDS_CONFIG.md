@@ -49,3 +49,4 @@ El proyecto ha sido limpiado de:
 
 Ahora el proyecto usa **solo Prisma** para conectarse a PostgreSQL.
 
+

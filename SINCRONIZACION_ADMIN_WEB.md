@@ -300,3 +300,4 @@ Las imágenes se manejan con rutas relativas:
 **Commit**: `feat: Sincronizar panel admin con página principal`  
 **Estado**: ✅ **COMPLETADO Y FUNCIONAL**
 
+

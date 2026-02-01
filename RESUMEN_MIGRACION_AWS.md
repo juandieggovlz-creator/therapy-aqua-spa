@@ -303,3 +303,4 @@ Todas las operaciones usan Prisma con PostgreSQL en AWS RDS.
 **Commits**: 2 (migración + amplify config)  
 **Estado**: ✅ READY TO DEPLOY
 
+

@@ -261,3 +261,4 @@ Sin el endpoint, no puedes continuar con los demás pasos.
 **Estado del proyecto**: ✅ LISTO PARA DESPLEGAR  
 **Build local**: ✅ EXITOSO (sin errores)
 
+

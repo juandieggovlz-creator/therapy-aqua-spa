@@ -457,3 +457,4 @@ npx prisma studio
 **Estado**: ✅ **LISTO PARA PRODUCCIÓN EN AWS AMPLIFY**  
 **Fecha**: 2026-01-31
 
+

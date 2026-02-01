@@ -166,3 +166,4 @@ Click **Save and deploy** y espera a que termine el build (aprox. 5-10 minutos).
 **Branch de trabajo**: `aws-backend-stable`  
 **Última actualización**: 2026-01-31
 
+
