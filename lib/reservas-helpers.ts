@@ -48,6 +48,13 @@ export async function getAllReservas(): Promise<Reserva[]> {
  */
 export async function createReserva(data: any): Promise<Reserva | null> {
   try {
+    console.log('💾 Prisma: Creando reserva en PostgreSQL...');
+    console.log('   reservation_id:', data.reservation_id);
+    console.log('   nombre:', data.nombre);
+    console.log('   fecha:', data.fecha);
+    console.log('   horario:', data.horario);
+    console.log('   total:', data.total);
+    
     const reserva = await prisma.reserva.create({
       data: {
         reservation_id: data.reservation_id,
@@ -68,9 +75,20 @@ export async function createReserva(data: any): Promise<Reserva | null> {
         descuento_promocion: data.descuento_promocion || 0,
       }
     });
+    
+    console.log('✅ Prisma: Reserva creada exitosamente en PostgreSQL');
+    console.log('   ID en BD:', reserva.id);
+    console.log('   reservation_id:', reserva.reservation_id);
+    
     return reserva as any;
-  } catch (error) {
-    console.error('❌ Error creando reserva:', error);
+  } catch (error: any) {
+    console.error('❌ Prisma: Error crítico creando reserva');
+    console.error('   Tipo:', error.constructor?.name);
+    console.error('   Mensaje:', error.message);
+    console.error('   Código:', error.code);
+    if (error.meta) {
+      console.error('   Meta:', error.meta);
+    }
     return null;
   }
 }
@@ -178,6 +196,11 @@ export async function verificarConflictoHorario(
   excludeId?: string
 ): Promise<{ hayConflicto: boolean; reservaConflictiva?: any }> {
   try {
+    console.log('🔍 Verificando conflicto de horario...');
+    console.log('   Fecha:', fecha);
+    console.log('   Horario:', horario);
+    console.log('   Excluir ID:', excludeId || 'ninguno');
+    
     // Liberar reservas expiradas primero
     await liberarReservasExpiradas();
 
@@ -201,12 +224,24 @@ export async function verificarConflictoHorario(
       }
     });
 
+    const hayConflicto = reservas.length > 0;
+    
+    if (hayConflicto) {
+      console.log('⚠️  CONFLICTO DETECTADO');
+      console.log('   Reserva conflictiva:', reservas[0].reservation_id);
+      console.log('   Estado:', reservas[0].estado);
+    } else {
+      console.log('✅ Horario disponible - Sin conflictos');
+    }
+
     return {
-      hayConflicto: reservas.length > 0,
+      hayConflicto,
       reservaConflictiva: reservas[0]
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error verificando conflicto:', error);
+    console.error('   Mensaje:', error.message);
+    // En caso de error, asumir que NO hay conflicto para no bloquear reservas
     return { hayConflicto: false };
   }
 }

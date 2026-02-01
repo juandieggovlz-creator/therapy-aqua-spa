@@ -92,8 +92,19 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
+    console.log('📥 POST /api/bookings - Nueva reserva recibida');
+    console.log('   Datos:', {
+      nombre: body.nombre,
+      telefono: body.telefono,
+      fecha: body.fecha,
+      horario: body.horario,
+      terapias: body.terapias?.length || 0,
+      total: body.total
+    });
+    
     // Validar campos requeridos
     if (!body.fecha || !body.horario) {
+      console.error('❌ Validación fallida: Fecha y horario requeridos');
       return NextResponse.json(
         { error: "Fecha y horario son requeridos" },
         { status: 400 }
@@ -101,8 +112,17 @@ export async function POST(request: Request) {
     }
 
     if (!body.terapias || body.terapias.length === 0) {
+      console.error('❌ Validación fallida: Debe seleccionar al menos una terapia');
       return NextResponse.json(
         { error: "Debe seleccionar al menos una terapia" },
+        { status: 400 }
+      );
+    }
+    
+    if (!body.nombre || !body.telefono || !body.email) {
+      console.error('❌ Validación fallida: Datos del cliente incompletos');
+      return NextResponse.json(
+        { error: "Nombre, teléfono y email son requeridos" },
         { status: 400 }
       );
     }
@@ -227,17 +247,27 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
+    console.log('💾 Guardando reserva en PostgreSQL...');
     const nuevaReserva = await crearReserva(reservaData);
     
     if (!nuevaReserva) {
+      console.error('❌ Error: No se pudo guardar la reserva en la base de datos');
       return NextResponse.json(
-        { error: "Error al guardar la reserva" },
+        { error: "Error al guardar la reserva en la base de datos" },
         { status: 500 }
       );
     }
 
-    console.log('✅ Reserva creada:', nuevaReserva.reservation_id || nuevaReserva.reservationId);
+    const reservaId = nuevaReserva.reservation_id || nuevaReserva.reservationId;
+    console.log('✅ Reserva guardada exitosamente en PostgreSQL');
+    console.log('   ID:', reservaId);
+    console.log('   Cliente:', nuevaReserva.nombre);
+    console.log('   Fecha:', nuevaReserva.fecha);
+    console.log('   Horario:', nuevaReserva.horario);
+    console.log('   Total:', nuevaReserva.total);
 
+    // ✅ ATOMICIDAD: Solo después de guardar en BD, retornar éxito
+    // El frontend se encargará de enviar la notificación a Telegram
     return NextResponse.json(
       { 
         success: true, 
@@ -246,10 +276,13 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error en POST /api/bookings:", error);
+  } catch (error: any) {
+    console.error("❌ Error crítico en POST /api/bookings:", error);
+    console.error("   Tipo:", error.constructor.name);
+    console.error("   Mensaje:", error.message);
+    console.error("   Stack:", error.stack);
     return NextResponse.json(
-      { error: "Error al crear cita" },
+      { error: "Error al crear la reserva. Por favor intenta nuevamente." },
       { status: 500 }
     );
   }
