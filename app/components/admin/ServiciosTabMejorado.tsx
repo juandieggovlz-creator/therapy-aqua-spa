@@ -402,7 +402,7 @@ export default function ServiciosTabMejorado() {
       {/* Grid de servicios */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {serviciosFiltrados.map(servicio => {
-          const descuentoActual = servicio.descuento || descuentos[servicio.id] || 0;
+          const descuentoActual = descuentos[servicio.id] || 0;
           const tieneDescuento = descuentoActual > 0;
           const precioConDescuento = tieneDescuento
             ? servicio.precio * (1 - descuentoActual / 100)
