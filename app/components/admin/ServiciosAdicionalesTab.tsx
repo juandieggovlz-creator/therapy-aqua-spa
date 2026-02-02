@@ -70,8 +70,8 @@ export default function ServiciosAdicionalesTab() {
 
       const url = '/api/admin/servicios-adicionales';
       const method = modalType === 'create' ? 'POST' : 'PATCH';
-      
-      const body = modalType === 'edit' 
+
+      const body = modalType === 'edit'
         ? { ...formData, id: selectedServicio?.id }
         : formData;
 
@@ -84,7 +84,7 @@ export default function ServiciosAdicionalesTab() {
       if (!response.ok) throw new Error('Error al guardar');
 
       showNotification.success(
-        modalType === 'create' 
+        modalType === 'create'
           ? 'Servicio adicional creado exitosamente'
           : 'Servicio adicional actualizado exitosamente'
       );
@@ -132,7 +132,6 @@ export default function ServiciosAdicionalesTab() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: servicio.id,
           ...servicio,
           activo: !servicio.activo
         })
@@ -208,11 +207,10 @@ export default function ServiciosAdicionalesTab() {
                 <div className="text-5xl">{servicio.icon}</div>
                 <button
                   onClick={() => handleToggleActivo(servicio)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                    servicio.activo
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${servicio.activo
                       ? 'bg-green-100 text-green-700 hover:bg-green-200'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {servicio.activo ? '✓ ACTIVO' : '✕ INACTIVO'}
                 </button>
