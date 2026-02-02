@@ -68,8 +68,8 @@ export default function ProductosTab() {
 
       const url = '/api/admin/productos';
       const method = modalType === 'create' ? 'POST' : 'PATCH';
-      
-      const body = modalType === 'edit' 
+
+      const body = modalType === 'edit'
         ? { ...formData, id: selectedProducto?.id }
         : formData;
 
@@ -82,7 +82,7 @@ export default function ProductosTab() {
       if (!response.ok) throw new Error('Error al guardar');
 
       showNotification.success(
-        modalType === 'create' 
+        modalType === 'create'
           ? 'Producto creado exitosamente'
           : 'Producto actualizado exitosamente'
       );
@@ -130,7 +130,6 @@ export default function ProductosTab() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: producto.id,
           ...producto,
           activo: !producto.activo
         })
@@ -202,11 +201,10 @@ export default function ProductosTab() {
               <div className="text-5xl">{producto.icon}</div>
               <button
                 onClick={() => handleToggleActivo(producto)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                  producto.activo
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${producto.activo
                     ? 'bg-green-100 text-green-700 hover:bg-green-200'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {producto.activo ? '✓ ACTIVO' : '✕ INACTIVO'}
               </button>
