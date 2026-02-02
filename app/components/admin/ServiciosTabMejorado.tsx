@@ -94,7 +94,7 @@ export default function ServiciosTabMejorado() {
 
   const openDescuentoModal = (servicio: Servicio) => {
     setSelectedServicio(servicio);
-    setDescuentoTemp(servicio.descuento || descuentos[servicio.id] || 0);
+    setDescuentoTemp(descuentos[servicio.id] || 0);
     setModalType('descuento');
     setShowModal(true);
   };
@@ -418,8 +418,8 @@ export default function ServiciosTabMejorado() {
                 <button
                   onClick={() => handleToggle(servicio, 'activo')}
                   className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${servicio.activo
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-400 text-white'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-400 text-white'
                     }`}
                 >
                   {servicio.activo ? '✓ ACTIVO' : '✕ INACTIVO'}
@@ -582,8 +582,8 @@ export default function ServiciosTabMejorado() {
                     <button
                       onClick={() => handleToggle(servicio, 'destacado')}
                       className={`w-full px-4 py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${servicio.destacado
-                          ? 'bg-amber-500 text-white hover:bg-amber-600'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                     >
                       <svg className="w-5 h-5" fill={servicio.destacado ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
