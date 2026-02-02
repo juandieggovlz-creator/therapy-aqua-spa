@@ -130,7 +130,7 @@ export default function ProductosTab() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...producto,
+          id: producto.id,
           activo: !producto.activo
         })
       });
@@ -202,8 +202,8 @@ export default function ProductosTab() {
               <button
                 onClick={() => handleToggleActivo(producto)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${producto.activo
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
                 {producto.activo ? '✓ ACTIVO' : '✕ INACTIVO'}

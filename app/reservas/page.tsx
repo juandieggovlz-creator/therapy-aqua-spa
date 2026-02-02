@@ -72,13 +72,13 @@ function ReservasContentInner() {
   const [esAfiliado, setEsAfiliado] = useState(false);
   const [afiliadoNombre, setAfiliadoNombre] = useState<string | null>(null);
   const [showAfiliadoInfo, setShowAfiliadoInfo] = useState(true);
-  
+
   // Verificar autenticación de afiliado al cargar
   useEffect(() => {
     const checkAfiliado = () => {
       const afiliadoToken = sessionStorage.getItem('afiliado_token');
       const afiliadoData = sessionStorage.getItem('afiliado');
-      
+
       if (afiliadoToken && afiliadoData) {
         try {
           const afiliado = JSON.parse(afiliadoData);
@@ -97,7 +97,7 @@ function ReservasContentInner() {
         setAfiliadoNombre(null);
       }
     };
-    
+
     checkAfiliado();
   }, []);
   const [terapiasSeleccionadas, setTerapiasSeleccionadas] = useState<string[]>([]);
@@ -139,7 +139,7 @@ function ReservasContentInner() {
     try {
       setLoadingHorarios(true);
       console.log(`🔍 Consultando horarios ocupados para: ${fechaSeleccionada}`);
-      
+
       const response = await fetch(`/api/horarios-ocupados?fecha=${fechaSeleccionada}`, {
         cache: 'no-store'
       });
@@ -151,12 +151,12 @@ function ReservasContentInner() {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.horariosOcupados) {
         const horariosOcupadosArray = data.horariosOcupados.map((h: any) => h.horario);
         setHorariosOcupados(horariosOcupadosArray);
         console.log(`✅ ${horariosOcupadosArray.length} horarios ocupados:`, horariosOcupadosArray);
-        
+
         // Si el horario seleccionado está ocupado, deseleccionarlo
         if (horario && horariosOcupadosArray.includes(horario)) {
           setHorario('');
@@ -179,30 +179,30 @@ function ReservasContentInner() {
     try {
       console.log('📥 Cargando servicios y descuentos desde API...');
       setLoadingServicios(true);
-      
+
       const timestamp = new Date().getTime();
-      
+
       // Cargar servicios
       const responseServicios = await fetch(`/api/admin/servicios?cache=${timestamp}`, {
         cache: 'no-store'
       });
-      
+
       if (!responseServicios.ok) {
         console.warn('⚠️ No se pudieron cargar servicios desde la API, usando valores por defecto');
         setTerapiasActualizadas(terapias);
         setLoadingServicios(false);
         return;
       }
-      
+
       const dataServicios = await responseServicios.json();
       const serviciosAPI = dataServicios.servicios || [];
-      
+
       // Cargar descuentos
       try {
         const responseDescuentos = await fetch(`/api/admin/descuentos?cache=${timestamp}`, {
           cache: 'no-store'
         });
-        
+
         if (responseDescuentos.ok) {
           const dataDescuentos = await responseDescuentos.json();
           const descuentos = dataDescuentos.descuentos || {};
@@ -216,39 +216,39 @@ function ReservasContentInner() {
         console.error('❌ Error cargando descuentos:', errorDescuentos);
         setDescuentosServicios({});
       }
-      
-        // Filtrar solo servicios activos y mapearlos al formato de TerapiaItem
-        // Asegurar que todos los campos necesarios estén presentes y validados
-        const serviciosActivos = serviciosAPI
-          .filter((s: any) => {
-            // IMPORTANTE: Solo mostrar servicios con activo === true
-            if (s.activo !== true) return false;
-            if (!s.id || !s.nombre) {
-              console.warn(`⚠️ Servicio inválido encontrado (sin ID o nombre):`, s);
-              return false;
-            }
-            return true;
-          })
-          .map((s: any) => {
-            // Validar y normalizar cada servicio con valores por defecto seguros
-            return {
-              id: s.id,
-              nombre: s.nombre || 'Servicio sin nombre',
-              duracion: (s.duracion && s.duracion > 0) ? s.duracion : 30,
-              precio: (s.precio && s.precio >= 0) ? s.precio : 0,
-              // precioOriginal ya no se usa, precio es la fuente de verdad
-              icon: s.icon || '✨'
-            };
-          })
-          .sort((a: TerapiaItem, b: TerapiaItem) => {
-            // Mantener el orden original si hay un campo orden, sino por nombre
-            const servicioA = serviciosAPI.find((s: any) => s.id === a.id);
-            const servicioB = serviciosAPI.find((s: any) => s.id === b.id);
-            const ordenA = servicioA?.orden || 999;
-            const ordenB = servicioB?.orden || 999;
-            return ordenA - ordenB;
-          });
-      
+
+      // Filtrar solo servicios activos y mapearlos al formato de TerapiaItem
+      // Asegurar que todos los campos necesarios estén presentes y validados
+      const serviciosActivos = serviciosAPI
+        .filter((s: any) => {
+          // IMPORTANTE: Solo mostrar servicios con activo === true
+          if (s.activo !== true) return false;
+          if (!s.id || !s.nombre) {
+            console.warn(`⚠️ Servicio inválido encontrado (sin ID o nombre):`, s);
+            return false;
+          }
+          return true;
+        })
+        .map((s: any) => {
+          // Validar y normalizar cada servicio con valores por defecto seguros
+          return {
+            id: s.id,
+            nombre: s.nombre || 'Servicio sin nombre',
+            duracion: (s.duracion && s.duracion > 0) ? s.duracion : 30,
+            precio: (s.precio && s.precio >= 0) ? s.precio : 0,
+            // precioOriginal ya no se usa, precio es la fuente de verdad
+            icon: s.icon || '✨'
+          };
+        })
+        .sort((a: TerapiaItem, b: TerapiaItem) => {
+          // Mantener el orden original si hay un campo orden, sino por nombre
+          const servicioA = serviciosAPI.find((s: any) => s.id === a.id);
+          const servicioB = serviciosAPI.find((s: any) => s.id === b.id);
+          const ordenA = servicioA?.orden || 999;
+          const ordenB = servicioB?.orden || 999;
+          return ordenA - ordenB;
+        });
+
       if (serviciosActivos.length > 0) {
         console.log(`✅ Servicios cargados desde API: ${serviciosActivos.length} servicios activos`);
         console.log('📊 Muestra de precios cargados:', serviciosActivos.slice(0, 3).map((s: TerapiaItem) => ({ id: s.id, nombre: s.nombre, precio: s.precio, duracion: s.duracion })));
@@ -257,13 +257,13 @@ function ReservasContentInner() {
         console.warn('⚠️ No hay servicios activos en la API, usando valores por defecto');
         setTerapiasActualizadas(terapias);
       }
-      
+
       // Cargar productos desde API pública
       try {
         const responseProductos = await fetch(`/api/productos-publicos?cache=${timestamp}`, {
           cache: 'no-store'
         });
-        
+
         if (responseProductos.ok) {
           const dataProductos = await responseProductos.json();
           const productosAPI = (dataProductos.productos || []).map((p: any) => ({
@@ -272,7 +272,7 @@ function ReservasContentInner() {
             precio: p.precio,
             icon: p.icon || '📦'
           }));
-          
+
           if (productosAPI.length > 0) {
             console.log(`✅ Productos cargados desde API: ${productosAPI.length} productos activos`);
             setProductosActualizados(productosAPI);
@@ -294,7 +294,7 @@ function ReservasContentInner() {
         const responseServicios = await fetch(`/api/servicios-adicionales-publicos?cache=${timestamp}`, {
           cache: 'no-store'
         });
-        
+
         if (responseServicios.ok) {
           const dataServicios = await responseServicios.json();
           const serviciosAPI = (dataServicios.servicios || []).map((s: any) => ({
@@ -305,7 +305,7 @@ function ReservasContentInner() {
             precio: s.precioParticular, // Por defecto precio particular
             icon: s.icon || '💆'
           }));
-          
+
           if (serviciosAPI.length > 0) {
             console.log(`✅ Servicios adicionales cargados desde API: ${serviciosAPI.length} servicios activos`);
             setServiciosAdicionales(serviciosAPI);
@@ -332,7 +332,7 @@ function ReservasContentInner() {
   // Cargar servicios desde la API al montar el componente
   useEffect(() => {
     cargarServicios();
-    
+
     // Verificar si hay cambios pendientes en localStorage
     const necesitaRecarga = localStorage.getItem('necesita_recarga');
     if (necesitaRecarga === 'true') {
@@ -437,7 +437,7 @@ function ReservasContentInner() {
     // Solo permitir números
     const soloNumeros = valor.replace(/\D/g, '');
     setTelefono(soloNumeros);
-    
+
     if (soloNumeros.length === 0) {
       setErrorTelefono('');
     } else if (soloNumeros.length < 10) {
@@ -454,7 +454,7 @@ function ReservasContentInner() {
   // Manejar cambio de email con validación en tiempo real
   const handleEmailChange = (valor: string) => {
     setEmail(valor);
-    
+
     if (valor.length === 0) {
       setErrorEmail('');
     } else if (!validarEmail(valor)) {
@@ -469,13 +469,13 @@ function ReservasContentInner() {
     const fechas: string[] = [];
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    
+
     // Generar fechas para los próximos 60 días
     for (let i = 0; i < 60; i++) {
       const fecha = new Date(hoy);
       fecha.setDate(hoy.getDate() + i);
       const diaSemana = fecha.getDay();
-      
+
       // Solo incluir días que no estén cerrados (no lunes, martes, miércoles)
       if (!diasCerrados.includes(diaSemana)) {
         fechas.push(fecha.toISOString().split('T')[0]);
@@ -490,24 +490,24 @@ function ReservasContentInner() {
     if (horariosOcupados.includes(horario)) {
       return true;
     }
-    
+
     // Fallback: verificar en reservas existentes por si acaso
     const fechaNormalizada = fechaSeleccionada.split('T')[0];
-    
+
     return reservasExistentes.some((reserva: any) => {
       // Solo considerar reservas activas (pendiente o confirmada)
       if (reserva.estado !== 'pendiente' && reserva.estado !== 'pendiente de pago' && reserva.estado !== 'confirmada') {
         return false;
       }
-      
+
       // Normalizar fecha de la reserva
       const fechaReserva = reserva.fecha ? reserva.fecha.split('T')[0] : null;
-      
+
       // Comparar fecha y horario
       if (fechaReserva !== fechaNormalizada) {
         return false;
       }
-      
+
       const horarioReserva = reserva.hora || reserva.horario || '';
       return horarioReserva === horario;
     });
@@ -518,26 +518,26 @@ function ReservasContentInner() {
     if (!fechaSeleccionada || !esDiaValido(fechaSeleccionada)) {
       return [];
     }
-    
+
     // Filtrar horarios que ya pasaron (con margen de 1 hora)
     const ahora = new Date();
     const margenTiempo = 60 * 60 * 1000; // 60 minutos (1 hora) en milisegundos
     const ahoraConMargen = new Date(ahora.getTime() + margenTiempo);
-    
+
     return horariosDisponibles.filter(horario => {
       const fechaHora = new Date(fechaSeleccionada + 'T' + horario + ':00');
-      
+
       // Verificar si ya pasó el horario
       if (fechaHora < ahoraConMargen) {
         return false;
       }
-      
+
       // Si el filtro está activo, excluir horarios ocupados
       if (mostrarSoloDisponibles) {
         const estaOcupado = verificarHorarioOcupado(fechaSeleccionada, horario);
         return !estaOcupado;
       }
-      
+
       // Si el filtro está desactivado, mostrar todos los horarios (incluso ocupados)
       return true;
     });
@@ -555,7 +555,7 @@ function ReservasContentInner() {
           cache: 'no-store'
         });
         const promocionData = await promocionRes.json();
-        
+
         if (promocionData.promocion) {
           console.log('🎁 Promoción activa cargada:', promocionData.promocion);
           console.log(`  📋 Tipo: ${promocionData.promocion.tipo} (${promocionData.promocion.valor}${promocionData.promocion.tipo === 'porcentaje' ? '%' : ' COP'})`);
@@ -563,7 +563,7 @@ function ReservasContentInner() {
         } else {
           console.log('ℹ️ No hay promociones activas');
         }
-        
+
         setPromocion(promocionData.promocion);
       } catch (error) {
         console.error('❌ Error cargando promoción:', error);
@@ -581,7 +581,7 @@ function ReservasContentInner() {
         setHorariosOcupados([]);
         return;
       }
-      
+
       try {
         const timestamp = new Date().getTime();
         const response = await fetch(`/api/bookings?cache=${timestamp}`, {
@@ -589,9 +589,9 @@ function ReservasContentInner() {
         });
         const data = await response.json();
         const reservas = data.bookings || [];
-        
+
         console.log(`📅 Reservas cargadas para filtrar horarios: ${reservas.length}`);
-        
+
         // Filtrar solo reservas activas de la fecha seleccionada
         const fechaNormalizada = fecha.split('T')[0];
         const reservasActivas = reservas.filter((r: any) => {
@@ -599,18 +599,18 @@ function ReservasContentInner() {
           const fechaReserva = r.fecha ? r.fecha.split('T')[0] : null;
           return estadoActivo && fechaReserva === fechaNormalizada;
         });
-        
+
         console.log(`🔒 Horarios ocupados en ${fechaNormalizada}:`, reservasActivas.map((r: any) => `${r.hora || r.horario} [${r.estado}]`));
-        
+
         setReservasExistentes(reservas);
       } catch (error) {
         console.error('❌ Error cargando reservas:', error);
         setReservasExistentes([]);
       }
     };
-    
+
     loadReservas();
-    
+
     // Cargar horarios ocupados desde el nuevo endpoint
     cargarHorariosOcupados(fecha);
   }, [fecha, cargarHorariosOcupados]);
@@ -628,19 +628,19 @@ function ReservasContentInner() {
   }, [searchParams, servicioPrecargado, terapiasActualizadas]);
 
   const toggleTerapia = (id: string) => {
-    setTerapiasSeleccionadas(prev => 
+    setTerapiasSeleccionadas(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
   };
 
   const toggleServicio = (id: string) => {
-    setServiciosSeleccionados(prev => 
+    setServiciosSeleccionados(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
   };
 
   const toggleProducto = (id: string) => {
-    setProductosSeleccionados(prev => 
+    setProductosSeleccionados(prev =>
       prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
     );
   };
@@ -672,16 +672,16 @@ function ReservasContentInner() {
     const totalTerapiasConDescuento = terapiasSeleccionadas.reduce((acc, id) => {
       const terapia = terapiasActualizadas.find(t => t.id === id);
       if (!terapia) return acc;
-      
+
       const precioBase = terapia.precio;
       let precioFinal = precioBase;
-      
+
       if (descuentosServicios[id]) {
         const descuento = precioBase * (descuentosServicios[id] / 100);
         totalDescuentosIndividuales += descuento;
         precioFinal = precioBase - descuento;
       }
-      
+
       return acc + precioFinal;
     }, 0);
 
@@ -690,7 +690,7 @@ function ReservasContentInner() {
     // 3️⃣ APLICAR DESCUENTO DE AFILIADO (20% sobre el SUBTOTAL COMPLETO)
     let descuentoAfiliado = 0;
     let subtotalConDescuentoAfiliado = subtotalConDescuentosIndividuales;
-    
+
     if (esAfiliado) {
       // Aplicar 20% sobre TODO el subtotal (terapias + servicios adicionales + productos)
       descuentoAfiliado = subtotalConDescuentosIndividuales * 0.20;
@@ -705,7 +705,7 @@ function ReservasContentInner() {
     if (promocion && promocion.activa) {
       if (promocion.tipoAplicacion === 'todos') {
         tienePromocion = true;
-        
+
         if (promocion.tipo === 'porcentaje') {
           descuentoPromocion = subtotalConDescuentoAfiliado * (promocion.valor / 100);
           totalFinal = subtotalConDescuentoAfiliado - descuentoPromocion;
@@ -715,10 +715,10 @@ function ReservasContentInner() {
         }
       } else if (promocion.tipoAplicacion === 'servicios_especificos' && promocion.serviciosIds) {
         const serviciosConPromocion = terapiasSeleccionadas.filter(id => promocion.serviciosIds?.includes(id));
-        
+
         if (serviciosConPromocion.length > 0) {
           tienePromocion = true;
-          
+
           const totalServiciosPromocion = serviciosConPromocion.reduce((acc, id) => {
             const terapia = terapiasActualizadas.find(t => t.id === id);
             if (!terapia) return acc;
@@ -731,7 +731,7 @@ function ReservasContentInner() {
             }
             return acc + precio;
           }, 0);
-          
+
           if (promocion.tipo === 'porcentaje') {
             descuentoPromocion = totalServiciosPromocion * (promocion.valor / 100);
             totalFinal = subtotalConDescuentoAfiliado - descuentoPromocion;
@@ -740,7 +740,7 @@ function ReservasContentInner() {
       } else if (promocion.tipoAplicacion === 'monto_minimo') {
         if (subtotalConDescuentoAfiliado >= (promocion.montoMinimo || 0)) {
           tienePromocion = true;
-          
+
           if (promocion.tipo === 'porcentaje') {
             descuentoPromocion = subtotalConDescuentoAfiliado * (promocion.valor / 100);
             totalFinal = subtotalConDescuentoAfiliado - descuentoPromocion;
@@ -751,7 +751,7 @@ function ReservasContentInner() {
         }
       }
     }
-    
+
     // RETORNAR TODOS LOS VALORES PARA UN DESGLOSE CLARO
     return {
       // Totales originales
@@ -759,24 +759,24 @@ function ReservasContentInner() {
       totalTerapiasOriginal: Math.round(totalTerapiasOriginal),
       totalServiciosOriginal: Math.round(totalServiciosOriginal),
       totalProductosOriginal: Math.round(totalProductosOriginal),
-      
+
       // Descuentos aplicados
       descuentosIndividuales: Math.round(totalDescuentosIndividuales),
       descuentoAfiliado: Math.round(descuentoAfiliado),
       descuentoPromocion: Math.round(descuentoPromocion),
-      
+
       // Subtotales intermedios
       subtotalConDescuentosIndividuales: Math.round(subtotalConDescuentosIndividuales),
       subtotalConDescuentoAfiliado: Math.round(subtotalConDescuentoAfiliado),
-      
+
       // Total final
       total: Math.round(totalFinal),
-      
+
       // Información adicional
       tienePromocion: tienePromocion,
       promocionActiva: tienePromocion ? promocion : null,
       esAfiliado: esAfiliado,
-      
+
       // Para compatibilidad con código existente
       totalOriginal: Math.round(subtotalOriginal),
       totalConPromocion: Math.round(totalFinal)
@@ -794,7 +794,7 @@ function ReservasContentInner() {
   const construirMensajeTelegram = () => {
     // Construir lista de servicios seleccionados
     let listaServicios = '';
-    
+
     // Agregar terapias
     if (terapiasSeleccionadas.length > 0) {
       const terapiasNombres = terapiasSeleccionadas.map(id => {
@@ -803,7 +803,7 @@ function ReservasContentInner() {
       }).filter(Boolean);
       listaServicios += terapiasNombres.join('\n');
     }
-    
+
     // Agregar servicios adicionales individuales
     if (serviciosSeleccionados.length > 0) {
       if (listaServicios) listaServicios += '\n';
@@ -815,7 +815,7 @@ function ReservasContentInner() {
         }
       });
     }
-    
+
     // Agregar productos
     if (productosSeleccionados.length > 0) {
       if (listaServicios) listaServicios += '\n';
@@ -826,11 +826,11 @@ function ReservasContentInner() {
         }
       });
     }
-    
+
     if (!listaServicios) {
       listaServicios = '• No se especificaron servicios';
     }
-    
+
     // Formatear fecha (agregar T00:00:00 para evitar problemas de zona horaria)
     const fechaFormateada = fecha ? new Date(fecha + 'T00:00:00').toLocaleDateString('es-CO', {
       weekday: 'long',
@@ -838,11 +838,11 @@ function ReservasContentInner() {
       month: 'long',
       day: 'numeric'
     }) : 'No especificada';
-    
+
     // Formatear total
     const totalCalculado = calcularTotal().total;
     const totalFormateado = `$${totalCalculado.toLocaleString('es-CO')}`;
-    
+
     // Construir mensaje completo
     const mensaje = `¡Solicitud Enviada! 🎉
 Nueva reserva recibida en Therapy Aqua Spa
@@ -864,45 +864,13 @@ ${listaServicios}
     return mensaje;
   };
 
-  // Función para enviar notificación a Telegram
-  const enviarNotificacionTelegram = async (mensaje: string) => {
-    try {
-      const telegramUrl = 'https://api.telegram.org/bot8503447166:AAHQ9Q0DduvHIKTkef-WiGDwQ5NISJl0Uyc/sendMessage';
-      
-      const response = await fetch(telegramUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: '5734885656',
-          text: mensaje
-        })
-      });
-
-      const data = await response.json();
-      
-      if (response.ok && data.ok) {
-        showNotification.success('Reserva enviada correctamente');
-        return true;
-      } else {
-        console.error('Error en respuesta de Telegram:', data);
-        showNotification.warning('No se pudo enviar la notificación, pero la reserva fue creada');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error enviando notificación a Telegram:', error);
-      showNotification.warning('No se pudo enviar la notificación, pero la reserva fue creada');
-      return false;
-    }
-  };
 
   const handleSubmit = async () => {
     // Limpiar mensajes de error previos
     setMensajeErrorHorario('');
     setMensajeErrorFecha('');
     setSubmitting(true);
-    
+
     // Validar que hay servicios seleccionados
     if (terapiasSeleccionadas.length === 0) {
       setMensajeErrorHorario('Por favor selecciona al menos una terapia');
@@ -927,7 +895,7 @@ ${listaServicios}
     // Agregar margen de 1 hora para procesamiento
     const margenTiempo = 60 * 60 * 1000; // 60 minutos (1 hora) en milisegundos
     const ahoraConMargen = new Date(ahora.getTime() + margenTiempo);
-    
+
     if (fechaHoraReserva < ahoraConMargen) {
       setMensajeErrorHorario('⚠️ Este horario ya no está disponible. Por favor selecciona un horario futuro (al menos 1 hora de anticipación).');
       setSubmitting(false);
@@ -942,24 +910,24 @@ ${listaServicios}
       const checkResponse = await fetch('/api/bookings');
       const checkData = await checkResponse.json();
       const reservasExistentes = checkData.bookings || [];
-      
+
       // Buscar reservas con la misma fecha y hora que estén en estados que bloquean
       const reservaConflictiva = reservasExistentes.find((r: any) => {
         // Solo bloquear si está pendiente, pendiente de pago, confirmada o completada
         if (r.estado !== 'pendiente' && r.estado !== 'pendiente de pago' && r.estado !== 'confirmada' && r.estado !== 'completada') {
           return false;
         }
-        
+
         // Comparar fechas (solo la fecha, no la hora)
         const fechaExistente = r.fecha ? new Date(r.fecha).toISOString().split('T')[0] : null;
         const fechaNueva = fecha ? new Date(fecha).toISOString().split('T')[0] : null;
-        
+
         if (fechaExistente !== fechaNueva) return false;
-        
+
         // Comparar horas (exactamente la misma hora)
         const horaExistente = r.hora || r.horario || '';
         const horaNueva = horario || '';
-        
+
         return horaExistente === horaNueva;
       });
 
@@ -977,7 +945,7 @@ ${listaServicios}
       setTimeout(() => setMensajeErrorHorario(''), 5000);
       return;
     }
-    
+
     // Validar que todas las terapias seleccionadas existan y tengan los campos necesarios
     const terapiasValidadas = terapiasSeleccionadas
       .map(id => {
@@ -1070,34 +1038,26 @@ ${listaServicios}
           email: email
         });
         console.log('   Cliente en respuesta:', data.cliente);
-        
-        // Enviar notificación a Telegram
-        try {
-          const mensajeTelegram = construirMensajeTelegram();
-          console.log('📱 Enviando notificación a Telegram...');
-          await enviarNotificacionTelegram(mensajeTelegram);
-        } catch (error) {
-          console.error('Error al enviar notificación a Telegram:', error);
-          // No bloquear el flujo si falla la notificación
-        }
-        
+
+        // Notificación ahora manejada por el backend automáticamente
+
         // Disparar evento para actualizar el dashboard, clientes y finanzas inmediatamente
-        const evento = new CustomEvent('reservaCreada', { 
-          detail: { 
+        const evento = new CustomEvent('reservaCreada', {
+          detail: {
             reserva: data.booking || data,
             cliente: data.cliente,
             nombre: nombre,
             telefono: telefono,
             email: email
-          } 
+          }
         });
         window.dispatchEvent(evento);
         console.log('📢 Evento reservaCreada disparado con detalles:', evento.detail);
-        
+
         setSubmitting(false);
         setReservaExitosa(true);
         setMensajeErrorHorario(''); // Limpiar cualquier error previo
-        
+
         // Cambiar la URL sin recargar la página (remover localhost de la vista)
         const nuevaUrl = '/reservas?reserva=confirmada';
         if (typeof window !== 'undefined') {
@@ -1146,7 +1106,7 @@ ${listaServicios}
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            
+
             <div className="mb-6">
               <h2 className="text-4xl md:text-5xl font-bold text-[#3d2817] mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
                 ¡Reserva Confirmada! ✨
@@ -1155,7 +1115,7 @@ ${listaServicios}
                 Gracias por confiar en nosotros, <span className="text-amber-600">{nombre || 'Cliente'}</span>
               </p>
             </div>
-            
+
             <div className="bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded-2xl p-6 mb-6">
               <p className="text-lg text-green-800 font-semibold mb-2">
                 🎉 ¡Tu reserva ha sido registrada exitosamente!
@@ -1164,7 +1124,7 @@ ${listaServicios}
                 Te esperamos el <strong className="text-[#3d2817]">{fecha ? new Date(fecha + 'T00:00:00').toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'día seleccionado'}</strong> a las <strong className="text-[#3d2817]">{horario}</strong>
               </p>
             </div>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-6 mb-8">
               <div className="flex items-start gap-3">
                 <div className="text-3xl">📱</div>
@@ -1192,7 +1152,7 @@ ${listaServicios}
 
             <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 mb-8 text-left">
               <h3 className="font-semibold text-[#3d2817] mb-4">Resumen de tu reserva:</h3>
-              
+
               {/* Datos de contacto */}
               <div className="bg-white rounded-lg p-4 mb-4">
                 <h4 className="font-semibold text-[#3d2817] mb-2 text-sm uppercase">Datos de contacto</h4>
@@ -1389,25 +1349,22 @@ ${listaServicios}
               const labels = ['Terapias', 'Fecha y hora', 'Datos personales', 'Confirmación'];
               const isActive = paso === num;
               const isCompleted = paso > num;
-              
+
               return (
                 <React.Fragment key={num}>
                   <div className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
-                    <div className={`flex items-center justify-center w-12 h-12 rounded-full font-bold transition-all duration-300 ${
-                      isActive || isCompleted ? 'bg-[#3d2817] text-white scale-110' : 'bg-stone-200 text-stone-500'
-                    }`}>
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-full font-bold transition-all duration-300 ${isActive || isCompleted ? 'bg-[#3d2817] text-white scale-110' : 'bg-stone-200 text-stone-500'
+                      }`}>
                       {num}
                     </div>
-                    <span className={`text-xs md:text-sm text-center transition-all duration-300 ${
-                      isActive ? 'font-bold text-[#3d2817]' : isCompleted ? 'text-[#3d2817]' : 'text-stone-600'
-                    }`}>
+                    <span className={`text-xs md:text-sm text-center transition-all duration-300 ${isActive ? 'font-bold text-[#3d2817]' : isCompleted ? 'text-[#3d2817]' : 'text-stone-600'
+                      }`}>
                       {labels[num - 1]}
                     </span>
                   </div>
                   {num < 4 && (
-                    <div className={`h-1 flex-1 max-w-16 rounded transition-all duration-300 mt-6 ${
-                      isCompleted ? 'bg-[#3d2817]' : 'bg-stone-200'
-                    }`} />
+                    <div className={`h-1 flex-1 max-w-16 rounded transition-all duration-300 mt-6 ${isCompleted ? 'bg-[#3d2817]' : 'bg-stone-200'
+                      }`} />
                   )}
                 </React.Fragment>
               );
@@ -1422,17 +1379,16 @@ ${listaServicios}
               <h2 className="text-2xl md:text-3xl font-bold text-[#3d2817] text-center mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Selecciona tus Terapias
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto p-2">
                 {terapiasActualizadas.map((terapia) => (
                   <button
                     key={terapia.id}
                     onClick={() => toggleTerapia(terapia.id)}
-                    className={`group relative p-6 rounded-2xl border-4 transition-all duration-300 text-left ${
-                      terapiasSeleccionadas.includes(terapia.id)
+                    className={`group relative p-6 rounded-2xl border-4 transition-all duration-300 text-left ${terapiasSeleccionadas.includes(terapia.id)
                         ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-stone-100 shadow-xl ring-4 ring-amber-200 ring-opacity-50'
                         : 'border-stone-200 hover:border-amber-300 bg-white hover:shadow-lg'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-4">
                       <div className="text-4xl flex-shrink-0">{terapia.icon}</div>
@@ -1448,12 +1404,12 @@ ${listaServicios}
                               const precioBase = terapia.precio;
                               let precioFinal = precioBase;
                               let descuentoAplicado = 0;
-                              
+
                               if (descuentosServicios[terapia.id]) {
                                 descuentoAplicado = descuentosServicios[terapia.id];
                                 precioFinal = precioBase * (1 - descuentoAplicado / 100);
                               }
-                              
+
                               return (
                                 <>
                                   {descuentoAplicado > 0 && (
@@ -1477,11 +1433,10 @@ ${listaServicios}
                           </div>
                         </div>
                       </div>
-                      <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        terapiasSeleccionadas.includes(terapia.id)
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${terapiasSeleccionadas.includes(terapia.id)
                           ? 'border-[#3d2817] bg-[#3d2817]'
                           : 'border-stone-300'
-                      }`}>
+                        }`}>
                         {terapiasSeleccionadas.includes(terapia.id) && (
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -1501,7 +1456,7 @@ ${listaServicios}
                       {terapiasSeleccionadas.length} terapia(s) • {serviciosSeleccionados.length} servicio(s) adicional(es) • {productosSeleccionados.length} producto(s)
                     </span>
                   </div>
-                  
+
                   {/* Terapias */}
                   {terapiasSeleccionadas.length > 0 && (
                     <div className="mb-4">
@@ -1521,12 +1476,12 @@ ${listaServicios}
                                   const precioBase = terapia.precio;
                                   let precioFinal = precioBase;
                                   let descuentoAplicado = 0;
-                                  
+
                                   if (descuentosServicios[id]) {
                                     descuentoAplicado = descuentosServicios[id];
                                     precioFinal = precioBase * (1 - descuentoAplicado / 100);
                                   }
-                                  
+
                                   return (
                                     <div className="text-right">
                                       {descuentoAplicado > 0 && (
@@ -1651,7 +1606,7 @@ ${listaServicios}
                     {(() => {
                       const totalInfo = calcularTotal();
                       const tieneDescuentos = totalInfo.descuentosIndividuales > 0 || totalInfo.descuentoAfiliado > 0 || totalInfo.descuentoPromocion > 0;
-                      
+
                       return (
                         <div className="space-y-3">
                           {/* Duración */}
@@ -1733,16 +1688,15 @@ ${listaServicios}
                     const precio = esAfiliado ? servicio.precioAfiliado : servicio.precioParticular;
                     const precioOriginal = servicio.precioParticular;
                     const isSelected = serviciosSeleccionados.includes(servicio.id);
-                    
+
                     return (
                       <button
                         key={servicio.id}
                         onClick={() => toggleServicio(servicio.id)}
-                        className={`p-5 rounded-xl border-4 transition-all duration-300 ${
-                          isSelected
+                        className={`p-5 rounded-xl border-4 transition-all duration-300 ${isSelected
                             ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-105'
                             : 'border-stone-200 hover:border-blue-300 bg-white hover:scale-102'
-                        }`}
+                          }`}
                       >
                         <div className="flex flex-col items-center text-center">
                           <span className="text-4xl mb-3">{servicio.icon}</span>
@@ -1762,11 +1716,10 @@ ${listaServicios}
                               </p>
                             )}
                           </div>
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                            isSelected
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
                               ? 'border-blue-500 bg-blue-500'
                               : 'border-stone-300'
-                          }`}>
+                            }`}>
                             {isSelected && (
                               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -1790,11 +1743,10 @@ ${listaServicios}
                     <button
                       key={producto.id}
                       onClick={() => toggleProducto(producto.id)}
-                      className={`p-4 rounded-xl border-4 transition-all duration-300 text-left ${
-                        productosSeleccionados.includes(producto.id)
+                      className={`p-4 rounded-xl border-4 transition-all duration-300 text-left ${productosSeleccionados.includes(producto.id)
                           ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
                           : 'border-stone-200 hover:border-amber-300 bg-white'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -1806,11 +1758,10 @@ ${listaServicios}
                             </p>
                           </div>
                         </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                          productosSeleccionados.includes(producto.id)
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${productosSeleccionados.includes(producto.id)
                             ? 'border-amber-500 bg-amber-500'
                             : 'border-stone-300'
-                        }`}>
+                          }`}>
                           {productosSeleccionados.includes(producto.id) && (
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -1827,11 +1778,10 @@ ${listaServicios}
                 <button
                   onClick={() => setPaso(2)}
                   disabled={terapiasSeleccionadas.length === 0}
-                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    terapiasSeleccionadas.length === 0
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${terapiasSeleccionadas.length === 0
                       ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
                       : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
-                  }`}
+                    }`}
                 >
                   Continuar →
                 </button>
@@ -1878,11 +1828,10 @@ ${listaServicios}
                       }}
                       min={fechasDisponibles[0] || new Date().toISOString().split('T')[0]}
                       max={fechasDisponibles[fechasDisponibles.length - 1]}
-                      className={`w-full p-4 rounded-2xl border-4 text-lg ${
-                        fecha && !esDiaValido(fecha)
+                      className={`w-full p-4 rounded-2xl border-4 text-lg ${fecha && !esDiaValido(fecha)
                           ? 'border-red-300 bg-red-50'
                           : 'border-stone-200 focus:border-[#3d2817] focus:outline-none'
-                      }`}
+                        }`}
                     />
                     {mensajeErrorFecha && (
                       <div className="p-3 bg-red-50 border-2 border-red-200 rounded-xl animate-fade-in">
@@ -1920,7 +1869,7 @@ ${listaServicios}
                           const fechaSeleccionada = new Date(fecha + 'T00:00:00');
                           const hoy = new Date();
                           hoy.setHours(0, 0, 0, 0);
-                          
+
                           if (fechaSeleccionada.getTime() === hoy.getTime()) {
                             return '💡 Los horarios de hoy ya pasaron. Por favor selecciona otro día.';
                           } else {
@@ -1938,11 +1887,10 @@ ${listaServicios}
                         </p>
                         <button
                           onClick={() => setMostrarSoloDisponibles(!mostrarSoloDisponibles)}
-                          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                            mostrarSoloDisponibles
+                          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 ${mostrarSoloDisponibles
                               ? 'bg-green-600 text-white shadow-md hover:bg-green-700'
                               : 'bg-white text-blue-700 border-2 border-blue-300 hover:bg-blue-100'
-                          }`}
+                            }`}
                         >
                           {mostrarSoloDisponibles ? '✓ Solo disponibles' : '📋 Mostrar todos'}
                         </button>
@@ -1956,10 +1904,10 @@ ${listaServicios}
                           const margenTiempo = 60 * 60 * 1000; // 60 minutos (1 hora)
                           const ahoraConMargen = new Date(ahora.getTime() + margenTiempo);
                           const horarioPasado = fechaHoraSeleccion < ahoraConMargen;
-                          
+
                           // Verificar si el horario está ocupado
                           const estaOcupado = verificarHorarioOcupado(fecha, horarioItem);
-                          
+
                           return (
                             <button
                               key={horarioItem}
@@ -1976,15 +1924,14 @@ ${listaServicios}
                                 }
                               }}
                               disabled={horarioPasado}
-                              className={`p-3 rounded-xl border-2 transition-all duration-300 font-semibold relative ${
-                                horarioPasado
+                              className={`p-3 rounded-xl border-2 transition-all duration-300 font-semibold relative ${horarioPasado
                                   ? 'border-red-200 bg-red-50 text-red-400 cursor-not-allowed opacity-50'
                                   : estaOcupado
-                                  ? 'border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer'
-                                  : horario === horarioItem
-                                  ? 'border-[#3d2817] bg-[#3d2817] text-white shadow-lg scale-105'
-                                  : 'border-stone-200 hover:border-amber-300 bg-white text-[#3d2817] hover:shadow-md'
-                              }`}
+                                    ? 'border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer'
+                                    : horario === horarioItem
+                                      ? 'border-[#3d2817] bg-[#3d2817] text-white shadow-lg scale-105'
+                                      : 'border-stone-200 hover:border-amber-300 bg-white text-[#3d2817] hover:shadow-md'
+                                }`}
                             >
                               {horarioItem}
                               {horarioPasado && <span className="block text-xs mt-1">No disponible</span>}
@@ -2001,7 +1948,7 @@ ${listaServicios}
                           <p className="text-sm text-green-700 font-semibold">✓ Horario seleccionado: {horario}</p>
                         </div>
                       )}
-                      
+
                       {mensajeErrorHorario && (
                         <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl animate-fade-in">
                           <div className="flex items-start gap-2">
@@ -2040,11 +1987,10 @@ ${listaServicios}
                     }
                   }}
                   disabled={!fecha || !horario || !esDiaValido(fecha) || verificarHorarioOcupado(fecha, horario)}
-                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    !fecha || !horario || !esDiaValido(fecha) || verificarHorarioOcupado(fecha, horario)
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${!fecha || !horario || !esDiaValido(fecha) || verificarHorarioOcupado(fecha, horario)
                       ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
                       : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
-                  }`}
+                    }`}
                 >
                   Continuar →
                 </button>
@@ -2087,13 +2033,12 @@ ${listaServicios}
                     onChange={(e) => handleTelefonoChange(e.target.value)}
                     placeholder="3012456789"
                     maxLength={10}
-                    className={`w-full p-4 rounded-xl border-2 focus:outline-none transition-colors ${
-                      telefono.length === 0
+                    className={`w-full p-4 rounded-xl border-2 focus:outline-none transition-colors ${telefono.length === 0
                         ? 'border-stone-200 focus:border-[#3d2817]'
                         : errorTelefono
-                        ? 'border-red-400 bg-red-50 focus:border-red-500'
-                        : 'border-green-400 bg-green-50 focus:border-green-500'
-                    }`}
+                          ? 'border-red-400 bg-red-50 focus:border-red-500'
+                          : 'border-green-400 bg-green-50 focus:border-green-500'
+                      }`}
                     required
                   />
                   {errorTelefono && (
@@ -2113,13 +2058,12 @@ ${listaServicios}
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="ejemplo@correo.com"
-                    className={`w-full p-4 rounded-xl border-2 focus:outline-none transition-colors ${
-                      email.length === 0
+                    className={`w-full p-4 rounded-xl border-2 focus:outline-none transition-colors ${email.length === 0
                         ? 'border-stone-200 focus:border-[#3d2817]'
                         : errorEmail
-                        ? 'border-red-400 bg-red-50 focus:border-red-500'
-                        : 'border-green-400 bg-green-50 focus:border-green-500'
-                    }`}
+                          ? 'border-red-400 bg-red-50 focus:border-red-500'
+                          : 'border-green-400 bg-green-50 focus:border-green-500'
+                      }`}
                     required
                   />
                   {errorEmail && (
@@ -2154,11 +2098,10 @@ ${listaServicios}
                 <button
                   onClick={() => setPaso(4)}
                   disabled={!nombre || !telefono || !email || !!errorTelefono || !!errorEmail}
-                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    !nombre || !telefono || !email || !!errorTelefono || !!errorEmail
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${!nombre || !telefono || !email || !!errorTelefono || !!errorEmail
                       ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
                       : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
-                  }`}
+                    }`}
                 >
                   Continuar →
                 </button>
@@ -2174,7 +2117,7 @@ ${listaServicios}
 
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200">
                 <h3 className="font-bold text-[#3d2817] text-lg mb-4">Resumen de tu reserva:</h3>
-                
+
                 <div className="space-y-3 mb-4">
                   <div className="bg-white rounded-lg p-3">
                     <p className="text-sm text-stone-600 mb-1"><strong>📅 Fecha:</strong> {fecha}</p>
@@ -2205,12 +2148,12 @@ ${listaServicios}
                                 const precioBase = terapia.precio;
                                 let precioFinal = precioBase;
                                 let descuentoAplicado = 0;
-                                
+
                                 if (descuentosServicios[id]) {
                                   descuentoAplicado = descuentosServicios[id];
                                   precioFinal = precioBase * (1 - descuentoAplicado / 100);
                                 }
-                                
+
                                 return (
                                   <div className="text-right">
                                     {descuentoAplicado > 0 && (
@@ -2299,12 +2242,12 @@ ${listaServicios}
                   {(() => {
                     const totalInfo = calcularTotal();
                     const tieneDescuentos = totalInfo.descuentosIndividuales > 0 || totalInfo.descuentoAfiliado > 0 || totalInfo.descuentoPromocion > 0;
-                    
+
                     return (
                       <div className="space-y-3">
                         {/* Título del resumen */}
                         <h4 className="font-bold text-[#3d2817] text-lg">💰 Resumen Financiero</h4>
-                        
+
                         {/* Desglose de montos originales */}
                         <div className="bg-white rounded-lg p-3 space-y-2">
                           {totalInfo.totalTerapiasOriginal > 0 && (
@@ -2411,11 +2354,10 @@ ${listaServicios}
                 <button
                   onClick={handleSubmit}
                   disabled={submitting || !!mensajeErrorHorario}
-                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    submitting || mensajeErrorHorario
+                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${submitting || mensajeErrorHorario
                       ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
                       : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
-                  }`}
+                    }`}
                 >
                   {submitting ? 'Procesando...' : 'Confirmar Reserva'}
                 </button>
