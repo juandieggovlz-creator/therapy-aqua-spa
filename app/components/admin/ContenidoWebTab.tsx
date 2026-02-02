@@ -62,7 +62,7 @@ export default function ContenidoWebTab() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: config.id,
+          ...config,
           valor: nuevoValor
         })
       });
@@ -87,7 +87,7 @@ export default function ContenidoWebTab() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: horario.id,
+          ...horario,
           activo: !horario.activo
         })
       });
@@ -154,21 +154,19 @@ export default function ContenidoWebTab() {
       <div className="flex gap-2 border-b border-stone-200">
         <button
           onClick={() => setActiveSection('configuracion')}
-          className={`px-6 py-3 font-medium transition-colors ${
-            activeSection === 'configuracion'
+          className={`px-6 py-3 font-medium transition-colors ${activeSection === 'configuracion'
               ? 'border-b-2 border-[#3d2817] text-[#3d2817]'
               : 'text-stone-600 hover:text-[#3d2817]'
-          }`}
+            }`}
         >
           📋 Configuración
         </button>
         <button
           onClick={() => setActiveSection('horarios')}
-          className={`px-6 py-3 font-medium transition-colors ${
-            activeSection === 'horarios'
+          className={`px-6 py-3 font-medium transition-colors ${activeSection === 'horarios'
               ? 'border-b-2 border-[#3d2817] text-[#3d2817]'
               : 'text-stone-600 hover:text-[#3d2817]'
-          }`}
+            }`}
         >
           🕐 Horarios
         </button>
@@ -270,11 +268,10 @@ export default function ContenidoWebTab() {
               <button
                 key={horario.id}
                 onClick={() => handleToggleHorario(horario)}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  horario.activo
+                className={`p-4 rounded-lg border-2 transition-all ${horario.activo
                     ? 'border-green-500 bg-green-50 text-green-900'
                     : 'border-stone-300 bg-stone-50 text-stone-400'
-                }`}
+                  }`}
               >
                 <div className="text-2xl mb-1">🕐</div>
                 <div className="font-bold">{horario.hora}</div>

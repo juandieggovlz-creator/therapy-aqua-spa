@@ -36,7 +36,7 @@ export default function ServiciosTabMejorado() {
   const [formData, setFormData] = useState<Partial<Servicio>>({});
   const [uploadingImage, setUploadingImage] = useState(false);
   const [descuentoTemp, setDescuentoTemp] = useState(0);
-  
+
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState<string>('todas');
@@ -86,7 +86,7 @@ export default function ServiciosTabMejorado() {
   };
 
   const openEditModal = (servicio: Servicio) => {
-    setFormData({...servicio});
+    setFormData({ ...servicio });
     setSelectedServicio(servicio);
     setModalType('edit');
     setShowModal(true);
@@ -141,7 +141,7 @@ export default function ServiciosTabMejorado() {
 
     try {
       let dataToSave = { ...formData };
-      
+
       // Generar ID automático para nuevos servicios
       if (modalType === 'create' && !dataToSave.id) {
         const nombreParaId = dataToSave.nombre || 'servicio';
@@ -151,7 +151,7 @@ export default function ServiciosTabMejorado() {
           .replace(/[\u0300-\u036f]/g, '')
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
-        
+
         let id = idBase;
         let counter = 1;
         while (servicios.some(s => s.id === id)) {
@@ -184,7 +184,7 @@ export default function ServiciosTabMejorado() {
       const timestamp = Date.now();
       localStorage.setItem('servicios_actualizados', timestamp.toString());
       localStorage.setItem('necesita_recarga', 'true');
-      
+
       ['servicioActualizado', 'actualizarPaginaPrincipal'].forEach(evento => {
         window.dispatchEvent(new CustomEvent(evento, {
           detail: { timestamp, source: 'admin-save' },
@@ -212,7 +212,7 @@ export default function ServiciosTabMejorado() {
       const timestamp = Date.now();
       localStorage.setItem('servicios_actualizados', timestamp.toString());
       localStorage.setItem('necesita_recarga', 'true');
-      
+
       ['servicioActualizado', 'actualizarPaginaPrincipal'].forEach(evento => {
         window.dispatchEvent(new CustomEvent(evento, {
           detail: { timestamp, source: 'admin-delete' },
@@ -229,9 +229,9 @@ export default function ServiciosTabMejorado() {
       await fetch('/api/admin/servicios', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id: servicio.id, 
-          [field]: !servicio[field] 
+        body: JSON.stringify({
+          ...servicio,
+          [field]: !servicio[field]
         })
       });
       await loadData();
@@ -239,7 +239,7 @@ export default function ServiciosTabMejorado() {
       const timestamp = Date.now();
       localStorage.setItem('servicios_actualizados', timestamp.toString());
       localStorage.setItem('necesita_recarga', 'true');
-      
+
       ['servicioActualizado', 'actualizarPaginaPrincipal'].forEach(evento => {
         window.dispatchEvent(new CustomEvent(evento, {
           detail: { timestamp, source: 'admin-toggle' },
@@ -258,9 +258,9 @@ export default function ServiciosTabMejorado() {
       await fetch('/api/admin/descuentos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          servicioId: selectedServicio.id, 
-          descuento: descuentoTemp 
+        body: JSON.stringify({
+          servicioId: selectedServicio.id,
+          descuento: descuentoTemp
         })
       });
 
@@ -269,7 +269,7 @@ export default function ServiciosTabMejorado() {
           ? `Descuento del ${descuentoTemp}% aplicado`
           : 'Descuento eliminado'
       );
-      
+
       setShowModal(false);
       await loadData();
 
@@ -287,12 +287,12 @@ export default function ServiciosTabMejorado() {
   const serviciosFiltrados = servicios.filter(s => {
     const matchSearch = s.nombre.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategoria = filterCategoria === 'todas' || s.categoria === filterCategoria;
-    const matchEstado = 
+    const matchEstado =
       filterEstado === 'todos' ||
       (filterEstado === 'activos' && s.activo) ||
       (filterEstado === 'inactivos' && !s.activo) ||
       (filterEstado === 'destacados' && s.destacado);
-    
+
     return matchSearch && matchCategoria && matchEstado;
   });
 
@@ -417,11 +417,10 @@ export default function ServiciosTabMejorado() {
               <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-3 flex items-center justify-between">
                 <button
                   onClick={() => handleToggle(servicio, 'activo')}
-                  className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${
-                    servicio.activo
+                  className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${servicio.activo
                       ? 'bg-green-500 text-white'
                       : 'bg-gray-400 text-white'
-                  }`}
+                    }`}
                 >
                   {servicio.activo ? '✓ ACTIVO' : '✕ INACTIVO'}
                 </button>
@@ -446,7 +445,7 @@ export default function ServiciosTabMejorado() {
                     <p className="text-xs font-bold text-gray-500 uppercase mb-3 text-center">
                       👁️ Preview Web Pública
                     </p>
-                    
+
                     {/* Imagen Preview */}
                     <div className="relative h-40 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg overflow-hidden mb-3 shadow-md">
                       {servicio.imagen ? (
@@ -519,13 +518,13 @@ export default function ServiciosTabMejorado() {
                     <p className="text-xs font-bold text-blue-700 uppercase mb-2">
                       📋 Información
                     </p>
-                    
+
                     <div className="space-y-2 text-sm">
                       <div>
                         <p className="text-xs text-gray-600 font-semibold">Título:</p>
                         <p className="text-gray-900 font-medium">{servicio.nombre}</p>
                       </div>
-                      
+
                       {servicio.descripcion && (
                         <div>
                           <p className="text-xs text-gray-600 font-semibold">Descripción:</p>
@@ -582,11 +581,10 @@ export default function ServiciosTabMejorado() {
 
                     <button
                       onClick={() => handleToggle(servicio, 'destacado')}
-                      className={`w-full px-4 py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${
-                        servicio.destacado
+                      className={`w-full px-4 py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${servicio.destacado
                           ? 'bg-amber-500 text-white hover:bg-amber-600'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                        }`}
                     >
                       <svg className="w-5 h-5" fill={servicio.destacado ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -842,9 +840,9 @@ export default function ServiciosTabMejorado() {
                       </label>
                       <textarea
                         value={(formData.detalles || []).join('\n')}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          detalles: e.target.value.split('\n').filter(d => d.trim()) 
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          detalles: e.target.value.split('\n').filter(d => d.trim())
                         })}
                         rows={5}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"

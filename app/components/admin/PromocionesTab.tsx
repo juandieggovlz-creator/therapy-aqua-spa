@@ -41,7 +41,7 @@ export default function PromocionesTab() {
   const [showModal, setShowModal] = useState(false);
   const [editingPromocion, setEditingPromocion] = useState<Promocion | null>(null);
   const [itemsDisponibles, setItemsDisponibles] = useState<ItemSeleccionable[]>([]);
-  
+
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -208,10 +208,10 @@ export default function PromocionesTab() {
     }
 
     try {
-      const url = editingPromocion 
+      const url = editingPromocion
         ? '/api/admin/promociones'
         : '/api/admin/promociones';
-      
+
       const method = editingPromocion ? 'PATCH' : 'POST';
 
       const payload: any = {
@@ -251,9 +251,9 @@ export default function PromocionesTab() {
       );
 
       // Disparar evento para actualización en tiempo real
-      window.dispatchEvent(new CustomEvent('promocionActualizada', { 
+      window.dispatchEvent(new CustomEvent('promocionActualizada', {
         bubbles: true,
-        cancelable: true 
+        cancelable: true
       }));
 
       setShowModal(false);
@@ -283,10 +283,10 @@ export default function PromocionesTab() {
       if (!response.ok) throw new Error('Error al eliminar');
 
       showNotification.success('Promoción eliminada');
-      
-      window.dispatchEvent(new CustomEvent('promocionActualizada', { 
+
+      window.dispatchEvent(new CustomEvent('promocionActualizada', {
         bubbles: true,
-        cancelable: true 
+        cancelable: true
       }));
 
       await cargarPromociones();
@@ -302,7 +302,7 @@ export default function PromocionesTab() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: promocion.id,
+          ...promocion,
           activo: !promocion.activo
         })
       });
@@ -313,9 +313,9 @@ export default function PromocionesTab() {
         promocion.activo ? 'Promoción desactivada' : 'Promoción activada'
       );
 
-      window.dispatchEvent(new CustomEvent('promocionActualizada', { 
+      window.dispatchEvent(new CustomEvent('promocionActualizada', {
         bubbles: true,
-        cancelable: true 
+        cancelable: true
       }));
 
       await cargarPromociones();
@@ -448,17 +448,16 @@ export default function PromocionesTab() {
       <div className="grid grid-cols-1 gap-6">
         {promociones.map((promocion) => {
           const vigente = isPromocionVigente(promocion);
-          
+
           return (
             <div
               key={promocion.id}
-              className={`bg-white rounded-2xl overflow-hidden transition-all transform hover:scale-[1.01] ${
-                vigente
+              className={`bg-white rounded-2xl overflow-hidden transition-all transform hover:scale-[1.01] ${vigente
                   ? 'border-4 border-green-500 shadow-2xl shadow-green-200'
                   : promocion.activo
-                  ? 'border-4 border-purple-300 shadow-xl'
-                  : 'border-4 border-gray-300 opacity-70 shadow-lg'
-              }`}
+                    ? 'border-4 border-purple-300 shadow-xl'
+                    : 'border-4 border-gray-300 opacity-70 shadow-lg'
+                }`}
             >
               <div className="p-8">
                 <div className="flex items-start justify-between">
@@ -496,7 +495,7 @@ export default function PromocionesTab() {
                       <div className="bg-gradient-to-br from-amber-100 to-amber-50 rounded-xl p-4 border-2 border-amber-300 shadow-md">
                         <p className="text-xs text-amber-700 font-black mb-2 uppercase tracking-wide">Descuento</p>
                         <p className="text-base font-black text-amber-900">
-                          {promocion.tipo === 'porcentaje' 
+                          {promocion.tipo === 'porcentaje'
                             ? `${promocion.valorDescuento}%`
                             : `$${promocion.valorDescuento.toLocaleString()}`
                           }
@@ -576,11 +575,10 @@ export default function PromocionesTab() {
                   <div className="flex flex-col gap-3 ml-6">
                     <button
                       onClick={() => toggleActivo(promocion)}
-                      className={`px-6 py-3 rounded-xl font-black text-sm transition-all shadow-lg hover:shadow-xl transform hover:scale-105 ${
-                        promocion.activo
+                      className={`px-6 py-3 rounded-xl font-black text-sm transition-all shadow-lg hover:shadow-xl transform hover:scale-105 ${promocion.activo
                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 border-2 border-green-600'
                           : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600 border-2 border-gray-600'
-                      }`}
+                        }`}
                     >
                       {promocion.activo ? '✓ Activa' : '○ Inactiva'}
                     </button>
@@ -661,7 +659,7 @@ export default function PromocionesTab() {
                   {/* Información básica */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-bold text-gray-900">📝 Información Básica</h4>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Nombre de la Promoción *
@@ -669,7 +667,7 @@ export default function PromocionesTab() {
                       <input
                         type="text"
                         value={formData.nombre}
-                        onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Ej: Descuento de Verano"
                         required
@@ -682,7 +680,7 @@ export default function PromocionesTab() {
                       </label>
                       <textarea
                         value={formData.descripcion}
-                        onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Describe la promoción para tus clientes"
                         rows={3}
@@ -693,7 +691,7 @@ export default function PromocionesTab() {
                   {/* Tipo y valor de descuento */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-bold text-gray-900">💰 Tipo de Descuento</h4>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -701,7 +699,7 @@ export default function PromocionesTab() {
                         </label>
                         <select
                           value={formData.tipo}
-                          onChange={(e) => setFormData({...formData, tipo: e.target.value as TipoPromocion})}
+                          onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoPromocion })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         >
                           <option value="porcentaje">% Descuento Porcentual</option>
@@ -731,10 +729,9 @@ export default function PromocionesTab() {
                             <input
                               type="number"
                               value={formData.valorDescuento}
-                              onChange={(e) => setFormData({...formData, valorDescuento: Number(e.target.value)})}
-                              className={`w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                                formData.tipo === 'monto_fijo' ? 'pl-8' : ''
-                              }`}
+                              onChange={(e) => setFormData({ ...formData, valorDescuento: Number(e.target.value) })}
+                              className={`w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${formData.tipo === 'monto_fijo' ? 'pl-8' : ''
+                                }`}
                               min="0"
                               step={formData.tipo === 'porcentaje' ? '0.01' : '100'}
                               required
@@ -756,7 +753,7 @@ export default function PromocionesTab() {
                           <input
                             type="number"
                             value={formData.precioMinimo}
-                            onChange={(e) => setFormData({...formData, precioMinimo: Number(e.target.value)})}
+                            onChange={(e) => setFormData({ ...formData, precioMinimo: Number(e.target.value) })}
                             className="w-full px-4 py-3 pl-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                             min="0"
                             step="1000"
@@ -773,14 +770,14 @@ export default function PromocionesTab() {
                   {/* Aplicable a */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-bold text-gray-900">🎯 ¿A qué se aplica?</h4>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Aplicable a *
                       </label>
                       <select
                         value={formData.aplicableA}
-                        onChange={(e) => setFormData({...formData, aplicableA: e.target.value as AplicableA, itemsIncluidos: []})}
+                        onChange={(e) => setFormData({ ...formData, aplicableA: e.target.value as AplicableA, itemsIncluidos: [] })}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       >
                         <option value="todos">Todos los servicios y productos</option>
@@ -800,11 +797,10 @@ export default function PromocionesTab() {
                           {getItemsFiltrados().map((item) => (
                             <label
                               key={item.id}
-                              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                                formData.itemsIncluidos.includes(item.id)
+                              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${formData.itemsIncluidos.includes(item.id)
                                   ? 'bg-purple-100 border-2 border-purple-500'
                                   : 'bg-white border-2 border-gray-200 hover:border-purple-300'
-                              }`}
+                                }`}
                             >
                               <input
                                 type="checkbox"
@@ -831,7 +827,7 @@ export default function PromocionesTab() {
                   {/* Fechas y horarios */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-bold text-gray-900">📅 Vigencia y Horarios</h4>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -840,7 +836,7 @@ export default function PromocionesTab() {
                         <input
                           type="date"
                           value={formData.fechaInicio}
-                          onChange={(e) => setFormData({...formData, fechaInicio: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           required
                         />
@@ -852,7 +848,7 @@ export default function PromocionesTab() {
                         <input
                           type="date"
                           value={formData.fechaFin}
-                          onChange={(e) => setFormData({...formData, fechaFin: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           required
                         />
@@ -869,11 +865,10 @@ export default function PromocionesTab() {
                             key={index}
                             type="button"
                             onClick={() => toggleDia(index)}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                              formData.diasValidos.includes(index)
+                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${formData.diasValidos.includes(index)
                                 ? 'bg-purple-600 text-white'
                                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
+                              }`}
                           >
                             {dia}
                           </button>
@@ -889,7 +884,7 @@ export default function PromocionesTab() {
                         <input
                           type="time"
                           value={formData.horarioInicio}
-                          onChange={(e) => setFormData({...formData, horarioInicio: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, horarioInicio: e.target.value })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         />
                       </div>
@@ -900,7 +895,7 @@ export default function PromocionesTab() {
                         <input
                           type="time"
                           value={formData.horarioFin}
-                          onChange={(e) => setFormData({...formData, horarioFin: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, horarioFin: e.target.value })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         />
                       </div>
@@ -910,7 +905,7 @@ export default function PromocionesTab() {
                   {/* Configuración adicional */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-bold text-gray-900">⚙️ Configuración Adicional</h4>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -919,7 +914,7 @@ export default function PromocionesTab() {
                         <input
                           type="number"
                           value={formData.maximoUsos || ''}
-                          onChange={(e) => setFormData({...formData, maximoUsos: e.target.value ? Number(e.target.value) : undefined})}
+                          onChange={(e) => setFormData({ ...formData, maximoUsos: e.target.value ? Number(e.target.value) : undefined })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           min="1"
                           placeholder="Ilimitado"
@@ -936,7 +931,7 @@ export default function PromocionesTab() {
                         <input
                           type="number"
                           value={formData.prioridad}
-                          onChange={(e) => setFormData({...formData, prioridad: Number(e.target.value)})}
+                          onChange={(e) => setFormData({ ...formData, prioridad: Number(e.target.value) })}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           min="1"
                           max="10"
@@ -954,7 +949,7 @@ export default function PromocionesTab() {
                       <input
                         type="text"
                         value={formData.codigoPromocion}
-                        onChange={(e) => setFormData({...formData, codigoPromocion: e.target.value.toUpperCase()})}
+                        onChange={(e) => setFormData({ ...formData, codigoPromocion: e.target.value.toUpperCase() })}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 uppercase"
                         placeholder="VERANO2026"
                         maxLength={50}
@@ -969,7 +964,7 @@ export default function PromocionesTab() {
                         <input
                           type="checkbox"
                           checked={formData.activo}
-                          onChange={(e) => setFormData({...formData, activo: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
                           className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
                         />
                         <span className="text-sm font-semibold text-gray-700">
@@ -981,7 +976,7 @@ export default function PromocionesTab() {
                         <input
                           type="checkbox"
                           checked={formData.visibleWeb}
-                          onChange={(e) => setFormData({...formData, visibleWeb: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, visibleWeb: e.target.checked })}
                           className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
                         />
                         <span className="text-sm font-semibold text-gray-700">
