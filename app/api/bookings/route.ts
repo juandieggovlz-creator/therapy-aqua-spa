@@ -12,22 +12,6 @@ import {
   liberarExpiradas,
 } from "@/lib/reservas-helpers";
 
-// GET /api/bookings - Obtener todas las reservas
-export async function GET() {
-  try {
-    const bookings = await leerReservas();
-    return NextResponse.json({
-      success: true,
-      bookings: bookings || []
-    }, { status: 200 });
-  } catch (error) {
-    console.error("Error en GET /api/bookings:", error);
-    return NextResponse.json(
-      { error: "Error al obtener reservas" },
-      { status: 500 }
-    );
-  }
-}
 
 
 // Función para enviar notificación a Telegram
@@ -168,7 +152,10 @@ export async function GET(request: Request) {
     }
 
     // Compatibilidad: devolver como "bookings" para el frontend
-    return NextResponse.json({ bookings: reservas }, { status: 200 });
+    return NextResponse.json({
+      success: true,
+      bookings: reservas
+    }, { status: 200 });
   } catch (e) {
     console.error("Error en GET /api/bookings:", e);
     return NextResponse.json(
