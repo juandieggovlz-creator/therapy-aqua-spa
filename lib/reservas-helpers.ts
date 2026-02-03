@@ -2,9 +2,7 @@
  * Helpers para gestión de reservas usando Prisma
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export type Reserva = {
   id: number;
@@ -103,7 +101,7 @@ export async function updateReserva(
 ): Promise<boolean> {
   try {
     console.log(`🔄 updateReserva - ID: ${reservationId}, Updates:`, updates);
-    
+
     // Obtener la reserva actual para actualizar el JSONB correctamente
     const reservaActual = await prisma.reserva.findFirst({
       where: { reservation_id: reservationId }
@@ -118,7 +116,7 @@ export async function updateReserva(
 
     // Separar campos que van directamente en la tabla vs los que van en el JSONB
     const { esAfiliado, duracionTotal, duracion, precio, total, ...otrosUpdates } = updates;
-    
+
     // Actualizar el campo servicios JSONB si hay cambios relacionados
     let serviciosActualizados = reservaActual.servicios;
     if (esAfiliado !== undefined || duracionTotal !== undefined || duracion !== undefined) {
@@ -157,7 +155,7 @@ export async function updateReserva(
       where: { reservation_id: reservationId },
       data: dataToUpdate
     });
-    
+
     console.log(`✅ Reserva actualizada exitosamente. Registros afectados: ${result.count}`);
     return true;
   } catch (error) {

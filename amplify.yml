@@ -4,6 +4,9 @@ frontend:
     preBuild:
       commands:
         - npm ci
+        - echo "DATABASE_URL=\"$DATABASE_URL\"" >> .env
+        - echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> .env
+        - echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> .env
         - npx prisma generate
     build:
       commands:

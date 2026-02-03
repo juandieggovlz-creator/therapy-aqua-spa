@@ -1,8 +1,6 @@
 export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 // GET - Obtener servicios adicionales activos para la página pública
 export async function GET() {

@@ -1,7 +1,6 @@
 export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 // GET - Obtener promociones activas y vigentes para mostrar en la web pública
 export async function GET() {
