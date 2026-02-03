@@ -12,6 +12,24 @@ import {
   liberarExpiradas,
 } from "@/lib/reservas-helpers";
 
+// GET /api/bookings - Obtener todas las reservas
+export async function GET() {
+  try {
+    const bookings = await leerReservas();
+    return NextResponse.json({
+      success: true,
+      bookings: bookings || []
+    }, { status: 200 });
+  } catch (error) {
+    console.error("Error en GET /api/bookings:", error);
+    return NextResponse.json(
+      { error: "Error al obtener reservas" },
+      { status: 500 }
+    );
+  }
+}
+
+
 // Función para enviar notificación a Telegram
 async function enviarNotificacionTelegram(reserva: any) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
