@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
@@ -56,22 +57,22 @@ export async function GET() {
       visibleWeb: p.visible_web
     }));
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       promociones: promocionesFormateadas,
-      success: true 
+      success: true
     });
   } catch (error: any) {
     console.error('❌ Error obteniendo promociones:', error);
-    
+
     // Si la tabla no existe, retornar array vacío
     if (error?.code === '42P01') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         promociones: [],
         success: true,
         message: 'Tabla promociones no existe aún'
       });
     }
-    
+
     return NextResponse.json(
       { error: 'Error al obtener promociones', success: false },
       { status: 500 }
@@ -83,7 +84,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Generar ID único
     const promocionId = `PROMO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -137,20 +138,20 @@ export async function POST(request: Request) {
 
     console.log('✅ Promoción creada:', promocionId);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       promocion: { id: promocionId },
-      success: true 
+      success: true
     });
   } catch (error: any) {
     console.error('❌ Error creando promoción:', error);
-    
+
     if (error?.code === '42P01') {
       return NextResponse.json(
         { error: 'Tabla promociones no existe. Ejecuta la migración de Prisma.', success: false },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Error al crear promoción', success: false },
       { status: 500 }
@@ -248,7 +249,7 @@ export async function PATCH(request: Request) {
     updates.push(`updated_at = NOW()`);
 
     if (updates.length === 1) { // Solo updated_at
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
         message: 'No hay cambios que aplicar'
       });
@@ -265,19 +266,19 @@ export async function PATCH(request: Request) {
 
     console.log('✅ Promoción actualizada:', id);
 
-    return NextResponse.json({ 
-      success: true 
+    return NextResponse.json({
+      success: true
     });
   } catch (error: any) {
     console.error('❌ Error actualizando promoción:', error);
-    
+
     if (error?.code === '42P01') {
       return NextResponse.json(
         { error: 'Tabla promociones no existe', success: false },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Error al actualizar promoción', success: false },
       { status: 500 }
@@ -305,19 +306,19 @@ export async function DELETE(request: Request) {
 
     console.log('✅ Promoción eliminada:', id);
 
-    return NextResponse.json({ 
-      success: true 
+    return NextResponse.json({
+      success: true
     });
   } catch (error: any) {
     console.error('❌ Error eliminando promoción:', error);
-    
+
     if (error?.code === '42P01') {
       return NextResponse.json(
         { error: 'Tabla promociones no existe', success: false },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Error al eliminar promoción', success: false },
       { status: 500 }

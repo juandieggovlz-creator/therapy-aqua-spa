@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -22,9 +23,9 @@ export async function GET() {
 
     console.log(`✅ ${productos.length} productos cargados`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       productos: productosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo productos:', error);
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
 
     console.log(`✅ Producto creado: ${productoId}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       producto_id: productoId,
       message: 'Producto creado exitosamente'
@@ -104,7 +105,7 @@ export async function PATCH(request: Request) {
 
     console.log(`✅ Producto actualizado: ${id}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Producto actualizado exitosamente'
     });
@@ -139,7 +140,7 @@ export async function DELETE(request: Request) {
 
     console.log(`✅ Producto eliminado: ${id}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Producto eliminado exitosamente'
     });

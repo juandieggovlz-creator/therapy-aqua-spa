@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('❌ Error obteniendo horarios ocupados:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Error al obtener horarios ocupados',
         horariosOcupados: []

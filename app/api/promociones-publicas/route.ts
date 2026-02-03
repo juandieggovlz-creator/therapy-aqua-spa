@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
@@ -7,7 +8,7 @@ export async function GET() {
   try {
     const hoy = new Date().toISOString().split('T')[0];
     const diaSemana = new Date().getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
-    
+
     const promociones: any[] = await prisma.$queryRaw`
       SELECT 
         promocion_id,
@@ -50,9 +51,9 @@ export async function GET() {
       prioridad: p.prioridad
     }));
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       promociones: promocionesFormateadas,
-      success: true 
+      success: true
     }, {
       headers: {
         'Cache-Control': 'no-store, must-revalidate',
@@ -62,15 +63,15 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error('❌ Error obteniendo promociones públicas:', error);
-    
+
     // Si la tabla no existe, retornar array vacío
     if (error?.code === '42P01') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         promociones: [],
         success: true
       });
     }
-    
+
     return NextResponse.json(
       { error: 'Error al obtener promociones', success: false },
       { status: 500 }

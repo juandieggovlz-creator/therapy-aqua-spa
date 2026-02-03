@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -37,16 +38,16 @@ export async function POST(request: NextRequest) {
     // Crear nombre único para el archivo
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
+
     // Generar nombre único con timestamp
     const timestamp = Date.now();
     const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const extension = originalName.split('.').pop() || 'jpg';
     const fileName = `${timestamp}_${originalName}`;
-    
+
     // Ruta donde se guardará la imagen
     const imageDir = join(process.cwd(), 'public', 'image');
-    
+
     // Crear directorio si no existe
     if (!existsSync(imageDir)) {
       await mkdir(imageDir, { recursive: true });
@@ -61,8 +62,8 @@ export async function POST(request: NextRequest) {
     const imageUrl = `/image/${fileName}`;
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         url: imageUrl,
         fileName: fileName,
         message: 'Imagen subida correctamente'

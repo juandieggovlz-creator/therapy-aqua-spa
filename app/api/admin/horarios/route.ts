@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 
 // GET - Obtener todos los horarios
@@ -6,9 +7,9 @@ export async function GET() {
     // TODO: Implementar cuando la tabla horarios exista en Neon
     const horarios: any[] = [];
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       horarios,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo horarios:', error);
@@ -23,9 +24,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // TODO: Implementar cuando la tabla horarios exista en Neon
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Funcionalidad no disponible',
-      success: false 
+      success: false
     }, { status: 501 });
   } catch (error) {
     console.error('❌ Error creando horario:', error);
@@ -40,9 +41,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     // TODO: Implementar cuando la tabla horarios exista en Neon
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Funcionalidad no disponible',
-      success: false 
+      success: false
     }, { status: 501 });
   } catch (error) {
     console.error('❌ Error actualizando horario:', error);
@@ -57,9 +58,9 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     // TODO: Implementar cuando la tabla horarios exista en Neon
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Funcionalidad no disponible',
-      success: false 
+      success: false
     }, { status: 501 });
   } catch (error) {
     console.error('❌ Error eliminando horario:', error);

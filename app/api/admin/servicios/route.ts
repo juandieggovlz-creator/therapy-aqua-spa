@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -32,7 +33,7 @@ export async function GET() {
           imagenUrl = `/image/${encodeURIComponent(imagenUrl)}`;
         }
       }
-      
+
       return {
         ...s,
         id: s.servicio_id, // Usar servicio_id como id para el frontend
@@ -44,9 +45,9 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       servicios: serviciosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo servicios:', error);
@@ -61,17 +62,17 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Generar servicio_id único
     const servicioId = `srv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
+
     // Procesar la imagen para asegurar formato correcto
     let imagenFinal = body.imagen || '';
     if (imagenFinal && !imagenFinal.startsWith('http') && !imagenFinal.startsWith('/image/')) {
       // Si es solo un nombre de archivo, agregar la ruta /image/
       imagenFinal = `/image/${encodeURIComponent(imagenFinal)}`;
     }
-    
+
     // Usar query raw para insertar
     await prisma.$executeRaw`
       INSERT INTO servicios (servicio_id, nombre, descripcion, categoria, precio, duracion, icon, imagen, activo, orden, detalles, created_at, updated_at)
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
 
     console.log('✅ Servicio creado:', servicioId);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       servicio: {
         id: servicioId,
         servicio_id: servicioId,
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
         descuento: 0,
         destacado: false
       },
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error creando servicio:', error);
@@ -161,16 +162,16 @@ export async function PATCH(request: Request) {
       if (validUpdates.activo !== undefined) setStatements.push(`activo = ${validUpdates.activo}`);
       if (validUpdates.orden !== undefined) setStatements.push(`orden = ${validUpdates.orden}`);
       if (validUpdates.detalles !== undefined) setStatements.push(`detalles = '${JSON.stringify(validUpdates.detalles).replace(/'/g, "''")}'::jsonb`);
-      
+
       setStatements.push(`updated_at = NOW()`);
-      
+
       const query = `UPDATE servicios SET ${setStatements.join(', ')} WHERE servicio_id = '${id}'`;
       await prisma.$executeRawUnsafe(query);
     }
 
     console.log('✅ Servicio actualizado:', id);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       servicio: {
         id: id,
         servicio_id: id,
@@ -179,7 +180,7 @@ export async function PATCH(request: Request) {
         descuento: 0,
         destacado: false
       },
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error actualizando servicio:', error);

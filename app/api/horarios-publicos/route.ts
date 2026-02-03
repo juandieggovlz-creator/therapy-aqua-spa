@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 
 // GET - Obtener horarios activos para la página pública
@@ -15,9 +16,9 @@ export async function GET() {
       '15:00'
     ];
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       horarios: horariosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo horarios públicos:', error);

@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -7,7 +8,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     console.log('📥 GET /api/admin/descuentos - Obteniendo descuentos...');
-    
+
     // Obtener todos los servicios con sus descuentos
     const servicios = await prisma.$queryRaw<any[]>`
       SELECT servicio_id, nombre, descuento
@@ -23,9 +24,9 @@ export async function GET() {
 
     console.log(`✅ ${servicios.length} descuentos cargados`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       descuentos,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo descuentos:', error);
@@ -69,7 +70,7 @@ export async function PATCH(request: Request) {
 
     console.log(`✅ Descuento actualizado: ${servicioId} -> ${descuentoNum}%`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: `Descuento de ${descuentoNum}% aplicado correctamente`
     });

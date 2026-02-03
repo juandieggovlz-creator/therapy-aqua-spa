@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
 // Base de datos temporal de afiliados (en producción usar BD real)

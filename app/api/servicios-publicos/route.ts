@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -21,10 +22,10 @@ export async function GET() {
       if (imagenDB === 'null' || imagenDB === null || imagenDB === undefined) {
         imagenDB = '';
       }
-      
+
       // Procesar la imagen para asegurar que tenga la ruta correcta
       let imagenFinal = imagenDB;
-      
+
       if (imagenFinal) {
         if (imagenFinal.startsWith('http')) {
           // URL externa, dejar como está
@@ -40,14 +41,14 @@ export async function GET() {
           imagenFinal = `/image/${encodeURIComponent(imagenFinal)}`;
         }
       }
-      
+
       // Calcular precio con descuento
       const precioOriginal = Number(s.precio);
       const descuento = s.descuento || 0;
-      const precioConDescuento = descuento > 0 
+      const precioConDescuento = descuento > 0
         ? Math.round(precioOriginal * (1 - descuento / 100))
         : precioOriginal;
-      
+
       return {
         id: s.servicio_id,
         key: s.servicio_id,
@@ -63,7 +64,7 @@ export async function GET() {
         precio: precioConDescuento,
         precioOriginal: precioOriginal,
         descuento: descuento,
-        priceLabel: descuento > 0 
+        priceLabel: descuento > 0
           ? `$${precioConDescuento.toLocaleString()}`
           : `$${precioOriginal.toLocaleString()}`,
         icon: s.icon || '💆',
@@ -74,9 +75,9 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       servicios: serviciosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo servicios públicos:', error);

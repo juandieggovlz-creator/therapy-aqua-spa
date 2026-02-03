@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 
 // GET - Obtener toda la configuración
@@ -6,9 +7,9 @@ export async function GET() {
     // TODO: Implementar cuando la tabla configuracion exista en Neon
     const configuraciones: any[] = [];
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       configuraciones,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo configuración:', error);
@@ -23,9 +24,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // TODO: Implementar cuando la tabla configuracion exista en Neon
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Funcionalidad no disponible',
-      success: false 
+      success: false
     }, { status: 501 });
   } catch (error) {
     console.error('❌ Error creando configuración:', error);
@@ -40,9 +41,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     // TODO: Implementar cuando la tabla configuracion exista en Neon
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Funcionalidad no disponible',
-      success: false 
+      success: false
     }, { status: 501 });
   } catch (error) {
     console.error('❌ Error actualizando configuración:', error);
@@ -57,9 +58,9 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     // TODO: Implementar cuando la tabla configuracion exista en Neon
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Funcionalidad no disponible',
-      success: false 
+      success: false
     }, { status: 501 });
   } catch (error) {
     console.error('❌ Error eliminando configuración:', error);

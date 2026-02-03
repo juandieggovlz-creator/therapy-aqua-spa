@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
 // Credenciales seguras (en producción usar base de datos con hash bcrypt)
@@ -11,7 +12,7 @@ const USERS = {
   },
   fisio: {
     username: "fisio@therapyaquaspa.com",
-    email: "fisio@therapyaquaspa.com", 
+    email: "fisio@therapyaquaspa.com",
     password: "Fisio2026!Therapy#Pro",
     role: "fisio",
     name: "Dra. Carolina Trujillo"

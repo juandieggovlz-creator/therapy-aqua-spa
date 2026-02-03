@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { CLIENTES, Cliente } from "./data";
 
@@ -5,17 +6,17 @@ import { CLIENTES, Cliente } from "./data";
 export async function GET() {
   try {
     console.log(`📋 API Clientes GET - Total clientes en CLIENTES: ${CLIENTES.length}`);
-    
+
     // Ordenar por fecha de registro (más recientes primero)
-    const clientesOrdenados = [...CLIENTES].sort((a, b) => 
+    const clientesOrdenados = [...CLIENTES].sort((a, b) =>
       new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
     );
-    
+
     console.log(`📋 API Clientes GET - Retornando ${clientesOrdenados.length} clientes ordenados`);
     if (clientesOrdenados.length > 0) {
       console.log(`   Primer cliente: ${clientesOrdenados[0].nombre} (${clientesOrdenados[0].telefono})`);
     }
-    
+
     return NextResponse.json({ clientes: clientesOrdenados }, { status: 200 });
   } catch (e) {
     console.error('❌ Error en GET /api/clientes:', e);
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       clienteExistente.nombre = nombre;
       if (email) clienteExistente.email = email;
       if (notas) clienteExistente.notas = notas;
-      
+
       return NextResponse.json(
         { success: true, cliente: clienteExistente, message: "Cliente actualizado" },
         { status: 200 }

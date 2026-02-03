@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 // API de compatibilidad para el sistema de reservas
 // Usa Vercel Postgres en producción y JSON en desarrollo
 import { NextResponse } from "next/server";

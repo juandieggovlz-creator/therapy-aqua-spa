@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -23,9 +24,9 @@ export async function GET() {
 
     console.log(`✅ ${servicios.length} servicios adicionales cargados`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       servicios: serviciosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo servicios adicionales:', error);
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
 
     console.log(`✅ Servicio adicional creado: ${servicioId}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       servicio_id: servicioId,
       message: 'Servicio adicional creado exitosamente'
@@ -110,7 +111,7 @@ export async function PATCH(request: Request) {
 
     console.log(`✅ Servicio adicional actualizado: ${id}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Servicio adicional actualizado exitosamente'
     });
@@ -145,7 +146,7 @@ export async function DELETE(request: Request) {
 
     console.log(`✅ Servicio adicional eliminado: ${id}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Servicio adicional eliminado exitosamente'
     });

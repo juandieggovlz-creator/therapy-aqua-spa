@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -26,9 +27,9 @@ export async function GET() {
 
     console.log(`✅ ${productos.length} productos activos`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       productos: productosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo productos públicos:', error);

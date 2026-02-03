@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
 // Ajustes globales del negocio
@@ -48,7 +49,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Actualizar ajustes de forma recursiva
     const actualizarAjustes = (obj: any, updates: any) => {
       for (const key in updates) {
@@ -62,7 +63,7 @@ export async function PATCH(request: Request) {
     };
 
     actualizarAjustes(ajustes, body);
-    
+
     return NextResponse.json(
       { success: true, ajustes },
       { status: 200 }

@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
 // Simulación de almacenamiento (en producción sería una BD)

@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -27,9 +28,9 @@ export async function GET() {
 
     console.log(`✅ ${servicios.length} servicios adicionales activos`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       servicios: serviciosFormateados,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error('❌ Error obteniendo servicios adicionales públicos:', error);
