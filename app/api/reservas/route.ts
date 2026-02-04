@@ -36,6 +36,19 @@ export async function GET(request: Request) {
 // POST /api/reservas - Crear reserva (Redirige a Prisma)
 export async function POST(request: Request) {
   try {
+    console.log("=== PRISMA RUNTIME CHECK (reservas) ===");
+    console.log("DATABASE_URL exists?", !!process.env.DATABASE_URL);
+
+    if (process.env.DATABASE_URL) {
+      console.log(
+        "DATABASE_URL preview:",
+        process.env.DATABASE_URL.slice(0, 30)
+      );
+    } else {
+      console.log("DATABASE_URL is MISSING in runtime");
+    }
+    console.log("===========================");
+
     const body = await request.json();
     const nuevaReserva = await crearReserva(body);
 
