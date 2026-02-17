@@ -999,7 +999,10 @@ ${listaServicios}
     const totalServiciosOriginal = serviciosSeleccionados.reduce((acc, id) => {
       const servicio = serviciosAdicionales.find(s => s.id === id);
       if (servicio) {
-        return acc + (esAfiliado ? servicio.precioAfiliado : servicio.precioParticular);
+        return acc + (esAfiliado
+          ? (servicio.precioAfiliado ?? 0)
+          : (servicio.precioParticular ?? 0)
+        );
       }
       return acc;
     }, 0);
