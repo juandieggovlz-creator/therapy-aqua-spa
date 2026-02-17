@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 type DiaHorario = {
   abierto: boolean;
@@ -41,18 +41,41 @@ type Contacto = {
 };
 
 export default function ContactoPage() {
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('/api/configuracion-publica');
+        const data = await res.json();
+        if (data.success) {
+          setConfig(data.configuracion);
+        }
+      } catch (e) {
+        console.error('Error fetching config:', e);
+      }
+      setLoading(false);
+    };
+    fetchConfig();
+  }, []);
+
   const ubicacion: Ubicacion = {
-    direccion: 'Calle 138 Nro. 55-38',
+    direccion: config?.contact_address?.valor || 'Calle 138 Nro. 55-38',
     lugar: 'Círculo de Suboficiales de las Fuerzas Militares',
     ciudad: 'Bogotá D.C.',
-    mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
+    mapaLink: config?.contact_google_maps?.valor || 'https://www.google.com/maps/place/C%C3%ADrculo+de+Suboficiales+de+las+Fuerzas+Militares+Sede+Social+Colina+Campestre/@4.7270293,-74.0630815,17z/data=!3m1!4b1!4m6!3m5!1s0x8e3f85166d81d1a9:0x2f6f5f8e86302677!8m2!3d4.727024!4d-74.0605066!16s%2Fg%2F1tj74n8d?entry=ttu&g_ep=EgoyMDI2MDIxMS4wIKXMDSoASAFQAw%3D%3D',
+    parqueadero: true,
+    acceso: 'Acceso seguro vigilado'
   };
+
   const contacto: Contacto = {
-    telefono: '+57 301 4185239',
-    email: 'contacto@therapyspa.com',
-    whatsappLink: 'https://wa.me/573014185239',
-    horariosAtencion: 'Jue - Dom: 8:00 AM - 4:00 PM'
+    telefono: config?.contact_whatsapp?.valor || '+57 301 4185239',
+    email: config?.contact_email?.valor || 'contacto@therapyspa.com',
+    whatsappLink: `https://wa.me/${(config?.contact_whatsapp?.valor || '573014185239').replace(/\D/g, '')}`,
+    horariosAtencion: config?.contact_schedule?.valor || 'Jue - Dom: 8:00 AM - 4:00 PM'
   };
+
   const horarios: Horarios = {
     lunes: { abierto: false, apertura: '08:00', cierre: '16:00' },
     martes: { abierto: false, apertura: '08:00', cierre: '16:00' },
@@ -62,7 +85,7 @@ export default function ContactoPage() {
     sabado: { abierto: true, apertura: '08:00', cierre: '16:00' },
     domingo: { abierto: true, apertura: '08:00', cierre: '16:00' }
   };
-  
+
   const formatearHora = (hora: string) => {
     if (!hora) return '';
     const [h, m] = hora.split(':');
@@ -84,7 +107,7 @@ export default function ContactoPage() {
   // Agrupar días por horario para mostrar más compacto
   const diasAbiertos: string[] = [];
   const diasCerrados: string[] = [];
-  
+
   const diasMap = [
     { key: 'lunes', label: 'Lunes' },
     { key: 'martes', label: 'Martes' },
@@ -96,7 +119,7 @@ export default function ContactoPage() {
   ];
 
   let horarioAbiertoTexto = '';
-  
+
   diasMap.forEach(({ key, label }) => {
     const diaData = horarios[key as keyof typeof horarios];
     if (diaData?.abierto) {
@@ -139,7 +162,7 @@ export default function ContactoPage() {
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden transform transition-all duration-500 hover:shadow-2xl">
             <div className="relative h-[400px] w-full">
               <iframe
-                src={ubicacion.mapaEmbed || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.862596289032!2d-74.1048!3d4.7108!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDInMzguOSJOIDc0wrAwNicyOC44Ilc!5e0!3m2!1ses!2sco!4v1234567890123!5m2!1ses!2sco"}
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.4384183610444!2d-74.0626953250211!3d4.727024095248108!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f85166d81d1a9%3A0x2f6f5f8e86302677!2sC%C3%ADrculo%20de%20Suboficiales%20de%20las%20Fuerzas%20Militares%20Sede%20Social%20Colina%20Campestre!5e0!3m2!1ses!2sco!4v1700000000000!5m2!1ses!2sco"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -154,9 +177,9 @@ export default function ContactoPage() {
                 📍 Therapy Aqua Spa
               </h3>
               <p className="text-sm md:text-base text-stone-600 mb-4">
-                {ubicacion.direccion || 'Calle 138 Nro. 55-38'}<br />
-                {ubicacion.lugar || 'Círculo de Suboficiales de las Fuerzas Militares'}<br />
-                {ubicacion.ciudad || 'Bogotá D.C., Colombia'}
+                <strong>Dirección:</strong> {ubicacion.direccion || 'Calle 138 Nro. 55-38, Bogotá D.C.'}<br />
+                <strong>Sede:</strong> {ubicacion.lugar || 'Círculo de Suboficiales de las Fuerzas Militares'}<br />
+                <strong>Ciudad:</strong> {ubicacion.ciudad || 'Bogotá D.C.'}
               </p>
               <div className="flex items-center gap-2 text-xs md:text-sm text-green-600 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -190,7 +213,7 @@ export default function ContactoPage() {
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" className="w-7 h-7">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                   </svg>
                 </div>
                 <div className="flex-1">
@@ -252,11 +275,11 @@ export default function ContactoPage() {
                 {diasCerrados.length > 0 && (
                   <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-200">
                     <span className="font-semibold text-stone-700">
-                      {diasCerrados.length === 1 
+                      {diasCerrados.length === 1
                         ? diasCerrados[0]
                         : diasCerrados.length === 2
-                        ? `${diasCerrados[0]} - ${diasCerrados[1]}`
-                        : `${diasCerrados[0]} - ${diasCerrados[diasCerrados.length - 1]}`}
+                          ? `${diasCerrados[0]} - ${diasCerrados[1]}`
+                          : `${diasCerrados[0]} - ${diasCerrados[diasCerrados.length - 1]}`}
                     </span>
                     <span className="text-red-600 font-bold">Cerrado</span>
                   </div>
@@ -264,11 +287,11 @@ export default function ContactoPage() {
                 {diasAbiertos.length > 0 && (
                   <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
                     <span className="font-semibold text-stone-700">
-                      {diasAbiertos.length === 1 
+                      {diasAbiertos.length === 1
                         ? diasAbiertos[0]
                         : diasAbiertos.length === 2
-                        ? `${diasAbiertos[0]} - ${diasAbiertos[1]}`
-                        : `${diasAbiertos[0]} - ${diasAbiertos[diasAbiertos.length - 1]}`}
+                          ? `${diasAbiertos[0]} - ${diasAbiertos[1]}`
+                          : `${diasAbiertos[0]} - ${diasAbiertos[diasAbiertos.length - 1]}`}
                     </span>
                     <span className="text-green-600 font-bold">{horarioAbiertoTexto || contacto.horariosAtencion || '08:00 AM - 04:00 PM'}</span>
                   </div>
@@ -333,7 +356,7 @@ export default function ContactoPage() {
           <h2 className="text-2xl md:text-3xl text-[#3d2817] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
             ¿Tienes alguna pregunta?
           </h2>
-            <p className="text-stone-600 mb-8 text-sm md:text-base max-w-2xl mx-auto">
+          <p className="text-stone-600 mb-8 text-sm md:text-base max-w-2xl mx-auto">
             Estamos disponibles para resolver todas tus dudas. Contáctanos por WhatsApp y recibe atención inmediata.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -345,7 +368,7 @@ export default function ContactoPage() {
                 className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                 </svg>
                 Chatear ahora
               </a>

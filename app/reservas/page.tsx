@@ -687,13 +687,13 @@ function ReservasContentInner() {
 
     const subtotalConDescuentosIndividuales = totalTerapiasConDescuento + totalServiciosOriginal + totalProductosOriginal;
 
-    // 3️⃣ APLICAR DESCUENTO DE AFILIADO (20% sobre el SUBTOTAL COMPLETO)
+    // 3️⃣ APLICAR DESCUENTO DE AFILIADO (10% sobre el SUBTOTAL COMPLETO)
     let descuentoAfiliado = 0;
     let subtotalConDescuentoAfiliado = subtotalConDescuentosIndividuales;
 
     if (esAfiliado) {
-      // Aplicar 20% sobre TODO el subtotal (terapias + servicios adicionales + productos)
-      descuentoAfiliado = subtotalConDescuentosIndividuales * 0.20;
+      // Aplicar 10% sobre TODO el subtotal (terapias + servicios adicionales + productos)
+      descuentoAfiliado = subtotalConDescuentosIndividuales * 0.10;
       subtotalConDescuentoAfiliado = subtotalConDescuentosIndividuales - descuentoAfiliado;
     }
 
@@ -727,7 +727,7 @@ function ReservasContentInner() {
               precio = precio * (1 - descuentosServicios[id] / 100);
             }
             if (esAfiliado) {
-              precio = precio * 0.8;
+              precio = precio * 0.9;
             }
             return acc + precio;
           }, 0);
@@ -994,6 +994,15 @@ ${listaServicios}
       setTimeout(() => setMensajeErrorHorario(''), 5000);
       return;
     }
+
+    // 2️⃣ SUBTOTAL DE SERVICIOS ADICIONALES (Precio diferencial para afiliados)
+    const totalServiciosOriginal = serviciosSeleccionados.reduce((acc, id) => {
+      const servicio = serviciosAdicionales.find(s => s.id === id);
+      if (servicio) {
+        return acc + (esAfiliado ? servicio.precioAfiliado : servicio.precioParticular);
+      }
+      return acc;
+    }, 0);
 
     const reserva = {
       esAfiliado,
@@ -1300,12 +1309,12 @@ ${listaServicios}
             Reserva tu Cita
           </h1>
           {afiliadoNombre && (
-            <div className="mb-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 px-6 py-3 rounded-full border-2 border-green-300">
-              <span className="text-2xl">🏅</span>
-              <p className="text-sm font-semibold text-[#3d2817]">
-                Bienvenido, <span className="text-green-700">{afiliadoNombre}</span>
-              </p>
-              <span className="text-xs text-stone-600">(Descuentos activos)</span>
+            <div className="flex justify-center mb-6">
+              <div className="flex items-center gap-2 text-stone-800 font-medium bg-stone-100/50 px-4 py-2 rounded-full border border-stone-200">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span>Afiliado identificado: <span className="text-emerald-700 font-bold">{afiliadoNombre}</span></span>
+                <span className="ml-2 bg-emerald-100 text-emerald-700 text-[11px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Beneficio 10% OFF</span>
+              </div>
             </div>
           )}
           <p className="text-lg text-stone-600">
@@ -1329,7 +1338,7 @@ ${listaServicios}
               <div className="flex-1">
                 <h3 className="font-bold text-[#3d2817] mb-2 text-lg">¿Eres Afiliado?</h3>
                 <p className="text-sm text-stone-700 mb-3">
-                  Si eres afiliado, obtendrás un <strong className="text-green-600">20% de descuento</strong> en el total de tu reserva, aplicable a:
+                  Si eres afiliado, obtendrás un <strong className="text-green-600">10% de descuento</strong> en el total de tu reserva, aplicable a:
                 </p>
                 <ul className="text-xs text-stone-600 space-y-1 mb-3 list-disc list-inside">
                   <li>Servicios adicionales (Sauna, Jacuzzi, Baño Turco)</li>
@@ -1386,8 +1395,8 @@ ${listaServicios}
                     key={terapia.id}
                     onClick={() => toggleTerapia(terapia.id)}
                     className={`group relative p-6 rounded-2xl border-4 transition-all duration-300 text-left ${terapiasSeleccionadas.includes(terapia.id)
-                        ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-stone-100 shadow-xl ring-4 ring-amber-200 ring-opacity-50'
-                        : 'border-stone-200 hover:border-amber-300 bg-white hover:shadow-lg'
+                      ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-stone-100 shadow-xl ring-4 ring-amber-200 ring-opacity-50'
+                      : 'border-stone-200 hover:border-amber-300 bg-white hover:shadow-lg'
                       }`}
                   >
                     <div className="flex items-start gap-4">
@@ -1434,8 +1443,8 @@ ${listaServicios}
                         </div>
                       </div>
                       <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${terapiasSeleccionadas.includes(terapia.id)
-                          ? 'border-[#3d2817] bg-[#3d2817]'
-                          : 'border-stone-300'
+                        ? 'border-[#3d2817] bg-[#3d2817]'
+                        : 'border-stone-300'
                         }`}>
                         {terapiasSeleccionadas.includes(terapia.id) && (
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1694,8 +1703,8 @@ ${listaServicios}
                         key={servicio.id}
                         onClick={() => toggleServicio(servicio.id)}
                         className={`p-5 rounded-xl border-4 transition-all duration-300 ${isSelected
-                            ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-105'
-                            : 'border-stone-200 hover:border-blue-300 bg-white hover:scale-102'
+                          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-105'
+                          : 'border-stone-200 hover:border-blue-300 bg-white hover:scale-102'
                           }`}
                       >
                         <div className="flex flex-col items-center text-center">
@@ -1717,8 +1726,8 @@ ${listaServicios}
                             )}
                           </div>
                           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
-                              ? 'border-blue-500 bg-blue-500'
-                              : 'border-stone-300'
+                            ? 'border-blue-500 bg-blue-500'
+                            : 'border-stone-300'
                             }`}>
                             {isSelected && (
                               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1744,8 +1753,8 @@ ${listaServicios}
                       key={producto.id}
                       onClick={() => toggleProducto(producto.id)}
                       className={`p-4 rounded-xl border-4 transition-all duration-300 text-left ${productosSeleccionados.includes(producto.id)
-                          ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
-                          : 'border-stone-200 hover:border-amber-300 bg-white'
+                        ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg'
+                        : 'border-stone-200 hover:border-amber-300 bg-white'
                         }`}
                     >
                       <div className="flex items-center justify-between">
@@ -1759,8 +1768,8 @@ ${listaServicios}
                           </div>
                         </div>
                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${productosSeleccionados.includes(producto.id)
-                            ? 'border-amber-500 bg-amber-500'
-                            : 'border-stone-300'
+                          ? 'border-amber-500 bg-amber-500'
+                          : 'border-stone-300'
                           }`}>
                           {productosSeleccionados.includes(producto.id) && (
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1779,8 +1788,8 @@ ${listaServicios}
                   onClick={() => setPaso(2)}
                   disabled={terapiasSeleccionadas.length === 0}
                   className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${terapiasSeleccionadas.length === 0
-                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                      : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
                     }`}
                 >
                   Continuar →
@@ -1829,8 +1838,8 @@ ${listaServicios}
                       min={fechasDisponibles[0] || new Date().toISOString().split('T')[0]}
                       max={fechasDisponibles[fechasDisponibles.length - 1]}
                       className={`w-full p-4 rounded-2xl border-4 text-lg ${fecha && !esDiaValido(fecha)
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-stone-200 focus:border-[#3d2817] focus:outline-none'
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-stone-200 focus:border-[#3d2817] focus:outline-none'
                         }`}
                     />
                     {mensajeErrorFecha && (
@@ -1888,8 +1897,8 @@ ${listaServicios}
                         <button
                           onClick={() => setMostrarSoloDisponibles(!mostrarSoloDisponibles)}
                           className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 ${mostrarSoloDisponibles
-                              ? 'bg-green-600 text-white shadow-md hover:bg-green-700'
-                              : 'bg-white text-blue-700 border-2 border-blue-300 hover:bg-blue-100'
+                            ? 'bg-green-600 text-white shadow-md hover:bg-green-700'
+                            : 'bg-white text-blue-700 border-2 border-blue-300 hover:bg-blue-100'
                             }`}
                         >
                           {mostrarSoloDisponibles ? '✓ Solo disponibles' : '📋 Mostrar todos'}
@@ -1925,12 +1934,12 @@ ${listaServicios}
                               }}
                               disabled={horarioPasado}
                               className={`p-3 rounded-xl border-2 transition-all duration-300 font-semibold relative ${horarioPasado
-                                  ? 'border-red-200 bg-red-50 text-red-400 cursor-not-allowed opacity-50'
-                                  : estaOcupado
-                                    ? 'border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer'
-                                    : horario === horarioItem
-                                      ? 'border-[#3d2817] bg-[#3d2817] text-white shadow-lg scale-105'
-                                      : 'border-stone-200 hover:border-amber-300 bg-white text-[#3d2817] hover:shadow-md'
+                                ? 'border-red-200 bg-red-50 text-red-400 cursor-not-allowed opacity-50'
+                                : estaOcupado
+                                  ? 'border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer'
+                                  : horario === horarioItem
+                                    ? 'border-[#3d2817] bg-[#3d2817] text-white shadow-lg scale-105'
+                                    : 'border-stone-200 hover:border-amber-300 bg-white text-[#3d2817] hover:shadow-md'
                                 }`}
                             >
                               {horarioItem}
@@ -1988,8 +1997,8 @@ ${listaServicios}
                   }}
                   disabled={!fecha || !horario || !esDiaValido(fecha) || verificarHorarioOcupado(fecha, horario)}
                   className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${!fecha || !horario || !esDiaValido(fecha) || verificarHorarioOcupado(fecha, horario)
-                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                      : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
                     }`}
                 >
                   Continuar →
@@ -2034,10 +2043,10 @@ ${listaServicios}
                     placeholder="3012456789"
                     maxLength={10}
                     className={`w-full p-4 rounded-xl border-2 focus:outline-none transition-colors ${telefono.length === 0
-                        ? 'border-stone-200 focus:border-[#3d2817]'
-                        : errorTelefono
-                          ? 'border-red-400 bg-red-50 focus:border-red-500'
-                          : 'border-green-400 bg-green-50 focus:border-green-500'
+                      ? 'border-stone-200 focus:border-[#3d2817]'
+                      : errorTelefono
+                        ? 'border-red-400 bg-red-50 focus:border-red-500'
+                        : 'border-green-400 bg-green-50 focus:border-green-500'
                       }`}
                     required
                   />
@@ -2059,10 +2068,10 @@ ${listaServicios}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="ejemplo@correo.com"
                     className={`w-full p-4 rounded-xl border-2 focus:outline-none transition-colors ${email.length === 0
-                        ? 'border-stone-200 focus:border-[#3d2817]'
-                        : errorEmail
-                          ? 'border-red-400 bg-red-50 focus:border-red-500'
-                          : 'border-green-400 bg-green-50 focus:border-green-500'
+                      ? 'border-stone-200 focus:border-[#3d2817]'
+                      : errorEmail
+                        ? 'border-red-400 bg-red-50 focus:border-red-500'
+                        : 'border-green-400 bg-green-50 focus:border-green-500'
                       }`}
                     required
                   />
@@ -2099,8 +2108,8 @@ ${listaServicios}
                   onClick={() => setPaso(4)}
                   disabled={!nombre || !telefono || !email || !!errorTelefono || !!errorEmail}
                   className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${!nombre || !telefono || !email || !!errorTelefono || !!errorEmail
-                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                      : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : 'bg-[#3d2817] hover:bg-[#2d1f11] text-white shadow-lg'
                     }`}
                 >
                   Continuar →
@@ -2287,7 +2296,7 @@ ${listaServicios}
                               )}
                               {totalInfo.esAfiliado && totalInfo.descuentoAfiliado > 0 && (
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-green-700">🏅 Descuento Afiliado (20%):</span>
+                                  <span className="text-green-700">🏅 Descuento Afiliado (10%):</span>
                                   <span className="font-bold text-green-700">-${totalInfo.descuentoAfiliado.toLocaleString('es-CO')}</span>
                                 </div>
                               )}
@@ -2355,8 +2364,8 @@ ${listaServicios}
                   onClick={handleSubmit}
                   disabled={submitting || !!mensajeErrorHorario}
                   className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 ${submitting || mensajeErrorHorario
-                      ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
                     }`}
                 >
                   {submitting ? 'Procesando...' : 'Confirmar Reserva'}

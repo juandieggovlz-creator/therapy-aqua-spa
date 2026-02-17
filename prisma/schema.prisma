@@ -35,21 +35,22 @@ model Reserva {
 }
 
 model Servicio {
-  id          Int      @id @default(autoincrement())
-  servicio_id String   @unique @db.VarChar(50)
-  nombre      String   @db.VarChar(255)
-  descripcion String?
-  categoria   String   @db.VarChar(100)
-  duracion    Int      @default(30)
-  precio      Decimal  @db.Decimal(10, 2)
-  icon        String?  @db.VarChar(10)
-  imagen      String?  @db.VarChar(500)
-  activo      Boolean  @default(true)
-  orden       Int      @default(0)
-  detalles    Json?
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  descuento   Int      @default(0)
+  id                   Int      @id @default(autoincrement())
+  servicio_id          String   @unique @db.VarChar(50)
+  nombre               String   @db.VarChar(255)
+  descripcion          String?
+  categoria            String   @db.VarChar(100)
+  duracion             Int      @default(30)
+  precio               Decimal  @db.Decimal(10, 2)
+  icon                 String?  @db.VarChar(10)
+  imagen               String?  @db.VarChar(500)
+  activo               Boolean  @default(true)
+  orden                Int      @default(0)
+  detalles             Json?
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  descuento            Int      @default(0)
+  detalles_tratamiento String?
 
   @@index([activo], map: "idx_servicio_activo")
   @@index([categoria], map: "idx_servicio_categoria")
@@ -145,4 +146,39 @@ model Promocion {
   @@index([fecha_inicio, fecha_fin], map: "idx_promocion_fechas")
   @@index([tipo], map: "idx_promocion_tipo")
   @@map("promociones")
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  @@map("admin_users")
+}
+
+model WebContent {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(50)
+  title     String?  @db.VarChar(255)
+  content   String?
+  image     String?  @db.VarChar(500)
+  section   String   @db.VarChar(50)
+  active    Boolean  @default(true)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([section], map: "idx_web_content_section")
+  @@map("web_content")
+}
+
+model FAQ {
+  id        Int      @id @default(autoincrement())
+  question  String   @db.VarChar(500)
+  answer    String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([active], map: "idx_faq_active")
+  @@map("faqs")
 }

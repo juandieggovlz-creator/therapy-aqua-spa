@@ -1,11 +1,13 @@
 export const runtime = "nodejs";
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
 // GET - Obtener toda la configuración
 export async function GET() {
   try {
-    // TODO: Implementar cuando la tabla configuracion exista en Neon
-    const configuraciones: any[] = [];
+    const configuraciones = await prisma.configuracion.findMany({
+      orderBy: { clave: 'asc' }
+    });
 
     return NextResponse.json({
       configuraciones,
@@ -23,11 +25,24 @@ export async function GET() {
 // POST - Crear nueva configuración
 export async function POST(request: Request) {
   try {
-    // TODO: Implementar cuando la tabla configuracion exista en Neon
+    const body = await request.json();
+    const { clave, valor, tipo, categoria, descripcion } = body;
+
+    const configuracion = await prisma.configuracion.create({
+      data: {
+        clave,
+        valor,
+        tipo: tipo || 'string',
+        categoria: categoria || 'general',
+        descripcion,
+        editable_por_gerente: true
+      }
+    });
+
     return NextResponse.json({
-      error: 'Funcionalidad no disponible',
-      success: false
-    }, { status: 501 });
+      configuracion,
+      success: true
+    });
   } catch (error) {
     console.error('❌ Error creando configuración:', error);
     return NextResponse.json(
@@ -40,11 +55,22 @@ export async function POST(request: Request) {
 // PATCH - Actualizar configuración existente
 export async function PATCH(request: Request) {
   try {
-    // TODO: Implementar cuando la tabla configuracion exista en Neon
+    const body = await request.json();
+    const { id, valor, descripcion } = body;
+
+    const configuracion = await prisma.configuracion.update({
+      where: { id },
+      data: {
+        valor,
+        descripcion,
+        updated_at: new Date()
+      }
+    });
+
     return NextResponse.json({
-      error: 'Funcionalidad no disponible',
-      success: false
-    }, { status: 501 });
+      configuracion,
+      success: true
+    });
   } catch (error) {
     console.error('❌ Error actualizando configuración:', error);
     return NextResponse.json(
@@ -57,11 +83,20 @@ export async function PATCH(request: Request) {
 // DELETE - Eliminar configuración
 export async function DELETE(request: Request) {
   try {
-    // TODO: Implementar cuando la tabla configuracion exista en Neon
+    const { searchParams } = new URL(request.url);
+    const id = parseInt(searchParams.get('id') || '');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+    }
+
+    await prisma.configuracion.delete({
+      where: { id }
+    });
+
     return NextResponse.json({
-      error: 'Funcionalidad no disponible',
-      success: false
-    }, { status: 501 });
+      success: true
+    });
   } catch (error) {
     console.error('❌ Error eliminando configuración:', error);
     return NextResponse.json(

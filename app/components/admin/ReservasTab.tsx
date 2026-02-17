@@ -94,7 +94,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       console.log('📊 ReservasTab - No hay reservas originales, lista vacía');
       return;
     }
-    
+
     // Aplicar todos los filtros
     aplicarFiltros();
   }, [filtroEstado, filtroFecha, filtroNombre, filtroTelefono, filtroFechaEspecifica, reservasOriginales]);
@@ -109,18 +109,18 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       const response = await fetch(url, {
         cache: 'no-store'
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error HTTP: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       // Obtener TODAS las reservas del servidor (sin filtrar por estado ni fecha)
       let todasLasReservas = data.bookings || [];
-      
+
       console.log(`📥 ReservasTab - Total reservas recibidas del servidor: ${todasLasReservas.length}`);
-      
+
       // Log de debug para ver el formato de las fechas
       if (todasLasReservas.length > 0) {
         const primeraReserva = todasLasReservas[0];
@@ -130,7 +130,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
           valorRaw: primeraReserva.fecha
         });
       }
-      
+
       if (todasLasReservas.length === 0) {
         console.log('⚠️ ReservasTab - NO HAY RESERVAS en el servidor - Array vacío');
         // Si no hay reservas, limpiar todo
@@ -139,10 +139,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
         setLastUpdate(new Date());
         return;
       }
-      
+
       // Guardar TODAS las reservas como originales (los filtros se aplicarán después mediante useEffect)
       setReservasOriginales(todasLasReservas);
-      
+
       setLastUpdate(new Date());
     } catch (error) {
       console.error('❌ Error cargando reservas:', error);
@@ -159,7 +159,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       setReservas([]);
       return;
     }
-    
+
     let reservasFiltradas = [...reservasOriginales];
 
     // FILTRAR POR ESTADO (si no es "todas")
@@ -178,7 +178,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       reservasFiltradas = reservasFiltradas.filter((r: Reserva) => {
         // Usar fecha de creación (createdAt) para el filtro de período
         if (!r.createdAt && !r.fechaCreacion) return false;
-        
+
         const fechaReserva = new Date(r.createdAt || r.fechaCreacion || '');
         fechaReserva.setHours(0, 0, 0, 0);
 
@@ -190,8 +190,8 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
             inicioSemana.setDate(hoy.getDate() - hoy.getDay());
             return fechaReserva >= inicioSemana;
           case 'mes':
-            return fechaReserva.getMonth() === hoy.getMonth() && 
-                   fechaReserva.getFullYear() === hoy.getFullYear();
+            return fechaReserva.getMonth() === hoy.getMonth() &&
+              fechaReserva.getFullYear() === hoy.getFullYear();
           default:
             return true;
         }
@@ -311,13 +311,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       }
 
       // Actualizar estado local
-      setReservasOriginales(prev => prev.map(r => 
+      setReservasOriginales(prev => prev.map(r =>
         r.id === id ? { ...r, total: precioConDescuentos, precio: precioConDescuentos, esAfiliado: true } : r
       ));
-      setReservas(prev => prev.map(r => 
+      setReservas(prev => prev.map(r =>
         r.id === id ? { ...r, total: precioConDescuentos, precio: precioConDescuentos, esAfiliado: true } : r
       ));
-      
+
       if (reservaSeleccionada?.id === id) {
         setReservaSeleccionada(prev => prev ? { ...prev, total: precioConDescuentos, precio: precioConDescuentos, esAfiliado: true } : null);
       }
@@ -362,13 +362,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       }
 
       // Actualizar estado local
-      setReservasOriginales(prev => prev.map(r => 
+      setReservasOriginales(prev => prev.map(r =>
         r.id === id ? { ...r, fecha, hora, horario: hora } : r
       ));
-      setReservas(prev => prev.map(r => 
+      setReservas(prev => prev.map(r =>
         r.id === id ? { ...r, fecha, hora, horario: hora } : r
       ));
-      
+
       if (reservaSeleccionada?.id === id) {
         setReservaSeleccionada(prev => prev ? { ...prev, fecha, hora, horario: hora } : null);
       }
@@ -413,13 +413,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       }
 
       // Actualizar estado local
-      setReservasOriginales(prev => prev.map(r => 
+      setReservasOriginales(prev => prev.map(r =>
         r.id === id ? { ...r, total: precioOriginal, precio: precioOriginal, esAfiliado: false } : r
       ));
-      setReservas(prev => prev.map(r => 
+      setReservas(prev => prev.map(r =>
         r.id === id ? { ...r, total: precioOriginal, precio: precioOriginal, esAfiliado: false } : r
       ));
-      
+
       if (reservaSeleccionada?.id === id) {
         setReservaSeleccionada(prev => prev ? { ...prev, total: precioOriginal, precio: precioOriginal, esAfiliado: false } : null);
       }
@@ -462,23 +462,23 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
     // Calcular subtotal de servicios adicionales
     let subtotalServiciosAdicionalesOriginal = 0;
     let subtotalServiciosAdicionalesConAfiliado = 0;
-    
+
     if (reserva.serviciosAdicionales && reserva.serviciosAdicionales.length > 0) {
       reserva.serviciosAdicionales.forEach((s: any) => {
         if (typeof s === 'object' && s !== null) {
           // Para el precio original, siempre usar precioParticular
           const precioParticular = s.precioParticular || s.precio || 29900;
           const precioAfiliado = s.precioAfiliado || 13000;
-          
+
           subtotalServiciosAdicionalesOriginal += precioParticular;
-          
+
           // Si es afiliado, usar precio de afiliado; sino, usar particular
           subtotalServiciosAdicionalesConAfiliado += reserva.esAfiliado ? precioAfiliado : precioParticular;
         } else {
           const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[s];
           const precioParticular = servicioRef?.precio || 29900;
           const precioAfiliado = 13000;
-          
+
           subtotalServiciosAdicionalesOriginal += precioParticular;
           subtotalServiciosAdicionalesConAfiliado += reserva.esAfiliado ? precioAfiliado : precioParticular;
         }
@@ -504,10 +504,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
     // Calcular nuevo total con los servicios ajustados a precio afiliado
     const precioTotalConServiciosAfiliado = subtotalTerapias + subtotalServiciosAdicionalesConAfiliado + subtotalProductos;
 
-    // Descuento del 20% sobre el TOTAL (con servicios adicionales ya ajustados a precio afiliado si aplica)
-    const descuentoAfiliadoTotal = reserva.esAfiliado ? precioTotalConServiciosAfiliado * 0.20 : 0;
+    // Descuento del 10% sobre el TOTAL (con servicios ya ajustados a precio afiliado si aplica)
+    const descuentoAfiliadoTotal = reserva.esAfiliado ? precioTotalConServiciosAfiliado * 0.10 : 0;
 
-    // Precio final: total con servicios ajustados menos el descuento del 20%
+    // Precio final: total con servicios ajustados menos el descuento del 10%
     const precioConDescuento = precioTotalConServiciosAfiliado - descuentoAfiliadoTotal;
 
     // Si ya tiene un total guardado y es afiliado, usarlo; si no, calcular
@@ -529,9 +529,9 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
         'completada': 'Completada',
         'cancelada': 'Cancelada'
       };
-      
+
       const nombreEstado = nombresEstado[nuevoEstado] || nuevoEstado;
-      
+
       // Si se está confirmando o completando el pago, calcular y guardar el total correcto
       let totalAPagar: number | undefined = undefined;
       if (nuevoEstado === 'confirmada' || nuevoEstado === 'completada') {
@@ -541,9 +541,9 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
           console.log(`💰 ${nuevoEstado === 'confirmada' ? 'Confirmando' : 'Completando'} reserva ${id} con total a pagar: ${totalAPagar}`);
         }
       }
-      
-      const bodyData: any = { 
-        id, 
+
+      const bodyData: any = {
+        id,
         estado: nuevoEstado
       };
 
@@ -551,9 +551,9 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       if (totalAPagar !== undefined) {
         bodyData.total = totalAPagar;
       }
-      
+
       console.log('📤 Actualizando estado de reserva:', bodyData);
-      
+
       const response = await fetch('/api/bookings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -565,7 +565,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
         console.error('❌ Error al actualizar estado:', response.status, errorData);
         throw new Error(errorData.error || 'Error al actualizar estado');
       }
-      
+
       console.log('✅ Estado actualizado exitosamente');
 
       // Actualizar localmente (incluyendo el total si se calculó)
@@ -575,27 +575,27 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
         actualizacionReserva.precio = totalAPagar;
       }
 
-      setReservas(prev => prev.map(r => 
+      setReservas(prev => prev.map(r =>
         r.id === id ? { ...r, ...actualizacionReserva } : r
       ));
-      setReservasOriginales(prev => prev.map(r => 
+      setReservasOriginales(prev => prev.map(r =>
         r.id === id ? { ...r, ...actualizacionReserva } : r
       ));
-      
+
       if (reservaSeleccionada?.id === id) {
         setReservaSeleccionada(prev => prev ? { ...prev, ...actualizacionReserva } : null);
       }
 
       // Disparar evento para actualizar el dashboard y finanzas
-      window.dispatchEvent(new CustomEvent('reservaActualizada', { 
-        detail: { 
-          reservaId: id, 
+      window.dispatchEvent(new CustomEvent('reservaActualizada', {
+        detail: {
+          reservaId: id,
           nuevoEstado,
           total: totalAPagar,
           esAfiliado: reservaSeleccionada?.esAfiliado || false
-        } 
+        }
       }));
-      
+
       // Si el estado es confirmada o completada, registrar en logs
       if (nuevoEstado === 'confirmada' || nuevoEstado === 'completada') {
         console.log(`💰 ReservasTab - Reserva ${id} ${nuevoEstado} con total: ${totalAPagar || reservaSeleccionada?.total || 0}`);
@@ -613,7 +613,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       }, 4000);
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      
+
       // Mostrar mensaje de error en la página
       setMensajeNotificacion({
         tipo: 'error',
@@ -648,11 +648,11 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
     if (!fecha) return 'N/A';
     try {
       let date: Date;
-      
+
       // Si ya es un objeto Date
       if (fecha instanceof Date) {
         date = fecha;
-      } 
+      }
       // Si es un string
       else if (typeof fecha === 'string') {
         // Si ya tiene hora (formato ISO completo), usar directamente
@@ -667,18 +667,18 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       else {
         date = new Date(fecha);
       }
-      
+
       // Verificar si la fecha es válida
       if (isNaN(date.getTime())) {
         console.warn('⚠️ Fecha inválida:', fecha);
         return 'Fecha inválida';
       }
-      
-      return date.toLocaleDateString('es-CO', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+
+      return date.toLocaleDateString('es-CO', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
     } catch (error) {
       console.error('❌ Error formateando fecha:', error, fecha);
@@ -845,7 +845,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
             <h3 className="text-lg font-bold text-[#3d2817] mb-4 flex items-center gap-2">
               <span>🛎️</span> Servicios Seleccionados
             </h3>
-            
+
             <div className="space-y-4">
               {/* Terapias */}
               {reservaSeleccionada.terapias && reservaSeleccionada.terapias.length > 0 && (
@@ -857,7 +857,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       const duracion = terapia?.duracion || 0;
                       const precio = terapia?.precio || terapia?.precioOriginal || 0;
                       const icono = terapia?.icon || '✨';
-                      
+
                       return (
                         <div key={idx} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
                           <div className="flex items-center gap-3 flex-1">
@@ -908,17 +908,17 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     )}
                   </p>
                   <div className="space-y-2">
-                      {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
-                        const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
-                        const icon = typeof servicio === 'object' ? servicio?.icon : null;
-                        const precioParticular = typeof servicio === 'object' ? (servicio?.precioParticular || servicio?.precio || 29900) : 29900;
-                        const precioAfiliado = typeof servicio === 'object' ? (servicio?.precioAfiliado || 13000) : 13000;
-                        
-                        // Determinar el precio a mostrar según si es afiliado o no
-                        const precioFinal = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
-                        const ahorro = precioParticular - precioAfiliado;
-                      
-                        return (
+                    {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
+                      const nombre = typeof servicio === 'string' ? servicio : (servicio?.nombre || servicio?.id || 'Servicio');
+                      const icon = typeof servicio === 'object' ? servicio?.icon : null;
+                      const precioParticular = typeof servicio === 'object' ? (servicio?.precioParticular || servicio?.precio || 29900) : 29900;
+                      const precioAfiliado = typeof servicio === 'object' ? (servicio?.precioAfiliado || 13000) : 13000;
+
+                      // Determinar el precio a mostrar según si es afiliado o no
+                      const precioFinal = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
+                      const ahorro = precioParticular - precioAfiliado;
+
+                      return (
                         <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="flex items-center gap-3 flex-1">
                             <span className="text-2xl">{icon || '💆'}</span>
@@ -942,10 +942,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             </p>
                           </div>
                         </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* Productos */}
@@ -957,7 +957,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       const nombre = typeof producto === 'string' ? producto : (producto?.nombre || producto?.id || 'Producto');
                       const icon = typeof producto === 'object' ? producto?.icon : '📦';
                       const precio = typeof producto === 'object' ? (producto?.precio || 0) : 0;
-                      
+
                       return (
                         <div key={idx} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                           <div className="flex items-center gap-3 flex-1">
@@ -1021,47 +1021,47 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   </div>
                 </div>
               )}
-              
+
               {/* Mostrar servicios adicionales individuales */}
               {reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0 && (
-                  <div className="bg-white/60 rounded-lg p-3 mb-2">
-                    <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
+                <div className="bg-white/60 rounded-lg p-3 mb-2">
+                  <p className="text-xs font-semibold text-stone-600 mb-2">Servicios Adicionales:</p>
                   <div className="space-y-2">
-                      {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
-                        let nombreServicio = '';
+                    {reservaSeleccionada.serviciosAdicionales.map((servicio: any, idx: number) => {
+                      let nombreServicio = '';
                       let precioParticular = 0;
                       let precioAfiliado = 0;
-                        let iconoServicio = '💆';
-                        
-                        // Si es un objeto, usar sus propiedades
-                        if (typeof servicio === 'object' && servicio !== null) {
-                          nombreServicio = servicio.nombre || servicio.id || 'Servicio';
+                      let iconoServicio = '💆';
+
+                      // Si es un objeto, usar sus propiedades
+                      if (typeof servicio === 'object' && servicio !== null) {
+                        nombreServicio = servicio.nombre || servicio.id || 'Servicio';
                         precioParticular = servicio.precioParticular || servicio.precio || 29900;
                         precioAfiliado = servicio.precioAfiliado || 13000;
-                          iconoServicio = servicio.icon || '💆';
-                        } else {
-                          // Si es un string, buscar en las referencias
-                          const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
-                          if (servicioRef) {
-                            nombreServicio = servicioRef.nombre;
+                        iconoServicio = servicio.icon || '💆';
+                      } else {
+                        // Si es un string, buscar en las referencias
+                        const servicioRef = SERVICIOS_ADICIONALES_PRECIOS[servicio];
+                        if (servicioRef) {
+                          nombreServicio = servicioRef.nombre;
                           precioParticular = servicioRef.precio;
                           precioAfiliado = PRECIO_SERVICIO_AFILIADO;
-                            iconoServicio = servicioRef.icon;
-                          } else {
-                            nombreServicio = servicio;
+                          iconoServicio = servicioRef.icon;
+                        } else {
+                          nombreServicio = servicio;
                           precioParticular = 0;
                           precioAfiliado = 0;
-                          }
                         }
-                      
+                      }
+
                       const precioAplicado = reservaSeleccionada.esAfiliado ? precioAfiliado : precioParticular;
-                        
-                        return (
+
+                      return (
                         <div key={idx} className="flex justify-between items-center text-sm">
                           <span className="text-stone-700 truncate pr-2 flex items-center gap-1">
                             <span>{iconoServicio}</span>
                             <span>{nombreServicio}</span>
-                            </span>
+                          </span>
                           <div className="text-right">
                             {reservaSeleccionada.esAfiliado && precioParticular > 0 && (
                               <p className="text-xs text-stone-500 line-through">
@@ -1070,13 +1070,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             )}
                             <span className={`font-semibold whitespace-nowrap ${reservaSeleccionada.esAfiliado ? 'text-green-600' : 'text-[#3d2817]'}`}>
                               {precioAplicado > 0 ? formatearPrecio(precioAplicado) : 'N/A'}
-                              </span>
+                            </span>
                           </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* Productos con precios */}
@@ -1088,7 +1088,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       let nombreProducto = '';
                       let precioProducto = 0;
                       let iconoProducto = '📦';
-                      
+
                       // Si es un objeto, usar sus propiedades
                       if (typeof producto === 'object' && producto !== null) {
                         nombreProducto = producto.nombre || producto.id || 'Producto';
@@ -1106,7 +1106,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                           precioProducto = 0; // Si no se encuentra, precio 0
                         }
                       }
-                      
+
                       return (
                         <div key={idx} className="flex justify-between text-sm">
                           <span className="text-stone-700 truncate pr-2">{iconoProducto} {nombreProducto}</span>
@@ -1202,7 +1202,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   </>
                 );
               })()}
-              
+
               {/* Precio Original y Descuentos */}
               {(() => {
                 // Calcular subtotal para usar como precio original si no hay total guardado
@@ -1242,7 +1242,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
 
                 // PRECIO ORIGINAL (sin ningún descuento): terapias + servicios originales (particulares) + productos
                 const precioTotalOriginal = subtotalTerapias + subtotalServiciosAdicionalesOriginal + subtotalProductos;
-                
+
                 // Si es afiliado: calcular servicios adicionales con precio de afiliado ($13,000)
                 let subtotalServiciosAdicionalesConDescuento = subtotalServiciosAdicionalesOriginal;
                 if (reservaSeleccionada.esAfiliado && reservaSeleccionada.serviciosAdicionales && reservaSeleccionada.serviciosAdicionales.length > 0) {
@@ -1254,16 +1254,16 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     }
                   }, 0);
                 }
-                
+
                 // Calcular nuevo total con servicios a precio afiliado
                 const precioTotalConServiciosAfiliado = subtotalTerapias + subtotalServiciosAdicionalesConDescuento + subtotalProductos;
-                
-                // Descuento del 20% sobre el TOTAL (con servicios ya ajustados a precio afiliado si aplica)
-                const descuentoAfiliadoTotal = reservaSeleccionada.esAfiliado ? precioTotalConServiciosAfiliado * 0.20 : 0;
-                
-                // Precio final: total con servicios ajustados menos el descuento del 20%
+
+                // Descuento del 10% sobre el TOTAL (con servicios ya ajustados a precio afiliado si aplica)
+                const descuentoAfiliadoTotal = reservaSeleccionada.esAfiliado ? precioTotalConServiciosAfiliado * 0.10 : 0;
+
+                // Precio final: total con servicios ajustados menos el descuento del 10%
                 const precioConDescuento = precioTotalConServiciosAfiliado - descuentoAfiliadoTotal;
-                
+
                 // Precio mostrado: si ya es afiliado, usar precio con descuento; si no, usar precio original
                 const precioMostrado = reservaSeleccionada.esAfiliado ? precioConDescuento : precioTotalOriginal;
 
@@ -1282,12 +1282,12 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       </p>
                     </div>
 
-                    {/* Descuento de Afiliado - 20% sobre el Total */}
+                    {/* Descuento de Afiliado - 10% sobre el Total */}
                     {reservaSeleccionada.esAfiliado && (
                       <div className="bg-green-50 rounded-lg p-4 border-2 border-green-300">
                         <div className="flex justify-between items-center mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-green-800">👑 Descuento Afiliado (20%):</span>
+                            <span className="text-sm font-semibold text-green-800">👑 Descuento Afiliado (10%):</span>
                             <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-bold">
                               BENEFICIO APLICADO
                             </span>
@@ -1297,7 +1297,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                           </span>
                         </div>
                         <p className="text-xs text-green-700 mt-1">
-                          ✓ Cliente afiliado - Descuento del 20% aplicado sobre el precio total calculado
+                          ✓ Cliente afiliado - Descuento del 10% aplicado sobre el precio total calculado
                         </p>
                         <div className="mt-2 p-2 bg-green-100 rounded border border-green-200">
                           <p className="text-xs font-semibold text-green-800">
@@ -1356,13 +1356,13 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                                 }
                                 // 2. Calcular nuevo total con servicios ajustados
                                 const precioTotalConServiciosAjustados = subtotalTerapias + serviciosConDescuento + subtotalProductos;
-                                // 3. Aplicar 20% sobre ese total
-                                const descuentoTotal = precioTotalConServiciosAjustados * 0.20;
+                                // 3. Aplicar 10% sobre ese total
+                                const descuentoTotal = precioTotalConServiciosAjustados * 0.10;
                                 const precioFinalConDescuentos = precioTotalConServiciosAjustados - descuentoTotal;
                                 aplicarDescuentosAfiliado(reservaSeleccionada.id, precioFinalConDescuentos);
                               }}
                               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                              title="Aplicar descuentos de afiliado (20% sobre el total con servicios adicionales a precio afiliado)"
+                              title="Aplicar descuentos de afiliado (10% sobre el total con servicios adicionales a precio afiliado)"
                             >
                               👑 Aplicar Descuentos de Afiliado
                             </button>
@@ -1375,7 +1375,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                             <strong>Diferencia aplicada:</strong> {formatearPrecio(precioTotalOriginal - precioMostrado)} de descuento por beneficios de afiliado
                           </p>
                           <p className="text-xs text-amber-700 mt-1">
-                            ✓ Servicios adicionales a precio afiliado ($13.000 c/u) + Descuento del 20% sobre el total
+                            ✓ Servicios adicionales a precio afiliado ($13.000 c/u) + Descuento del 10% sobre el total
                           </p>
                         </div>
                       )}
@@ -1411,11 +1411,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     }, 600);
                   }
                 }}
-                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${
-                  reservaSeleccionada.estado === 'pendiente'
-                    ? 'bg-yellow-300 text-yellow-900 border-yellow-400 cursor-not-allowed opacity-70 shadow-lg'
-                    : 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:scale-105 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${reservaSeleccionada.estado === 'pendiente'
+                  ? 'bg-yellow-300 text-yellow-900 border-yellow-400 cursor-not-allowed opacity-70 shadow-lg'
+                  : 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:scale-105 hover:shadow-md active:scale-95'
+                  }`}
                 disabled={reservaSeleccionada.estado === 'pendiente'}
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -1426,7 +1425,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   <span className="absolute inset-0 bg-yellow-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
                 )}
               </button>
-              
+
               <button
                 onClick={(e) => {
                   const target = e.currentTarget as HTMLButtonElement;
@@ -1444,11 +1443,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     }, 600);
                   }
                 }}
-                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${
-                  reservaSeleccionada.estado === 'pendiente de pago'
-                    ? 'bg-orange-300 text-orange-900 border-orange-400 cursor-not-allowed opacity-70 shadow-lg'
-                    : 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 hover:scale-105 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${reservaSeleccionada.estado === 'pendiente de pago'
+                  ? 'bg-orange-300 text-orange-900 border-orange-400 cursor-not-allowed opacity-70 shadow-lg'
+                  : 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 hover:scale-105 hover:shadow-md active:scale-95'
+                  }`}
                 disabled={reservaSeleccionada.estado === 'pendiente de pago'}
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -1459,7 +1457,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   <span className="absolute inset-0 bg-orange-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
                 )}
               </button>
-              
+
               <button
                 onClick={(e) => {
                   const target = e.currentTarget as HTMLButtonElement;
@@ -1477,11 +1475,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     }, 600);
                   }
                 }}
-                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${
-                  reservaSeleccionada.estado === 'confirmada'
-                    ? 'bg-green-300 text-green-900 border-green-400 cursor-not-allowed opacity-70 shadow-lg'
-                    : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:scale-105 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${reservaSeleccionada.estado === 'confirmada'
+                  ? 'bg-green-300 text-green-900 border-green-400 cursor-not-allowed opacity-70 shadow-lg'
+                  : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:scale-105 hover:shadow-md active:scale-95'
+                  }`}
                 disabled={reservaSeleccionada.estado === 'confirmada'}
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -1492,7 +1489,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   <span className="absolute inset-0 bg-green-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
                 )}
               </button>
-              
+
               <button
                 onClick={(e) => {
                   const target = e.currentTarget as HTMLButtonElement;
@@ -1510,11 +1507,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     }, 600);
                   }
                 }}
-                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${
-                  reservaSeleccionada.estado === 'completada'
-                    ? 'bg-blue-300 text-blue-900 border-blue-400 cursor-not-allowed opacity-70 shadow-lg'
-                    : 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 hover:scale-105 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${reservaSeleccionada.estado === 'completada'
+                  ? 'bg-blue-300 text-blue-900 border-blue-400 cursor-not-allowed opacity-70 shadow-lg'
+                  : 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 hover:scale-105 hover:shadow-md active:scale-95'
+                  }`}
                 disabled={reservaSeleccionada.estado === 'completada'}
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -1525,7 +1521,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   <span className="absolute inset-0 bg-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
                 )}
               </button>
-              
+
               <button
                 onClick={(e) => {
                   const target = e.currentTarget as HTMLButtonElement;
@@ -1543,11 +1539,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                     }, 600);
                   }
                 }}
-                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${
-                  reservaSeleccionada.estado === 'cancelada'
-                    ? 'bg-red-300 text-red-900 border-red-400 cursor-not-allowed opacity-70 shadow-lg'
-                    : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200 hover:scale-105 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-300 transform relative overflow-hidden group ${reservaSeleccionada.estado === 'cancelada'
+                  ? 'bg-red-300 text-red-900 border-red-400 cursor-not-allowed opacity-70 shadow-lg'
+                  : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200 hover:scale-105 hover:shadow-md active:scale-95'
+                  }`}
                 disabled={reservaSeleccionada.estado === 'cancelada'}
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -1570,11 +1565,10 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
       {/* Notificación visual para cambios de estado */}
       {mensajeNotificacion && (
         <div
-          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg border-2 animate-fade-in ${
-            mensajeNotificacion.tipo === 'success'
-              ? 'bg-green-50 border-green-300 text-green-800'
-              : 'bg-red-50 border-red-300 text-red-800'
-          }`}
+          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg border-2 animate-fade-in ${mensajeNotificacion.tipo === 'success'
+            ? 'bg-green-50 border-green-300 text-green-800'
+            : 'bg-red-50 border-red-300 text-red-800'
+            }`}
           style={{
             animation: 'fadeIn 0.3s ease-out, fadeOut 0.3s ease-out 3.7s forwards'
           }}
@@ -1596,7 +1590,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
           </div>
         </div>
       )}
-      
+
       <style jsx>{`
         @keyframes fadeIn {
           from {
@@ -1755,7 +1749,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
             </button>
           </div>
         </div>
-        
+
         {(filtroNombre || filtroTelefono || filtroFechaEspecifica || filtroEstado !== 'todas' || filtroFecha !== 'todas') && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
@@ -1782,7 +1776,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
               className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-2 border-transparent hover:border-amber-300"
             >
               <div className="flex items-start justify-between gap-4">
-                <div 
+                <div
                   className="flex-1 cursor-pointer"
                   onClick={() => setReservaSeleccionada(reserva)}
                 >
@@ -1794,7 +1788,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       {reserva.estado?.toUpperCase() || 'PENDIENTE'}
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-stone-600 mb-3">
                     <div>
                       <span className="font-semibold">📅 Fecha:</span> {formatearFecha(reserva.fecha)}
@@ -1838,14 +1832,14 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       <div className="space-y-1">
                         <span className="text-xs font-semibold text-stone-500 uppercase block mb-1">Servicios Adicionales:</span>
                         <div className="space-y-1">
-                        {reserva.serviciosAdicionales.map((s: any, idx: number) => {
-                          const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
+                          {reserva.serviciosAdicionales.map((s: any, idx: number) => {
+                            const nombre = typeof s === 'string' ? s : (s?.nombre || s?.id);
                             const icon = typeof s === 'object' ? s?.icon : null;
                             const precioParticular = typeof s === 'object' ? (s?.precioParticular || s?.precio || 29900) : 29900;
                             const precioAfiliado = typeof s === 'object' ? (s?.precioAfiliado || 13000) : 13000;
                             const precioAplicado = reserva.esAfiliado ? precioAfiliado : precioParticular;
-                            
-                          return (
+
+                            return (
                               <div key={idx} className="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-200">
                                 <div className="flex items-center gap-2">
                                   {icon && <span className="text-lg">{icon}</span>}
@@ -1862,8 +1856,8 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                                   </p>
                                 </div>
                               </div>
-                          );
-                        })}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1898,7 +1892,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                     </svg>
                   </button>
-                  <div 
+                  <div
                     onClick={() => setReservaSeleccionada(reserva)}
                     className="cursor-pointer"
                   >
@@ -1928,7 +1922,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                 <p className="text-sm text-stone-600 mt-1">Esta acción no se puede deshacer</p>
               </div>
             </div>
-            
+
             <div className="bg-stone-50 rounded-lg p-4 mb-6">
               <p className="text-sm font-semibold text-stone-700 mb-3">Reserva a eliminar:</p>
               <div className="space-y-2">
@@ -1963,7 +1957,7 @@ export default function ReservasTab({ userRole = 'admin' }: ReservasTabProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
                 <p className="text-sm text-amber-800">
-                  <strong>Advertencia:</strong> Al eliminar esta reserva, se eliminará permanentemente de la base de datos. 
+                  <strong>Advertencia:</strong> Al eliminar esta reserva, se eliminará permanentemente de la base de datos.
                   Esta acción afectará las estadísticas y no se puede deshacer.
                 </p>
               </div>

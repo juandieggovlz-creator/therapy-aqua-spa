@@ -11,8 +11,8 @@ function getImagePath(filename: string): string {
 }
 
 type ServicioDestacado = {
-  id: number;
-  key: string;
+  id: number | string;
+  key: string | number;
   title: string;
   icon: string;
   price: number;
@@ -21,120 +21,12 @@ type ServicioDestacado = {
   imagen: string;
   description: string;
   detalles: string[];
+  detalles_tratamiento?: string;
   precioOriginal?: number;
   descuento?: number;
 };
 
-const serviciosDestacadosBase: ServicioDestacado[] = [
-  {
-    id: 1,
-    key: "columna",
-    title: "THERAPY LESIONES DE COLUMNA",
-    icon: "🦴",
-    price: 100000,
-    priceLabel: "$100.000",
-    duration: "30 min",
-    imagen: getImagePath("therapy lesiones de columna 2.jpg"),
-    description: "Tratamiento especializado para dolor lumbar, cervical y dorsalgia. Recupera tu movilidad y alivia el dolor crónico.",
-    detalles: [
-      "Evaluación postural completa",
-      "Terapia manual especializada",
-      "Ejercicios de fortalecimiento",
-      "Técnicas de alivio del dolor",
-      "Plan de seguimiento personalizado"
-    ]
-  },
-  {
-    id: 2,
-    key: "bienestar-general",
-    title: "MASAJE BIENESTAR GENERAL",
-    icon: "🌿",
-    price: 140000,
-    priceLabel: "$140.000",
-    duration: "45 min",
-    imagen: getImagePath("masaje general.jfif"),
-    description: "Masaje corporal completo que combina técnicas de relajación profunda para reducir estrés y tensión muscular.",
-    detalles: [
-      "Masaje corporal completo",
-      "Aromaterapia relajante",
-      "Música terapéutica",
-      "Técnicas de relajación profunda",
-      "Mejora de circulación sanguínea"
-    ]
-  },
-  {
-    id: 3,
-    key: "deportivo",
-    title: "MASAJE THERAPY DEPORTIVO",
-    icon: "🏃",
-    price: 100000,
-    priceLabel: "$100.000",
-    duration: "40 min",
-    imagen: getImagePath("masaje deportivo.jpg"),
-    description: "Ideal para atletas y personas activas. Previene lesiones y mejora el rendimiento físico.",
-    detalles: [
-      "Preparación pre-competencia",
-      "Recuperación post-entrenamiento",
-      "Liberación de tensión muscular",
-      "Mejora de flexibilidad",
-      "Prevención de lesiones deportivas"
-    ]
-  },
-  {
-    id: 4,
-    key: "preso-ocular",
-    title: "PRESO THERAPY OCULAR",
-    icon: "👁️",
-    price: 80000,
-    priceLabel: "$80.000",
-    duration: "30 min",
-    imagen: getImagePath("therapy ocular.jpg"),
-    description: "Tratamiento innovador para ojos cansados, ojeras y tensión ocular. Refresca y revitaliza tu mirada.",
-    detalles: [
-      "Masaje de contorno de ojos",
-      "Reducción de ojeras",
-      "Desinflamación de párpados",
-      "Alivio de tensión ocular",
-      "Efecto lifting natural"
-    ]
-  },
-  {
-    id: 5,
-    key: "skincare-mano",
-    title: "SKINCARE MANO THERAPY",
-    icon: "🤲",
-    price: 90000,
-    priceLabel: "$90.000",
-    duration: "30 min",
-    imagen: getImagePath("skincare mano.jpg"),
-    description: "Rejuvenecimiento de manos con exfoliación, hidratación profunda y masaje especializado.",
-    detalles: [
-      "Exfoliación suave",
-      "Masaje de manos y antebrazos",
-      "Hidratación profunda",
-      "Tratamiento anti-edad",
-      "Nutrición de uñas y cutículas"
-    ]
-  },
-  {
-    id: 6,
-    key: "facial",
-    title: "MASAJE FACIAL",
-    icon: "✨",
-    price: 90000,
-    priceLabel: "$90.000",
-    duration: "30 min",
-    imagen: getImagePath("masaje facial.jpg"),
-    description: "Masaje facial con técnicas lifting que mejoran la circulación y tonifican los músculos faciales.",
-    detalles: [
-      "Limpieza facial profunda",
-      "Masaje linfático facial",
-      "Técnicas de lifting natural",
-      "Hidratación intensiva",
-      "Rejuvenecimiento de la piel"
-    ]
-  }
-];
+const serviciosDestacadosBase: ServicioDestacado[] = [];
 
 const testimoniosQuick = [
   { name: "Ana María G.", text: "Llegué con dolor lumbar crónico. Después de tres sesiones, pude volver a dormir bien.", stars: 5 },
@@ -144,83 +36,89 @@ const testimoniosQuick = [
 
 export default function HomePage() {
   const [serviciosDestacados, setServiciosDestacados] = useState<ServicioDestacado[]>(serviciosDestacadosBase);
+  const [totalServicios, setTotalServicios] = useState(0);
   const [promocionActiva, setPromocionActiva] = useState<any>(null);
   const [currentTestimonio, setCurrentTestimonio] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [flippedCard, setFlippedCard] = useState<number | null>(null);
+  const [flippedCard, setFlippedCard] = useState<number | string | null>(null);
+  const [cmsContent, setCmsContent] = useState<any>({});
 
-  // Cargar servicios desde la API
-  useEffect(() => {
-    const cargarServicios = async () => {
-      try {
-        const response = await fetch('/api/servicios-publicos');
-        const data = await response.json();
-        
-        if (data.success && data.servicios && data.servicios.length > 0) {
-          // Mapear servicios de la API a los servicios destacados base
-          const serviciosActualizados = serviciosDestacadosBase.map(servicioBase => {
-            // Buscar el servicio correspondiente en la API por nombre
-            const servicioAPI = data.servicios.find((s: any) => 
-              s.nombre === servicioBase.title || 
-              s.title === servicioBase.title ||
-              s.servicio_id === servicioBase.key
-            );
-
-            if (servicioAPI) {
-              const precioOriginal = servicioAPI.precioOriginal || servicioAPI.precio || servicioBase.price;
-              const descuento = servicioAPI.descuento || 0;
-              const precioConDescuento = descuento > 0 
-                ? Math.round(precioOriginal * (1 - descuento / 100))
-                : precioOriginal;
-
-              return {
-                ...servicioBase,
-                price: precioConDescuento,
-                precioOriginal: precioOriginal,
-                descuento: descuento,
-                priceLabel: `$${precioConDescuento.toLocaleString()}`,
-                duration: servicioAPI.duration || servicioAPI.duracion ? `${servicioAPI.duracion} min` : servicioBase.duration,
-                description: servicioAPI.description || servicioAPI.descripcion || servicioBase.description
-              };
-            }
-
-            return servicioBase;
-          });
-
-          console.log('✅ Servicios con descuentos cargados:', serviciosActualizados.filter(s => s.descuento && s.descuento > 0).length);
-          setServiciosDestacados(serviciosActualizados);
-        } else {
-          console.log('ℹ️ Usando servicios por defecto');
+  const cargarServicios = useCallback(async () => {
+    try {
+      console.log('🔄 Cargando servicios dinámicos para el Home...');
+      const response = await fetch('/api/servicios-publicos', {
+        cache: 'no-store',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache'
         }
-        setLoading(false);
-      } catch (error) {
-        console.error('❌ Error cargando servicios:', error);
-        console.log('ℹ️ Usando servicios por defecto');
-        setLoading(false);
+      });
+      const data = await response.json();
+
+      if (data.success && data.servicios && data.servicios.length > 0) {
+        // Mostrar los primeros 6 activos (o todos si hay menos de 6)
+        const serviciosDB = data.servicios.map((s: any) => ({
+          id: s.servicio_id || s.id,
+          key: s.servicio_id || s.id,
+          title: s.nombre || s.title,
+          icon: s.icon || '💆',
+          price: s.precio || s.price,
+          priceLabel: s.priceLabel || `$${(s.precio || s.price).toLocaleString()}`,
+          duration: s.duration || `${s.duracion} min`,
+          imagen: s.imagen,
+          description: s.descripcion || s.description,
+          detalles_tratamiento: s.detalles_tratamiento,
+          detalles: Array.isArray(s.detalles) ? s.detalles : (s.detalles ? JSON.parse(s.detalles) : []),
+          precioOriginal: s.precioOriginal,
+          descuento: s.descuento
+        }));
+
+        console.log('✅ Servicios dinámicos cargados en Home:', serviciosDB.length);
+        setServiciosDestacados(serviciosDB.slice(0, 6)); // Solo mostramos los primeros 6 destacados
+        setTotalServicios(data.servicios.length); // Actualizar el total de servicios
+      } else {
+        console.log('ℹ️ No hay servicios en DB');
+        setServiciosDestacados([]);
+        setTotalServicios(0); // Resetear el total si no hay servicios
       }
-    };
+      setLoading(false);
+    } catch (error) {
+      console.error('❌ Error cargando servicios en Home:', error);
+      setLoading(false);
+    }
+  }, []);
 
+  const cargarCmsContent = useCallback(async () => {
+    try {
+      const res = await fetch('/api/web-content?section=home');
+      const data = await res.json();
+      if (data.success) {
+        setCmsContent(data.content);
+      }
+    } catch (error) {
+      console.error('Error cargando CMS:', error);
+    }
+  }, []);
+
+  useEffect(() => {
     cargarServicios();
+    cargarCmsContent();
 
-    // Escuchar eventos de actualización de descuentos
-    const handleDescuentoActualizado = (event: any) => {
-      console.log('🏠 Página Inicio - Descuento actualizado:', event?.detail);
+    // Escuchar eventos de actualización del admin
+    const handleActualizacion = (e: any) => {
+      console.log('🏠 Home detectó actualización:', e.type);
       cargarServicios();
+      cargarCmsContent();
     };
 
-    const handleServicioActualizado = (event: any) => {
-      console.log('🏠 Página Inicio - Servicio actualizado:', event?.detail);
-      cargarServicios();
-    };
-
-    window.addEventListener('descuentoActualizado', handleDescuentoActualizado);
-    window.addEventListener('servicioActualizado', handleServicioActualizado);
+    window.addEventListener('servicioActualizado', handleActualizacion);
+    window.addEventListener('actualizarPaginaPrincipal', handleActualizacion);
 
     return () => {
-      window.removeEventListener('descuentoActualizado', handleDescuentoActualizado);
-      window.removeEventListener('servicioActualizado', handleServicioActualizado);
+      window.removeEventListener('servicioActualizado', handleActualizacion);
+      window.removeEventListener('actualizarPaginaPrincipal', handleActualizacion);
     };
-  }, []);
+  }, [cargarServicios, cargarCmsContent]);
 
   // Animación de testimonios
   useEffect(() => {
@@ -229,6 +127,9 @@ export default function HomePage() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Helpers CMS
+  const getCms = (key: string, fallback: string) => cmsContent[key]?.content || fallback;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100 overflow-hidden">
@@ -257,8 +158,8 @@ export default function HomePage() {
 
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <Image 
-            src="/image/28a4ed9b-c783-4bca-9170-ac1fbf5cf12f.jpg" 
+          <Image
+            src="/image/28a4ed9b-c783-4bca-9170-ac1fbf5cf12f.jpg"
             alt="Therapy Aqua Spa"
             fill
             className="object-cover opacity-20"
@@ -273,25 +174,24 @@ export default function HomePage() {
         <div className="relative z-10 text-center px-4 transition-all duration-1000 transform opacity-100 translate-y-0">
           <div className="mb-6 inline-block">
             <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-lg animate-pulse">
-              ✨ Bienvenido a tu santuario de bienestar
+              {getCms('home_hero_badge', '✨ Bienvenido a tu santuario de bienestar')}
             </span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-[#3d2817] mb-6 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Therapy Aqua Spa
+            {getCms('home_hero_title', 'Therapy Aqua Spa')}
           </h1>
-          
+
           <p className="text-xl md:text-3xl text-amber-700 mb-8 font-semibold">
-            Terapia que alivia tu cuerpo
+            {getCms('home_hero_subtitle', 'Terapia que alivia tu cuerpo')}
           </p>
-          
+
           <p className="text-base md:text-lg text-stone-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-            Fisioterapia profesional y masajes terapéuticos en el corazón de Bogotá. 
-            Transformamos tu dolor en bienestar, tu tensión en paz.
+            {getCms('home_hero_description', 'Fisioterapia profesional y masajes terapéuticos en el corazón de Bogotá. Transformamos tu dolor en bienestar, tu tensión en paz.')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link 
+            <Link
               href="/servicios"
               className="group relative inline-flex items-center gap-3 bg-[#3d2817] hover:bg-[#2d1f11] text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl overflow-hidden"
             >
@@ -301,8 +201,8 @@ export default function HomePage() {
               </svg>
               <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
             </Link>
-            
-            <Link 
+
+            <Link
               href="/reservas"
               className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-10 py-5 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl"
             >
@@ -315,15 +215,23 @@ export default function HomePage() {
 
           <div className="mt-16 grid grid-cols-3 gap-8 max-w-3xl mx-auto">
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>500+</div>
+              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                {getCms('home_metrics_clients', '500+')}
+              </div>
               <div className="text-sm text-stone-600 mt-1">Clientes Felices</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>15</div>
-              <div className="text-sm text-stone-600 mt-1">Terapias Especializadas</div>
+              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                {totalServicios > 0 ? totalServicios : getCms('home_metrics_services_count', '21')}
+              </div>
+              <div className="text-sm text-stone-600 mt-1">
+                {getCms('home_metrics_services', 'Terapias Especializadas')}
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>5★</div>
+              <div className="text-4xl font-bold text-[#3d2817]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                {getCms('home_metrics_rating', '5★')}
+              </div>
               <div className="text-sm text-stone-600 mt-1">Calificación Promedio</div>
             </div>
           </div>
@@ -346,7 +254,7 @@ export default function HomePage() {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full -ml-24 -mb-24"></div>
               </div>
-              
+
               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex-1 text-center md:text-left">
                   <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-4">
@@ -357,7 +265,7 @@ export default function HomePage() {
                   </h3>
                   <div className="flex items-center justify-center md:justify-start gap-4 flex-wrap">
                     <span className="text-3xl md:text-4xl font-bold text-white">
-                      {promocionActiva.tipo === 'porcentaje' 
+                      {promocionActiva.tipo === 'porcentaje'
                         ? `${promocionActiva.valor}% OFF`
                         : `$${promocionActiva.valor.toLocaleString('es-CO')} OFF`}
                     </span>
@@ -413,26 +321,26 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {serviciosDestacados.map((servicio) => (
-              <div 
+              <div
                 key={servicio.id}
                 className="relative h-[480px] cursor-pointer"
                 style={{ perspective: '1000px' }}
                 onMouseEnter={() => setFlippedCard(servicio.id)}
                 onMouseLeave={() => setFlippedCard(null)}
               >
-                <div 
+                <div
                   className="relative w-full h-full transition-all duration-700"
                   style={{
                     transformStyle: 'preserve-3d',
                     transform: flippedCard === servicio.id ? 'rotateY(180deg)' : 'rotateY(0deg)'
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute w-full h-full bg-gradient-to-br from-amber-50 to-stone-100 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
                     style={{ backfaceVisibility: 'hidden' }}
                   >
                     <div className="relative h-48 overflow-hidden">
-                      <Image 
+                      <Image
                         src={servicio.imagen}
                         alt={servicio.title}
                         width={500}
@@ -450,7 +358,7 @@ export default function HomePage() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="p-6 flex flex-col justify-between flex-1">
                       <div>
                         <h3 className="text-xl font-bold text-[#3d2817] mb-3 leading-tight min-h-[60px]" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -488,9 +396,9 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div 
+                  <div
                     className="absolute w-full h-full bg-white rounded-3xl shadow-2xl overflow-hidden"
-                    style={{ 
+                    style={{
                       backfaceVisibility: 'hidden',
                       transform: 'rotateY(180deg)'
                     }}
@@ -503,11 +411,11 @@ export default function HomePage() {
                           </h4>
                           <span className="text-3xl">{servicio.icon}</span>
                         </div>
-                        
+
                         <p className="text-sm text-stone-600 mb-4 leading-relaxed">
-                          {servicio.description}
+                          {servicio.detalles_tratamiento || servicio.description}
                         </p>
-                        
+
                         <div className="space-y-2 mb-4">
                           <p className="text-sm font-semibold text-[#3d2817] mb-3">Incluye:</p>
                           {servicio.detalles.map((detalle, idx) => (
@@ -520,7 +428,7 @@ export default function HomePage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col gap-2 pt-4 border-t border-stone-200 flex-shrink-0">
                         <div className="flex items-center justify-between text-sm mb-2">
                           <span className="text-stone-600">Duración: <strong>{servicio.duration}</strong></span>
@@ -540,13 +448,13 @@ export default function HomePage() {
                             <span className="font-bold text-amber-700">{servicio.priceLabel}</span>
                           )}
                         </div>
-                        <Link 
+                        <Link
                           href="/servicios"
                           className="w-full bg-stone-200 hover:bg-stone-300 text-[#3d2817] px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
                         >
                           Ver Más Terapias
                         </Link>
-                        <Link 
+                        <Link
                           href={`/reservas?servicio=${servicio.key}`}
                           className="w-full bg-[#3d2817] hover:bg-[#2d1f11] text-white px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 text-center"
                         >
@@ -568,8 +476,8 @@ export default function HomePage() {
             <div className="relative">
               <div className="relative z-10 bg-white rounded-3xl shadow-2xl p-8">
                 <div className="w-32 h-32 mx-auto bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mb-6 shadow-xl overflow-hidden">
-                  <img 
-                    src="/image/fisioterapeuta.jpg" 
+                  <img
+                    src="/image/fisioterapeuta.jpg"
                     alt="Dra. Carolina Trujillo"
                     className="w-full h-full object-cover"
                   />
@@ -622,7 +530,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <Link 
+              <Link
                 href="/reservas"
                 className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
@@ -670,9 +578,8 @@ export default function HomePage() {
                 <button
                   key={idx}
                   onClick={() => setCurrentTestimonio(idx)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    currentTestimonio === idx ? 'w-8 bg-amber-600' : 'bg-stone-300 hover:bg-stone-400'
-                  }`}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${currentTestimonio === idx ? 'w-8 bg-amber-600' : 'bg-stone-300 hover:bg-stone-400'
+                    }`}
                 />
               ))}
             </div>

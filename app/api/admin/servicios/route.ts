@@ -39,6 +39,7 @@ export async function GET() {
         precio: Number(s.precio),
         precioOriginal: Number(s.precio),
         descuento: s.descuento || 0,
+        detalles_tratamiento: s.detalles_tratamiento || '',
         destacado: false // Campo no existe aún en la DB
       };
     });
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
 
     // Usar query raw para insertar
     await prisma.$executeRaw`
-      INSERT INTO servicios (servicio_id, nombre, descripcion, categoria, precio, duracion, icon, imagen, activo, orden, detalles, created_at, updated_at)
+      INSERT INTO servicios (servicio_id, nombre, descripcion, categoria, precio, duracion, icon, imagen, activo, orden, detalles, detalles_tratamiento, created_at, updated_at)
       VALUES (
         ${servicioId},
         ${body.nombre},
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
         ${body.activo !== undefined ? body.activo : true},
         ${body.orden || 0},
         ${body.detalles ? JSON.stringify(body.detalles) : null}::jsonb,
+        ${body.detalles_tratamiento || ''},
         NOW(),
         NOW()
       )
@@ -145,6 +147,7 @@ export async function PATCH(request: Request) {
     if (updates.activo !== undefined) validUpdates.activo = updates.activo;
     if (updates.orden !== undefined) validUpdates.orden = updates.orden;
     if (updates.detalles !== undefined) validUpdates.detalles = updates.detalles;
+    if (updates.detalles_tratamiento !== undefined) validUpdates.detalles_tratamiento = updates.detalles_tratamiento;
 
     // Usar query raw para actualizar
     if (Object.keys(validUpdates).length > 0) {
@@ -160,6 +163,7 @@ export async function PATCH(request: Request) {
       if (validUpdates.activo !== undefined) setStatements.push(`activo = ${validUpdates.activo}`);
       if (validUpdates.orden !== undefined) setStatements.push(`orden = ${validUpdates.orden}`);
       if (validUpdates.detalles !== undefined) setStatements.push(`detalles = '${JSON.stringify(validUpdates.detalles).replace(/'/g, "''")}'::jsonb`);
+      if (validUpdates.detalles_tratamiento !== undefined) setStatements.push(`detalles_tratamiento = '${validUpdates.detalles_tratamiento.replace(/'/g, "''")}'`);
 
       setStatements.push(`updated_at = NOW()`);
 

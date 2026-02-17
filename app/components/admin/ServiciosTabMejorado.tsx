@@ -17,6 +17,7 @@ type Servicio = {
   destacado: boolean;
   categoria: string;
   orden: number;
+  detalles_tratamiento?: string;
   detalles?: string[];
 };
 
@@ -78,7 +79,8 @@ export default function ServiciosTabMejorado() {
       destacado: false,
       categoria: categorias[0],
       orden: servicios.length + 1,
-      detalles: ['Profesionales certificados', 'Equipos de última tecnología']
+      detalles: ['Profesionales certificados', 'Equipos de última tecnología'],
+      detalles_tratamiento: ''
     });
     setSelectedServicio(null);
     setModalType('create');
@@ -833,21 +835,69 @@ export default function ServiciosTabMejorado() {
                       )}
                     </div>
 
-                    {/* Detalles */}
+                    {/* Detalles del Tratamiento (Texto Largo) */}
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Detalles (uno por línea)
+                        Detalles del Tratamiento (Texto Largo)
                       </label>
                       <textarea
-                        value={(formData.detalles || []).join('\n')}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          detalles: e.target.value.split('\n').filter(d => d.trim())
-                        })}
-                        rows={5}
+                        value={formData.detalles_tratamiento || ''}
+                        onChange={(e) => setFormData({ ...formData, detalles_tratamiento: e.target.value })}
+                        rows={6}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                        placeholder="Profesionales certificados&#10;Equipos de última tecnología&#10;Ambiente relajante"
+                        placeholder="Descripción detallada de la terapia que se mostrará en el reverso de la tarjeta..."
                       />
+                    </div>
+
+                    {/* Sección "Incluye" (Lista Interactiva) */}
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ¿Qué incluye este servicio? (Lista interactiva)
+                      </label>
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {(formData.detalles || []).map((detalle, idx) => (
+                            <div key={idx} className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
+                              <input
+                                type="text"
+                                value={detalle}
+                                onChange={(e) => {
+                                  const newDetalles = [...(formData.detalles || [])];
+                                  newDetalles[idx] = e.target.value;
+                                  setFormData({ ...formData, detalles: newDetalles });
+                                }}
+                                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-amber-800 p-0 hover:bg-white/50 transition-colors rounded px-1"
+                              />
+                              <button
+                                onClick={() => {
+                                  const newDetalles = (formData.detalles || []).filter((_, i) => i !== idx);
+                                  setFormData({ ...formData, detalles: newDetalles });
+                                }}
+                                className="text-amber-600 hover:text-red-500 transition-colors"
+                                title="Eliminar item"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              detalles: [...(formData.detalles || []), "Nuevo item"]
+                            });
+                          }}
+                          className="inline-flex items-center gap-2 bg-white border-2 border-dashed border-amber-300 text-amber-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-50 transition-all"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Agregar item a la lista
+                        </button>
+                      </div>
                     </div>
 
                     {/* Toggles */}

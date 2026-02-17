@@ -10,268 +10,7 @@ function getImagePath(filename: string): string {
   return `/image/${encodeURIComponent(filename)}`;
 }
 
-const servicios = [
-  {
-    categoria: "Terapias de Rehabilitación",
-    descripcion: "Tratamientos especializados para recuperación y alivio del dolor",
-    servicios: [
-      { 
-        key: "columna", 
-        title: "THERAPY LESIONES DE COLUMNA", 
-        duration: "30 min", 
-        price: 100000,
-        priceLabel: "$100.000", 
-        icon: "🦴",
-        imagen: getImagePath("therapy lesiones de columna 2.jpg"),
-        detalles: [
-          "Evaluación postural completa",
-          "Terapia manual especializada",
-          "Ejercicios de fortalecimiento",
-          "Técnicas de alivio del dolor",
-          "Plan de seguimiento personalizado"
-        ]
-      },
-      { 
-        key: "brazos", 
-        title: "THERAPY LESIONES MUSCULARES BRAZOS", 
-        duration: "30 min", 
-        price: 180000,
-        priceLabel: "$180.000", 
-        icon: "💪",
-        imagen: getImagePath("lesiones de brazo.jpg"),
-        detalles: [
-          "Masaje profundo de tejidos",
-          "Liberación miofascial",
-          "Estiramientos terapéuticos",
-          "Fortalecimiento muscular",
-          "Reducción de tensión"
-        ]
-      },
-      { 
-        key: "piernas", 
-        title: "THERAPY LESIONES MUSCULARES PIERNAS", 
-        duration: "30 min", 
-        price: 180000,
-        priceLabel: "Paquete 3 sesiones $180.000", 
-        icon: "🦵",
-        imagen: getImagePath("masaje de piernas.jpg") + "?v=2",
-        detalles: [
-          "Terapia de tejidos blandos",
-          "Movilización articular",
-          "Ejercicios de rehabilitación",
-          "Mejora de flexibilidad",
-          "Prevención de lesiones"
-        ]
-      },
-      { 
-        key: "hombro", 
-        title: "THERAPY TRAUMA HOMBRO, CODO, MUÑECA", 
-        duration: "30 min", 
-        price: 250000,
-        priceLabel: "Paquete 5 sesiones $250.000", 
-        icon: "🤝",
-        imagen: getImagePath("masaje hombro, codo.jpg"),
-        detalles: [
-          "Evaluación biomecánica",
-          "Terapia manual avanzada",
-          "Movilización pasiva y activa",
-          "Fortalecimiento progresivo",
-          "Reeducación del movimiento"
-        ]
-      },
-      { 
-        key: "cadera", 
-        title: "THERAPY TRAUMA CADERA, RODILLA, TOBILLO", 
-        duration: "30 min", 
-        price: 250000,
-        priceLabel: "Paquete 5 sesiones $250.000", 
-        icon: "🦿",
-        imagen: getImagePath("masaje cadera.jpg"),
-        detalles: [
-          "Evaluación funcional",
-          "Terapia de estabilización",
-          "Ejercicios de propiocepción",
-          "Fortalecimiento muscular",
-          "Mejora del equilibrio"
-        ]
-      },
-    ]
-  },
-  {
-    categoria: "Tratamientos de Bienestar",
-    descripcion: "Experiencias de relajación y cuidado integral",
-    servicios: [
-      { 
-        key: "bienestar-general", 
-        title: "MASAJE BIENESTAR GENERAL", 
-        duration: "45 min", 
-        price: 140000,
-        priceLabel: "$140.000", 
-        icon: "🌿",
-        imagen: getImagePath("masaje general.jfif"),
-        detalles: [
-          "Masaje corporal completo",
-          "Aromaterapia relajante",
-          "Música terapéutica",
-          "Técnicas de relajación profunda",
-          "Mejora de circulación sanguínea"
-        ]
-      },
-      { 
-        key: "cuello", 
-        title: "MASAJE DE CUELLO", 
-        duration: "30 min", 
-        price: 90000,
-        priceLabel: "$90.000", 
-        icon: "💆",
-        imagen: getImagePath("masaje cuello.jpg"),
-        detalles: [
-          "Masaje relajante",
-          "Masaje descontracturante",
-          "Masaje activador",
-          "Limpieza, exfoliación e hidratación de piel",
-          "Vibración, percusión y estiramiento articular y muscular",
-          "Masajeador capilar y piedras volcánicas",
-          "Musicoterapia y aromaterapia"
-        ]
-      },
-      { 
-        key: "deportivo", 
-        title: "MASAJE THERAPY DEPORTIVO", 
-        duration: "40 min", 
-        price: 100000,
-        priceLabel: "$100.000", 
-        icon: "🏃",
-        imagen: getImagePath("masaje deportivo.jpg"),
-        detalles: [
-          "Preparación pre-competencia",
-          "Recuperación post-entrenamiento",
-          "Liberación de tensión muscular",
-          "Mejora de flexibilidad",
-          "Prevención de lesiones deportivas"
-        ]
-      },
-      { 
-        key: "espalda", 
-        title: "MASAJE DE ESPALDA", 
-        duration: "30 min", 
-        price: 120000,
-        priceLabel: "$120.000", 
-        icon: "🧘",
-        imagen: getImagePath("masaje de espalda.jpg"),
-        detalles: [
-          "Masaje profundo de espalda",
-          "Liberación de nudos musculares",
-          "Alivio de contracturas",
-          "Mejora de postura",
-          "Reducción de estrés"
-        ]
-      },
-          { 
-            key: "hombros", 
-            title: "MASAJE HOMBROS Y BRAZOS", 
-            duration: "30 min", 
-            price: 100000,
-            priceLabel: "$100.000", 
-            icon: "💆",
-        imagen: getImagePath("masaje hombros y brazos.jpg"),
-        detalles: [
-          "Liberación de tensión cervical",
-          "Masaje de cuello y hombros",
-          "Descontractura muscular",
-          "Alivio de dolor de brazos",
-          "Mejora de movilidad"
-        ]
-      },
-          { 
-            key: "rodillas", 
-            title: "MASAJE CADERAS Y RODILLAS", 
-            duration: "30 min", 
-            price: 120000,
-            priceLabel: "$120.000", 
-            icon: "🦴",
-        imagen: getImagePath("masaje cadera 2.jpg"),
-        detalles: [
-          "Masaje de miembros inferiores",
-          "Liberación de tensión articular",
-          "Mejora de circulación",
-          "Alivio de rigidez",
-          "Fortalecimiento muscular"
-        ]
-      },
-          { 
-            key: "pies", 
-            title: "MASAJE PANTORRILLAS Y PIES", 
-            duration: "30 min", 
-            price: 120000,
-            priceLabel: "$120.000", 
-            icon: "🦶",
-        imagen: getImagePath("masaje piernas.jpg"),
-        detalles: [
-          "Reflexología podal",
-          "Masaje de pantorrillas",
-          "Liberación de fatiga",
-          "Estimulación de puntos reflejos",
-          "Relajación profunda"
-        ]
-      },
-    ]
-  },
-  {
-    categoria: "Cuidado Facial y Especializado",
-    descripcion: "Tratamientos faciales y terapias específicas de alta calidad",
-    servicios: [
-      { 
-        key: "facial", 
-        title: "MASAJE FACIAL", 
-        duration: "30 min", 
-        price: 90000,
-        priceLabel: "$90.000", 
-        icon: "✨",
-        imagen: getImagePath("masaje facial.jpg"),
-        detalles: [
-          "Limpieza facial profunda",
-          "Masaje linfático facial",
-          "Técnicas de lifting natural",
-          "Hidratación intensiva",
-          "Rejuvenecimiento de la piel"
-        ]
-      },
-      { 
-        key: "skincare-mano", 
-        title: "SKINCARE MANO THERAPY", 
-        duration: "30 min", 
-        price: 90000,
-        priceLabel: "$90.000", 
-        icon: "🤲",
-        imagen: getImagePath("skincare mano.jpg"),
-        detalles: [
-          "Exfoliación suave",
-          "Masaje de manos y antebrazos",
-          "Hidratación profunda",
-          "Tratamiento anti-edad",
-          "Nutrición de uñas y cutículas"
-        ]
-      },
-      { 
-        key: "preso-ocular", 
-        title: "PRESO THERAPY OCULAR", 
-        duration: "30 min", 
-        price: 80000,
-        priceLabel: "$80.000", 
-        icon: "👁️",
-        imagen: getImagePath("therapy ocular.jpg"),
-        detalles: [
-          "Masaje de contorno de ojos",
-          "Reducción de ojeras",
-          "Desinflamación de párpados",
-          "Alivio de tensión ocular",
-          "Efecto lifting natural"
-        ]
-      },
-    ]
-  }
-];
+const serviciosDefault: any[] = [];
 
 export default function ServiciosPage() {
   const [categoriaActiva, setCategoriaActiva] = useState(0);
@@ -286,7 +25,7 @@ export default function ServiciosPage() {
       try {
         const serviciosRes = await fetch('/api/servicios-publicos');
         const serviciosData = await serviciosRes.json();
-        
+
         if (serviciosData.success && serviciosData.servicios) {
           setServiciosAPI(serviciosData.servicios);
           console.log('✅ Servicios cargados desde API pública:', serviciosData.servicios.length);
@@ -295,9 +34,9 @@ export default function ServiciosPage() {
         console.error('Error cargando servicios:', error);
       }
     };
-    
+
     loadData();
-    
+
     // Verificar si hay cambios pendientes en localStorage
     const necesitaRecarga = localStorage.getItem('necesita_recarga');
     if (necesitaRecarga === 'true') {
@@ -357,12 +96,12 @@ export default function ServiciosPage() {
 
   const getPrecioConDescuento = (servicio: any) => {
     const servicioId = servicio.key || servicio.id;
-    
+
     // Buscar el servicio en serviciosAPI para obtener el precio y descuento actualizados
     const servicioAPI = serviciosAPI.find(s => s.id === servicioId);
     const precioBase = servicioAPI?.precioOriginal || servicioAPI?.precio || servicio.price;
     const descuento = servicioAPI?.descuento || descuentosIndividuales[servicioId] || 0;
-    
+
     if (descuento && descuento > 0) {
       const precioConDescuento = precioBase * (1 - descuento / 100);
       return {
@@ -372,7 +111,7 @@ export default function ServiciosPage() {
         tieneDescuento: true
       };
     }
-    
+
     return {
       precioOriginal: precioBase,
       precioConDescuento: precioBase,
@@ -380,14 +119,14 @@ export default function ServiciosPage() {
       tieneDescuento: false
     };
   };
-  
+
   // Función para obtener la duración actualizada desde la API
   const getDuracionActualizada = (servicio: any) => {
     const servicioId = servicio.key || servicio.id;
     const servicioAPI = serviciosAPI.find(s => s.id === servicioId);
     return servicioAPI?.duracion ? `${servicioAPI.duracion} min` : servicio.duration;
   };
-  
+
   // Función para obtener el nombre actualizado desde la API
   const getNombreActualizado = (servicio: any) => {
     const servicioId = servicio.key || servicio.id;
@@ -401,8 +140,8 @@ export default function ServiciosPage() {
     const servicioAPI = serviciosAPI.find(s => s.id === servicioId);
     if (servicioAPI?.imagen) {
       // Si la imagen ya viene con ruta completa desde la API, usarla directamente
-      const imagenPath = servicioAPI.imagen.startsWith('http') || servicioAPI.imagen.startsWith('/') 
-        ? servicioAPI.imagen 
+      const imagenPath = servicioAPI.imagen.startsWith('http') || servicioAPI.imagen.startsWith('/')
+        ? servicioAPI.imagen
         : getImagePath(servicioAPI.imagen);
       console.log(`🖼️ Imagen para ${servicioId}: ${servicioAPI.imagen} → ${imagenPath}`);
       return imagenPath;
@@ -415,32 +154,31 @@ export default function ServiciosPage() {
   const tieneImagenValida = (servicio: any) => {
     const servicioId = servicio.key || servicio.id;
     const servicioAPI = serviciosAPI.find(s => s.id === servicioId);
-    
+
     // Tiene imagen de la API
     if (servicioAPI?.imagen && servicioAPI.imagen.trim() !== '') return true;
-    
+
     // Tiene imagen hardcodeada válida
-    if (servicio.imagen && 
-        servicio.imagen.trim() !== '' && 
-        !servicio.imagen.includes('default-service.jpg')) {
+    if (servicio.imagen &&
+      servicio.imagen.trim() !== '' &&
+      !servicio.imagen.includes('default-service.jpg')) {
       return true;
     }
-    
+
     return false;
   };
 
   // Función para combinar servicios hardcodeados con servicios de la API
   const getServiciosMezclados = () => {
     if (serviciosAPI.length === 0) {
-      // Si no hay servicios de la API, usar solo los hardcodeados
-      return servicios;
+      return [];
     }
 
     // ✅ Mapeo inteligente de categorías de BD a categorías del frontend
     const mapearCategoria = (nombreServicio: string, categoriaDB: string) => {
       const nombreUpper = nombreServicio.toUpperCase();
       const categoriaUpper = categoriaDB?.toUpperCase() || '';
-      
+
       // Terapias de Rehabilitación: servicios de lesiones, trauma, terapia
       if (
         nombreUpper.includes('THERAPY') ||
@@ -452,7 +190,7 @@ export default function ServiciosPage() {
       ) {
         return "Terapias de Rehabilitación";
       }
-      
+
       // Cuidado Facial y Especializado: servicios faciales, oculares, manos
       if (
         nombreUpper.includes('FACIAL') ||
@@ -464,7 +202,7 @@ export default function ServiciosPage() {
       ) {
         return "Cuidado Facial y Especializado";
       }
-      
+
       // Tratamientos de Bienestar: todo lo demás (masajes generales)
       return "Tratamientos de Bienestar";
     };
@@ -476,9 +214,9 @@ export default function ServiciosPage() {
       "Cuidado Facial y Especializado": []
     };
 
-    // Inicializar con servicios hardcodeados
-    servicios.forEach(cat => {
-      serviciosPorCategoria[cat.categoria] = [...cat.servicios];
+    // Inicializar con servicios vacíos
+    Object.keys(serviciosPorCategoria).forEach(cat => {
+      serviciosPorCategoria[cat] = [];
     });
 
     // Agregar o actualizar servicios desde la API
@@ -495,7 +233,7 @@ export default function ServiciosPage() {
       let servicioExistente: any = null;
       let categoriaExistente: string | null = null;
       let indexExistente = -1;
-      
+
       for (const cat in serviciosPorCategoria) {
         const idx = serviciosPorCategoria[cat].findIndex(
           s => (s.key === servicioAPI.id || s.id === servicioAPI.id)
@@ -517,13 +255,14 @@ export default function ServiciosPage() {
         priceLabel: `$${(servicioAPI.precio || 0).toLocaleString('es-CO')}`,
         icon: servicioAPI.icon || '✨',
         // ✅ IMPORTANTE: Si la API no tiene imagen, mantener la imagen original del servicio hardcodeado
-        imagen: servicioAPI.imagen 
-          ? getImagePath(servicioAPI.imagen) 
+        imagen: servicioAPI.imagen
+          ? getImagePath(servicioAPI.imagen)
           : (servicioExistente?.imagen || ''),
         // ✅ IMPORTANTE: Si la API no tiene detalles, mantener los detalles originales del servicio hardcodeado
-        detalles: (Array.isArray(servicioAPI.detalles) && servicioAPI.detalles.length > 0) 
-          ? servicioAPI.detalles 
-          : (servicioExistente?.detalles || ["Profesionales certificados", "Equipos de última tecnología"])
+        detalles: (Array.isArray(servicioAPI.detalles) && servicioAPI.detalles.length > 0)
+          ? servicioAPI.detalles
+          : (servicioExistente?.detalles || ["Profesionales certificados", "Equipos de última tecnología"]),
+        detalles_tratamiento: servicioAPI.detalles_tratamiento || (servicioExistente?.detalles_tratamiento || servicioExistente?.descripcion || '')
       };
 
       if (servicioExistente) {
@@ -536,18 +275,22 @@ export default function ServiciosPage() {
     });
 
     // Convertir a formato de categorías con servicios
-    return servicios.map(catOriginal => ({
+    return [
+      { categoria: "Terapias de Rehabilitación", descripcion: "Tratamientos especializados para recuperación y alivio del dolor" },
+      { categoria: "Tratamientos de Bienestar", descripcion: "Experiencias de relajación y cuidado integral" },
+      { categoria: "Cuidado Facial y Especializado", descripcion: "Tratamientos faciales y terapias específicas de alta calidad" }
+    ].map((catOriginal: any) => ({
       categoria: catOriginal.categoria,
       descripcion: catOriginal.descripcion,
       servicios: serviciosPorCategoria[catOriginal.categoria] || []
-    })).filter(cat => cat.servicios.length > 0); // Solo mostrar categorías con servicios
+    })).filter((cat: any) => cat.servicios.length > 0);
   };
 
   const serviciosMezclados = getServiciosMezclados();
-  
+
   // Log para debug: mostrar servicios activos vs total
   useEffect(() => {
-    const totalServicios = serviciosMezclados.reduce((acc, cat) => acc + cat.servicios.length, 0);
+    const totalServicios = serviciosMezclados.reduce((acc: number, cat: any) => acc + cat.servicios.length, 0);
     const serviciosActivos = serviciosAPI.filter(s => s.activo === true).length;
     const serviciosInactivos = serviciosAPI.filter(s => s.activo !== true).length;
     console.log(`📊 Servicios en vista: ${totalServicios} | API activos: ${serviciosActivos} | API inactivos: ${serviciosInactivos}`);
@@ -580,15 +323,14 @@ export default function ServiciosPage() {
 
         {/* Filtros por categoría */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {serviciosMezclados.map((cat, index) => (
+          {serviciosMezclados.map((cat: any, index: number) => (
             <button
               key={index}
               onClick={() => setCategoriaActiva(index)}
-              className={`px-6 py-3 rounded-full font-semibold text-sm md:text-base transition-all duration-300 transform hover:scale-105 ${
-                categoriaActiva === index
-                  ? 'bg-[#3d2817] text-white shadow-lg'
-                  : 'bg-white text-stone-700 hover:bg-stone-100 shadow-md'
-              }`}
+              className={`px-6 py-3 rounded-full font-semibold text-sm md:text-base transition-all duration-300 transform hover:scale-105 ${categoriaActiva === index
+                ? 'bg-[#3d2817] text-white shadow-lg'
+                : 'bg-white text-stone-700 hover:bg-stone-100 shadow-md'
+                }`}
             >
               {cat.categoria}
             </button>
@@ -615,17 +357,16 @@ export default function ServiciosPage() {
                 onMouseEnter={() => setCardFlipped(servicio.key)}
                 onMouseLeave={() => setCardFlipped(null)}
               >
-                <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${
-                  cardFlipped === servicio.key ? 'rotate-y-180' : ''
-                }`}>
-                  
+                <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${cardFlipped === servicio.key ? 'rotate-y-180' : ''
+                  }`}>
+
                   {/* FRENTE de la tarjeta */}
                   <div className="absolute w-full h-full backface-hidden bg-white rounded-3xl shadow-xl overflow-hidden">
                     {/* Imagen */}
                     <div className="relative h-52 overflow-hidden flex-shrink-0 bg-gradient-to-br from-amber-100 to-stone-200">
                       {tieneImagenValida(servicio) ? (
-                        <Image 
-                          src={getImagenActualizada(servicio)} 
+                        <Image
+                          src={getImagenActualizada(servicio)}
                           alt={getNombreActualizado(servicio)}
                           fill
                           className="object-cover transform group-hover:scale-110 transition-transform duration-500"
@@ -663,7 +404,7 @@ export default function ServiciosPage() {
                       <h3 className="text-base font-bold text-[#3d2817] mb-3 leading-tight line-clamp-2" style={{ fontFamily: "'Playfair Display', serif" }}>
                         {getNombreActualizado(servicio)}
                       </h3>
-                      
+
                       <div className="space-y-2 mb-4 flex-shrink-0">
                         <div className="flex items-center gap-2 text-xs text-stone-600">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-600 flex-shrink-0">
@@ -711,7 +452,7 @@ export default function ServiciosPage() {
 
                   {/* REVERSO de la tarjeta */}
                   <div className="absolute w-full h-full backface-hidden rotate-y-180 bg-gradient-to-br from-[#3d2817] to-[#2d1f11] rounded-3xl shadow-xl overflow-hidden p-6 flex flex-col">
-                    <div className="flex-1">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                           Incluye:
@@ -719,7 +460,11 @@ export default function ServiciosPage() {
                         <span className="text-4xl">{servicio.icon}</span>
                       </div>
 
-                      <ul className="space-y-3 mb-6">
+                      <p className="text-sm text-white/80 mb-6 leading-relaxed">
+                        {servicio.detalles_tratamiento || 'Sin descripción detallada.'}
+                      </p>
+
+                      <ul className="space-y-3">
                         {servicio.detalles.map((detalle: string, idx: number) => (
                           <li key={idx} className="flex items-start gap-3 text-white/90">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5">
@@ -843,7 +588,7 @@ export default function ServiciosPage() {
               className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-5 h-5">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
               </svg>
               Contactar por WhatsApp
             </a>

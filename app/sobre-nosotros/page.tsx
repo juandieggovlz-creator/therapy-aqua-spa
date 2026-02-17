@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 type SobreNosotros = {
@@ -101,9 +101,9 @@ function GaleriaInstalaciones() {
     <div className="bg-gradient-to-br from-stone-900 to-[#3d2817] rounded-3xl shadow-2xl overflow-hidden mb-16 p-8 md:p-12">
       <div className="text-center mb-12">
         <div className="flex items-center justify-center gap-4 mb-4">
-          <img 
-            src="/image/logo-oficial.jpg" 
-            alt="Therapy Aqua Spa Logo" 
+          <img
+            src="/image/logo-oficial.jpg"
+            alt="Therapy Aqua Spa Logo"
             className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover shadow-lg"
           />
           <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -122,11 +122,10 @@ function GaleriaInstalaciones() {
             {instalaciones.map((foto, index) => (
               <div
                 key={foto.id}
-                className={`absolute inset-0 transition-all duration-700 transform ${
-                  index === currentSlide 
-                    ? 'opacity-100 scale-100' 
-                    : 'opacity-0 scale-95'
-                }`}
+                className={`absolute inset-0 transition-all duration-700 transform ${index === currentSlide
+                  ? 'opacity-100 scale-100'
+                  : 'opacity-0 scale-95'
+                  }`}
               >
                 <img
                   src={foto.imagen}
@@ -168,34 +167,31 @@ function GaleriaInstalaciones() {
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`transition-all duration-300 ${
-                    index === currentSlide
-                      ? 'w-8 h-2 bg-white'
-                      : 'w-2 h-2 bg-white/50 hover:bg-white/75'
-                  } rounded-full`}
+                  className={`transition-all duration-300 ${index === currentSlide
+                    ? 'w-8 h-2 bg-white'
+                    : 'w-2 h-2 bg-white/50 hover:bg-white/75'
+                    } rounded-full`}
                 />
               ))}
             </div>
           </div>
-          
+
           {/* Galería de miniaturas */}
           <div className="mt-6 grid grid-cols-5 gap-2">
             {instalaciones.map((foto, index) => (
               <button
                 key={foto.id}
                 onClick={() => setCurrentSlide(index)}
-                className={`relative h-20 md:h-24 rounded-lg overflow-hidden transition-all duration-300 transform hover:scale-110 ${
-                  index === currentSlide ? 'ring-4 ring-amber-400 scale-110' : 'opacity-70 hover:opacity-100'
-                }`}
+                className={`relative h-20 md:h-24 rounded-lg overflow-hidden transition-all duration-300 transform hover:scale-110 ${index === currentSlide ? 'ring-4 ring-amber-400 scale-110' : 'opacity-70 hover:opacity-100'
+                  }`}
               >
                 <img
                   src={foto.imagen}
                   alt={foto.titulo}
                   className="w-full h-full object-cover"
                 />
-                <div className={`absolute inset-0 ${
-                  index === currentSlide ? 'bg-amber-400/20' : 'bg-black/30'
-                } transition-all duration-300`} />
+                <div className={`absolute inset-0 ${index === currentSlide ? 'bg-amber-400/20' : 'bg-black/30'
+                  } transition-all duration-300`} />
               </button>
             ))}
           </div>
@@ -206,7 +202,7 @@ function GaleriaInstalaciones() {
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 shadow-lg animate-pulse">
               <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-8 h-8 text-pink-600">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -220,7 +216,7 @@ function GaleriaInstalaciones() {
           {/* QR Code Real */}
           <div className="bg-white p-6 rounded-2xl shadow-xl mb-6">
             <div className="aspect-square flex items-center justify-center">
-              <img 
+              <img
                 src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://www.instagram.com/therapyaquaspa?utm_source=qr%26igsh=MTNzaTduczUzbW56"
                 alt="QR Code Instagram Therapy Aqua Spa"
                 className="w-full h-full object-contain"
@@ -236,7 +232,7 @@ function GaleriaInstalaciones() {
           >
             <span className="flex items-center justify-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-5 h-5">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
               Visitar @therapyaquaspa
             </span>
@@ -252,19 +248,38 @@ function GaleriaInstalaciones() {
 }
 
 export default function SobreNosotrosPage() {
-  const sobreNosotros: SobreNosotros = {
-    titulo: 'Sobre Nosotros',
-    subtitulo: 'Bienestar y Relajación',
-    descripcion: 'En Therapy Aqua Spa nos dedicamos a brindar experiencias únicas de relajación y bienestar.',
-    valores: ['Calidad', 'Profesionalismo', 'Innovación', 'Compromiso']
+  const [cmsContent, setCmsContent] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const res = await fetch('/api/web-content?section=about');
+        const data = await res.json();
+        if (data.success) setCmsContent(data.content);
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    };
+    fetchContent();
+  }, []);
+
+  const getCms = (key: string, fallback: string) => cmsContent[key]?.content || fallback;
+
+  const sobreNosotros = {
+    titulo: getCms('about_title', 'Sobre Nosotros'),
+    subtitulo: getCms('about_subtitle', 'Tu refugio de bienestar integral'),
+    descripcion: getCms('about_description', 'En Therapy Aqua Spa transformamos la fisioterapia y los tratamientos de bienestar en una experiencia de renovación profunda para cuerpo y mente.'),
+    valores: ['Atención personalizada', 'Ambiente premium', 'Profesionalismo', 'Innovación']
   };
-  const ubicacion: Ubicacion = {
+
+  const ubicacion = {
     direccion: 'Calle 138 Nro. 55-38',
     lugar: 'Círculo de Suboficiales de las Fuerzas Militares',
     ciudad: 'Bogotá D.C.',
-    mapaLink: 'https://maps.google.com/?q=Cra+27+6-56+Pasto'
+    mapaLink: 'https://www.google.com/maps/place/C%C3%ADrculo+de+Suboficiales+de+las+Fuerzas+Militares+Sede+Social+Colina+Campestre/@4.7270293,-74.0630815,17z/data=!3m1!4b1!4m6!3m5!1s0x8e3f85166d81d1a9:0x2f6f5f8e86302677!8m2!3d4.727024!4d-74.0605066!16s%2Fg%2F1tj74n8d?entry=ttu&g_ep=EgoyMDI2MDIxMS4wIKXMDSoASAFQAw%3D%3D'
   };
-  
+
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-neutral-100">
       {/* Elementos decorativos flotantes */}
@@ -429,8 +444,8 @@ export default function SobreNosotrosPage() {
             <div className="bg-gradient-to-br from-green-100 to-emerald-100 p-12 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-32 h-32 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-                  <img 
-                    src="/image/fisioterapeuta.jpg" 
+                  <img
+                    src="/image/fisioterapeuta.jpg"
                     alt="Dra. Carolina Trujillo"
                     className="w-full h-full object-cover"
                   />

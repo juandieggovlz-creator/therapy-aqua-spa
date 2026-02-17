@@ -222,31 +222,71 @@ export async function verificarConflictoHorario(
 }
 
 /**
- * Liberar reservas expiradas (más de 30 minutos en estado pendiente)
+ * Liberar reservas expiradas
+ * - 'pendiente': 2 horas de gracia
+ * - 'pendiente de pago': 30 minutos de gracia
+ * No cancela citas que ocurran en menos de 2 horas (margen de seguridad para cambios manuales)
  */
 export async function liberarReservasExpiradas(): Promise<number> {
   try {
     const ahora = new Date();
-    const tiempoExpiracion = new Date(ahora.getTime() - 30 * 60 * 1000); // 30 minutos
+    const tiempoExpiracionPago = new Date(ahora.getTime() - 30 * 60 * 1000); // 30 min
+    const tiempoExpiracionPendiente = new Date(ahora.getTime() - 120 * 60 * 1000); // 2 horas
+    const umbralProximidadCita = new Date(ahora.getTime() + 2 * 60 * 60 * 1000);
 
-    const result = await prisma.reserva.updateMany({
+    const haceDosDias = new Date(ahora.getTime() - 48 * 60 * 60 * 1000);
+
+    // Obtener reservas candidatas a expirar (solo recientes o futuras para optimizar)
+    const reservasCandidatas = await prisma.reserva.findMany({
       where: {
-        estado: 'pendiente',
-        created_at: {
-          lt: tiempoExpiracion
-        }
-      },
-      data: {
-        estado: 'cancelada',
-        updated_at: ahora
+        estado: { in: ['pendiente', 'pendiente de pago'] },
+        OR: [
+          { created_at: { gte: haceDosDias } },
+          { fecha: { gte: haceDosDias } }
+        ]
       }
     });
 
-    if (result.count > 0) {
-      console.log(`🔓 ${result.count} reserva(s) expirada(s) liberada(s)`);
+    let canceladas = 0;
+
+    for (const reserva of reservasCandidatas) {
+      const createdAt = new Date(reserva.created_at);
+
+      // Combinar fecha (Date) y horario (string "HH:mm") para tener el momento exacto de la cita
+      const fechaCita = new Date(reserva.fecha);
+      const [horas, minutos] = (reserva.horario || "00:00").split(':').map(Number);
+      fechaCita.setHours(horas, minutos, 0, 0);
+
+      // Reglas de expiración:
+      let debeExpirar = false;
+
+      // 1. Verificar timeout por estado
+      if (reserva.estado === 'pendiente de pago' && createdAt < tiempoExpiracionPago) {
+        debeExpirar = true;
+      } else if (reserva.estado === 'pendiente' && createdAt < tiempoExpiracionPendiente) {
+        debeExpirar = true;
+      }
+
+      // 2. Margen de seguridad: No auto-cancelar si la cita es en menos de 2 horas o ya pasó
+      // (Si ya pasó, el admin debe gestionarla manualmente como completada o cancelada)
+      if (debeExpirar && fechaCita < umbralProximidadCita) {
+        debeExpirar = false;
+      }
+
+      if (debeExpirar) {
+        await prisma.reserva.update({
+          where: { reservation_id: reserva.reservation_id },
+          data: { estado: 'cancelada', updated_at: ahora }
+        });
+        canceladas++;
+      }
     }
 
-    return result.count;
+    if (canceladas > 0) {
+      console.log(`🔓 ${canceladas} reserva(s) expirada(s) liberada(s) correctamente`);
+    }
+
+    return canceladas;
   } catch (error) {
     console.error('❌ Error liberando reservas:', error);
     return 0;

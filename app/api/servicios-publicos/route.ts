@@ -68,6 +68,7 @@ export async function GET() {
         icon: s.icon || '💆',
         imagen: imagenFinal || '/image/default-service.jpg',
         detalles: s.detalles || [],
+        detalles_tratamiento: s.detalles_tratamiento || '',
         activo: s.activo,
         orden: s.orden
       };
