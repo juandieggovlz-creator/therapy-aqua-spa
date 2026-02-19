@@ -33,32 +33,56 @@ async function enviarNotificacionTelegram(reserva: any) {
       day: 'numeric'
     }) : 'No especificada';
 
-    const terapiasNombres = Array.isArray(reserva.terapias)
-      ? reserva.terapias.map((t: any) => `• ${t.nombre}`).join('\n')
-      : '• No especificada';
+    // Helper para formatear listas
+    const formatearLista = (items: any[], icono: string = '•') => {
+      if (!Array.isArray(items) || items.length === 0) return 'Ninguno';
+      return items.map((item: any) => `${icono} ${item.nombre || item.id}`).join('\n');
+    };
 
-    const mensaje = `¡Nueva Reserva! 🎉
-Resumen de reserva:
-👤 Nombre: ${reserva.nombre || 'No especificado'}
-📞 Teléfono: ${reserva.telefono || 'No especificado'}
-📧 Email: ${reserva.email || 'No especificado'}
+    const listaTerapias = formatearLista(reserva.terapias, '💆');
+    const listaAdicionales = formatearLista(reserva.serviciosAdicionales, '✨');
+    const listaProductos = formatearLista(reserva.productos, '🛍');
 
-📅 Fecha: ${fechaFormateada}
-⏰ Hora: ${reserva.horario || 'No especificada'}
+    let mensaje = `<b>¡Nueva Reserva! 🎉</b>\n\n`;
+    mensaje += `<b>📅 Fecha:</b> ${fechaFormateada}\n`;
+    mensaje += `<b>⏰ Hora:</b> ${reserva.horario || 'No especificada'}\n\n`;
 
-Servicios:
-${terapiasNombres}
+    mensaje += `<b>👤 Cliente:</b>\n`;
+    mensaje += `<b>Nombre:</b> ${reserva.nombre || 'No especificado'}\n`;
+    mensaje += `<b>📞 Teléfono:</b> ${reserva.telefono || 'No especificado'}\n`;
+    mensaje += `<b>📧 Email:</b> ${reserva.email || 'No especificado'}\n\n`;
 
-💰 Total: ${totalFormateado}`;
+    mensaje += `<b>💆 Terapias:</b>\n${listaTerapias}\n\n`;
+
+    if (listaAdicionales !== 'Ninguno') {
+      mensaje += `<b>✨ Servicios Adicionales:</b>\n${listaAdicionales}\n\n`;
+    }
+
+    if (listaProductos !== 'Ninguno') {
+      mensaje += `<b>🛍 Productos:</b>\n${listaProductos}\n\n`;
+    }
+
+    mensaje += `<b>⏱ Duración Total:</b> ${reserva.duracionTotal || 0} min\n`;
+    mensaje += `<b>💰 Total:</b> ${totalFormateado}`;
+
+    if (reserva.notas) {
+      mensaje += `\n\n<b>📝 Nota del cliente:</b>\n${reserva.notas}`;
+    }
 
     const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
+        parse_mode: "HTML",
         text: mensaje,
       }),
     });
+
+    const result = await response.json();
+    if (!response.ok) {
+      console.error("❌ Telegram API Error:", result);
+    }
 
     return response.ok;
   } catch (error) {
